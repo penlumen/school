@@ -1,0 +1,198 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// System Users
+model User {
+  id              Int      @id @default(autoincrement())
+  uuid            String   @unique  @default(uuid())
+  email           String   @unique
+  password        String
+  first_name      String?
+  last_lame       String?
+  contact         String?
+  profile         String?
+  address         String?
+  city            String?
+  state           String?
+  country         String?
+  zip             String?
+  role            String   @default("user")
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+
+  school          School[]
+}
+
+// Registered School
+model School {
+  id              Int      @id @default(autoincrement())
+  uuid            String   @unique  @default(uuid())
+  user_uuid       String
+  name            String
+  email           String
+  contact         String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  user            User     @relation(fields: [user_uuid], references: [uuid])
+  staff           Staff[]
+  parents         Parent[]
+  students        Student[]
+  classes         Class[]
+  grades          Grade[]
+}
+
+
+// School Staff
+model Staff {
+  id              Int      @id @default(autoincrement())
+  uuid            String   @unique  @default(uuid())
+  shool_uuid      String
+  email           String
+  password        String
+  first_name      String?
+  last_lame       String?
+  contact         String?
+  alt_contact     String?
+  profile         String?
+  address         String?
+  postion         String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  school          School?  @relation(fields: [shool_uuid], references: [uuid])
+  @@unique([shool_uuid, email])
+}
+
+
+// School Parent
+model Parent {
+  id              Int      @id @default(autoincrement())
+  uuid            String   @unique  @default(uuid())
+  shool_uuid      String
+  email           String
+  password        String
+  first_name      String?
+  last_lame       String?
+  contact         String?
+  alt_contact     String?
+  profile         String?
+  address         String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  school          School?  @relation(fields: [shool_uuid], references: [uuid])
+  student         Student[]
+  @@unique([shool_uuid, email])
+}
+
+
+// School Student
+model Student {
+  id              Int      @id @default(autoincrement())
+  uuid            String   @unique  @default(uuid())
+  parent_uuid     String
+  shool_uuid      String
+  class_uuid      String
+  reg_number      String
+  first_name      String
+  last_lame       String
+  profile         String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  parent          Parent   @relation(fields: [parent_uuid], references: [uuid])
+  school          School   @relation(fields: [shool_uuid], references: [uuid])
+  class           Class    @relation(fields: [class_uuid], references: [uuid])
+  result          Result[]
+  @@unique([shool_uuid, reg_number])
+}
+
+// School Classes
+model Class {
+  id              Int      @id @default(autoincrement())
+  uuid            String   @unique  @default(uuid())
+  school_uuid     String
+  name            String
+  status          String   @default("active")
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  school          School?  @relation(fields: [school_uuid], references: [uuid])
+  subject         Subject[]
+  student         Student[]
+}
+
+// School Subjects
+model Subject {
+  id              Int      @id @default(autoincrement())
+  uuid            String   @unique  @default(uuid())
+  class_uuid      String
+  name            String
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  class           Class?   @relation(fields: [class_uuid], references: [uuid])
+}
+
+
+// School Grades
+model Grade {
+  id              Int      @id @default(autoincrement())
+  uuid            String   @unique  @default(uuid())
+  school_uuid     String
+  score           Float
+  grade           String
+  remark          String
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  school          School?  @relation(fields: [school_uuid], references: [uuid])
+}
+
+
+// Result
+model Result {
+  id              Int      @id @default(autoincrement())
+  uuid            String   @unique  @default(uuid())
+  student_uuid    String
+  class_name      String
+  grade           String
+  remark          String
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  student         Student? @relation(fields: [student_uuid], references: [uuid])
+  assessments     Assessments[]
+}
+
+
+// School Assessments
+model Assessments {
+  id                  Int      @id @default(autoincrement())
+  uuid                String   @unique  @default(uuid())
+  result_uuid         String
+  subject_name        String
+  first_assesment     Float
+  secont_assesment    Float
+  exam_assesment      Float
+  total_assesment     Float
+  grade               String
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  result              Result?  @relation(fields: [result_uuid], references: [uuid])
+}
