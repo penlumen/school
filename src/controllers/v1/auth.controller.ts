@@ -1,5 +1,5 @@
-import { Request, RequestHandler, Response } from "express";
 import prisma from "../../config/prisma.config";
+import { RequestHandler, Request, Response } from 'express';
 
 export const signUp: RequestHandler = async (req: Request, res: Response): Promise<void> => {
   const { email, password } = req.body;

@@ -32,8 +32,9 @@ model User {
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
-
   school          School[]
+  parents         Parent[]
+  staff           Staff[]
 }
 
 // Registered School
@@ -44,12 +45,11 @@ model School {
   name            String
   email           String
   contact         String?
+  address         String?
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
   user            User     @relation(fields: [user_uuid], references: [uuid])
-  staff           Staff[]
-  parents         Parent[]
   students        Student[]
   classes         Class[]
   grades          Grade[]
@@ -60,7 +60,7 @@ model School {
 model Staff {
   id              Int      @id @default(autoincrement())
   uuid            String   @unique  @default(uuid())
-  shool_uuid      String
+  user_uuid       String
   email           String
   password        String
   first_name      String?
@@ -73,8 +73,8 @@ model Staff {
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
-  school          School?  @relation(fields: [shool_uuid], references: [uuid])
-  @@unique([shool_uuid, email])
+  school          User?    @relation(fields: [user_uuid], references: [uuid])
+  @@unique([user_uuid, email])
 }
 
 
@@ -82,7 +82,7 @@ model Staff {
 model Parent {
   id              Int      @id @default(autoincrement())
   uuid            String   @unique  @default(uuid())
-  shool_uuid      String
+  user_uuid      String
   email           String
   password        String
   first_name      String?
@@ -94,9 +94,9 @@ model Parent {
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
-  school          School?  @relation(fields: [shool_uuid], references: [uuid])
+  school          User?    @relation(fields: [user_uuid], references: [uuid])
   student         Student[]
-  @@unique([shool_uuid, email])
+  @@unique([user_uuid, email])
 }
 
 
