@@ -13,14 +13,36 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  ROOT
+  SCHOOL
+}
+
 // System Users
 model User {
   id              Int      @id @default(autoincrement())
   uuid            String   @unique  @default(uuid())
   email           String   @unique
   password        String
-  first_name      String?
-  last_lame       String?
+  name            String?
+  app_key         String?
+  app_secret      String?
+  role            Role     @default(SCHOOL)
+  status          String   @default("active")
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  profile         Profile?
+  school          School[]
+  parents         Parent[]
+  staff           Staff[]
+}
+
+// User Profile
+model Profile {
+  id              Int      @id @default(autoincrement())
+  user_uuid       String   @unique  @default(uuid())
+  name            String?
   contact         String?
   profile         String?
   address         String?
@@ -28,13 +50,10 @@ model User {
   state           String?
   country         String?
   zip             String?
-  role            String   @default("user")
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
-  school          School[]
-  parents         Parent[]
-  staff           Staff[]
+  user            User?    @relation(fields: [user_uuid], references: [uuid])
 }
 
 // Registered School
@@ -63,8 +82,7 @@ model Staff {
   user_uuid       String
   email           String
   password        String
-  first_name      String?
-  last_lame       String?
+  name            String?
   contact         String?
   alt_contact     String?
   profile         String?
@@ -82,11 +100,10 @@ model Staff {
 model Parent {
   id              Int      @id @default(autoincrement())
   uuid            String   @unique  @default(uuid())
-  user_uuid      String
+  user_uuid       String
   email           String
   password        String
-  first_name      String?
-  last_lame       String?
+  name            String?
   contact         String?
   alt_contact     String?
   profile         String?
@@ -108,8 +125,7 @@ model Student {
   shool_uuid      String
   class_uuid      String
   reg_number      String
-  first_name      String
-  last_lame       String
+  name            String
   profile         String?
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
@@ -185,14 +201,16 @@ model Assessments {
   id                  Int      @id @default(autoincrement())
   uuid                String   @unique  @default(uuid())
   result_uuid         String
-  subject_name        String
-  first_assesment     Float
-  secont_assesment    Float
-  exam_assesment      Float
-  total_assesment     Float
+  subject             String
+  assignment          Float
+  assesment           Float
+  examination         Float
+  overall             Float
   grade               String
   created_at          DateTime @default(now())
   updated_at          DateTime @updatedAt
 
   result              Result?  @relation(fields: [result_uuid], references: [uuid])
+
+  @@unique([result_uuid, subject])
 }

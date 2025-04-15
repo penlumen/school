@@ -1,11 +1,28 @@
+-- CreateEnum
+CREATE TYPE "Role" AS ENUM ('ROOT', 'SCHOOL');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" SERIAL NOT NULL,
     "uuid" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
-    "first_name" TEXT,
-    "last_lame" TEXT,
+    "name" TEXT,
+    "app_key" TEXT,
+    "app_secret" TEXT,
+    "role" "Role" NOT NULL DEFAULT 'SCHOOL',
+    "status" TEXT NOT NULL DEFAULT 'active',
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "profile" (
+    "id" SERIAL NOT NULL,
+    "user_uuid" TEXT NOT NULL,
+    "name" TEXT,
     "contact" TEXT,
     "profile" TEXT,
     "address" TEXT,
@@ -13,11 +30,10 @@ CREATE TABLE "User" (
     "state" TEXT,
     "country" TEXT,
     "zip" TEXT,
-    "role" TEXT NOT NULL DEFAULT 'user',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "profile_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -28,6 +44,7 @@ CREATE TABLE "School" (
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "contact" TEXT,
+    "address" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -38,11 +55,10 @@ CREATE TABLE "School" (
 CREATE TABLE "Staff" (
     "id" SERIAL NOT NULL,
     "uuid" TEXT NOT NULL,
-    "shool_uuid" TEXT NOT NULL,
+    "user_uuid" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
-    "first_name" TEXT,
-    "last_lame" TEXT,
+    "name" TEXT,
     "contact" TEXT,
     "alt_contact" TEXT,
     "profile" TEXT,
@@ -58,11 +74,10 @@ CREATE TABLE "Staff" (
 CREATE TABLE "Parent" (
     "id" SERIAL NOT NULL,
     "uuid" TEXT NOT NULL,
-    "shool_uuid" TEXT NOT NULL,
+    "user_uuid" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
-    "first_name" TEXT,
-    "last_lame" TEXT,
+    "name" TEXT,
     "contact" TEXT,
     "alt_contact" TEXT,
     "profile" TEXT,
@@ -81,8 +96,7 @@ CREATE TABLE "Student" (
     "shool_uuid" TEXT NOT NULL,
     "class_uuid" TEXT NOT NULL,
     "reg_number" TEXT NOT NULL,
-    "first_name" TEXT NOT NULL,
-    "last_lame" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
     "profile" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -148,11 +162,11 @@ CREATE TABLE "Assessments" (
     "id" SERIAL NOT NULL,
     "uuid" TEXT NOT NULL,
     "result_uuid" TEXT NOT NULL,
-    "subject_name" TEXT NOT NULL,
-    "first_assesment" DOUBLE PRECISION NOT NULL,
-    "secont_assesment" DOUBLE PRECISION NOT NULL,
-    "exam_assesment" DOUBLE PRECISION NOT NULL,
-    "total_assesment" DOUBLE PRECISION NOT NULL,
+    "subject" TEXT NOT NULL,
+    "assignment" DOUBLE PRECISION NOT NULL,
+    "assesment" DOUBLE PRECISION NOT NULL,
+    "examination" DOUBLE PRECISION NOT NULL,
+    "overall" DOUBLE PRECISION NOT NULL,
     "grade" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -167,19 +181,22 @@ CREATE UNIQUE INDEX "User_uuid_key" ON "User"("uuid");
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "profile_user_uuid_key" ON "profile"("user_uuid");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "School_uuid_key" ON "School"("uuid");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Staff_uuid_key" ON "Staff"("uuid");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Staff_shool_uuid_email_key" ON "Staff"("shool_uuid", "email");
+CREATE UNIQUE INDEX "Staff_user_uuid_email_key" ON "Staff"("user_uuid", "email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Parent_uuid_key" ON "Parent"("uuid");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Parent_shool_uuid_email_key" ON "Parent"("shool_uuid", "email");
+CREATE UNIQUE INDEX "Parent_user_uuid_email_key" ON "Parent"("user_uuid", "email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Student_uuid_key" ON "Student"("uuid");
@@ -202,14 +219,20 @@ CREATE UNIQUE INDEX "Result_uuid_key" ON "Result"("uuid");
 -- CreateIndex
 CREATE UNIQUE INDEX "Assessments_uuid_key" ON "Assessments"("uuid");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "Assessments_result_uuid_subject_key" ON "Assessments"("result_uuid", "subject");
+
+-- AddForeignKey
+ALTER TABLE "profile" ADD CONSTRAINT "profile_user_uuid_fkey" FOREIGN KEY ("user_uuid") REFERENCES "User"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+
 -- AddForeignKey
 ALTER TABLE "School" ADD CONSTRAINT "School_user_uuid_fkey" FOREIGN KEY ("user_uuid") REFERENCES "User"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Staff" ADD CONSTRAINT "Staff_shool_uuid_fkey" FOREIGN KEY ("shool_uuid") REFERENCES "School"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Staff" ADD CONSTRAINT "Staff_user_uuid_fkey" FOREIGN KEY ("user_uuid") REFERENCES "User"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Parent" ADD CONSTRAINT "Parent_shool_uuid_fkey" FOREIGN KEY ("shool_uuid") REFERENCES "School"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Parent" ADD CONSTRAINT "Parent_user_uuid_fkey" FOREIGN KEY ("user_uuid") REFERENCES "User"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Student" ADD CONSTRAINT "Student_parent_uuid_fkey" FOREIGN KEY ("parent_uuid") REFERENCES "Parent"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
