@@ -8,7 +8,7 @@ import { RequestHandler, Request, Response } from 'express';
  * @param req
  * @param res
  */
-export const getSchool: RequestHandler = async (
+export const index: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
@@ -39,7 +39,7 @@ export const getSchool: RequestHandler = async (
  * @param req
  * @param res
  */
-export const createSchool: RequestHandler = async (
+export const create: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
@@ -77,7 +77,7 @@ export const createSchool: RequestHandler = async (
  * @param req
  * @param res
  */
-export const showSchool: RequestHandler = async (
+export const show: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
@@ -108,7 +108,7 @@ export const showSchool: RequestHandler = async (
  * @param req
  * @param res
  */
-export const updateSchool: RequestHandler = async (
+export const update: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
@@ -146,7 +146,7 @@ export const updateSchool: RequestHandler = async (
  * @param req
  * @param res
  */
-export const deleteSchool: RequestHandler = async (
+export const remove: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<void> => {

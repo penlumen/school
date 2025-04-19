@@ -1,18 +1,18 @@
 import { Router } from 'express';
 import {
-  getSchool,
-  showSchool,
-  createSchool,
-  updateSchool,
-  deleteSchool,
+  index,
+  create,
+  show,
+  update,
+  remove,
 } from '../../controllers/v1/school.controller';
 
 const router = Router();
 
-router.get('/school', getSchool);
-router.post('/school', createSchool);
-router.get('/school/:uuid', showSchool);
-router.patch('/school/:uuid', updateSchool);
-router.delete('/school/:uuid', deleteSchool);
+router.get('/school', index);
+router.post('/school', create);
+router.get('/school/:uuid', show);
+router.patch('/school/:uuid', update);
+router.delete('/school/:uuid', remove);
 
 export default router;

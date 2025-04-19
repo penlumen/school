@@ -3,92 +3,55 @@ import { useHashing } from '../../config/hashing';
 import { useMiddleware } from '../../config/middleware';
 import { RequestHandler, Request, Response } from 'express';
 
-export const signUp: RequestHandler = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
-  const { create } = useMiddleware();
-  const { createHash } = useHashing();
-  const { email, password } = req.body;
-  console.log('data:', { email, password });
-
-  if (!email || !password) {
-    res.status(400).json({
-      status: 400,
-      success: false,
-      message: 'Email and password are required',
-    });
-    return;
-  }
-  const existingUser = await prisma.user.findUnique({
-    where: {
-      email,
-    },
-  });
-  if (existingUser) {
-    res.status(409).json({
-      status: 409,
-      success: false,
-      message: 'Email already exists',
-    });
-    return;
-  }
-  const hashPassword = await createHash(password);
-
-  try {
-    const result = await prisma.$transaction(async (prisma) => {
-      const user = await prisma.user.create({
-        data: {
-          email,
-          password: hashPassword,
-        },
-      });
-      if (!user) {
-        throw new Error('Error creating user');
-      }
-      const profile = await prisma.profile.create({
-        data: {
-          user_uuid: user.uuid,
-        },
-      });
-      return { user, profile };
-    });
-
-    const { user } = result;
-    const token = create({ user });
-
-    res.status(201).json({
-      status: 201,
-      success: true,
-      message: 'User created successfully',
-      data: { token, user },
-    });
-  } catch (error: any) {
-    res.status(400).json({
-      status: 400,
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-export const signIn: RequestHandler = async (
+/**
+ * Session
+ * @param req
+ * @param res
+ */
+export const session: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
   const { create } = useMiddleware();
   const { compareHash } = useHashing();
-  const { email, password } = req.body;
+  const { email, password, role, user_uuid } = req.body;
 
   try {
-    const user = await prisma.user.findUnique({
-      where: {
-        email,
-      },
-      include: {
-        profile: true,
-      },
-    });
+    let user: any = null;
+
+    switch (role) {
+      case 'staff':
+        user = await prisma.staff.findUnique({
+          where: {
+            email,
+            user_uuid,
+          },
+        });
+        break;
+
+      case 'parent':
+        user = await prisma.parent.findUnique({
+          where: {
+            email,
+            user_uuid,
+          },
+        });
+        break;
+
+      case 'root':
+        user = await prisma.user.findUnique({
+          where: { email },
+          include: { profile: true },
+        });
+        break;
+
+      default:
+        res.status(400).json({
+          status: 400,
+          success: false,
+          message: 'Invalid user role specified',
+        });
+    }
 
     if (!user) {
       res.status(401).json({
@@ -96,34 +59,42 @@ export const signIn: RequestHandler = async (
         success: false,
         message: 'Invalid email or password',
       });
-    } else {
-      const isPasswordValid = await compareHash(password, user.password);
-      if (!isPasswordValid) {
-        res.status(401).json({
-          status: 401,
-          success: false,
-          message: 'Invalid email or password',
-        });
-      }
+    }
 
-      const token = create({ user });
+    const isPasswordValid = await compareHash(password, user.password);
 
-      res.status(200).json({
-        status: 200,
-        success: true,
-        message: 'User logged in successfully',
-        data: { token, user },
+    if (!isPasswordValid) {
+      res.status(401).json({
+        status: 401,
+        success: false,
+        message: 'Invalid email or password',
       });
     }
+
+    const token = create({ user });
+
+    res.status(200).json({
+      status: 200,
+      success: true,
+      message: 'User logged in successfully',
+      data: { token, user },
+    });
   } catch (error: any) {
-    res.status(400).json({
-      status: 400,
+    res.status(500).json({
+      status: 500,
       success: false,
-      message: error.message,
+      message: error.message || 'Something went wrong',
     });
   }
 };
 
+
+/**
+ * Profile
+ * @param req
+ * @param res
+ * @returns
+ */
 export const profile: RequestHandler = async (
   req: Request,
   res: Response,
