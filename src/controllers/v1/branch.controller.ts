@@ -1,10 +1,11 @@
 import prisma from '../../config/prisma.config';
+import { useMiddleware } from '../../config/middleware';
 import { RequestHandler, Request, Response } from 'express';
 
 /**
- * Fetch all schools
- * @description This function fetches all schools from the database.
- * @route GET /api/v1/school
+ * Fetch all branches
+ * @description This function fetches all branches from the database.
+ * @route GET /api/v1/branch
  * @param req
  * @param res
  */
@@ -12,16 +13,36 @@ export const index: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const auth = '1';
+  const { verifyToken } = useMiddleware();
+  const token = req.headers.authorization;
+
+  if (!token) {
+    res.status(401).json({
+      status: 401,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
+  const decoded = verifyToken(token);
+  if (!decoded) {
+    res.status(401).json({
+      status: 401,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
+
   try {
-    const schools = await prisma.school.findMany({
-      where: { user_uuid: auth },
+    const branches = await prisma.branch.findMany({
+      where: { uuid: decoded.school_uuid },
     });
     res.status(200).json({
       status: 200,
       success: true,
-      message: 'schools',
-      data: { schools },
+      message: 'Branches',
+      data: { branches },
     });
   } catch (error: any) {
     res.status(400).json({
@@ -33,9 +54,9 @@ export const index: RequestHandler = async (
 };
 
 /**
- * Create a new school
- * @description This function creates a new school in the database.
- * @route POST /api/v1/school
+ * Create a new branch
+ * @description This function creates a new branch in the database.
+ * @route POST /api/v1/branch
  * @param req
  * @param res
  */
@@ -43,23 +64,41 @@ export const create: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const auth = '1';
+  const { verifyToken } = useMiddleware();
+  const token = req.headers.authorization;
   const { name, email, contact, address } = req.body;
+
+  if (!token) {
+    res.status(401).json({
+      status: 401,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
+  const decoded = verifyToken(token);
+  if (!decoded) {
+    res.status(401).json({
+      status: 401,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
+
   try {
-    const school = await prisma.school.create({
+    const branch = await prisma.branch.create({
       data: {
         name,
-        email,
         contact,
-        address,
-        user_uuid: auth,
+        school_uuid: decoded.school_uuid,
       },
     });
     res.status(201).json({
       status: 201,
       success: true,
-      message: 'School created successfully',
-      data: { school },
+      message: 'Branch created successfully',
+      data: { branch },
     });
   } catch (error: any) {
     res.status(400).json({
@@ -71,9 +110,9 @@ export const create: RequestHandler = async (
 };
 
 /**
- * Fetch a school by UUID
- * @description This function fetches a school by its UUID from the database.
- * @route GET /api/v1/school/:uuid
+ * Fetch a branch by UUID
+ * @description This function fetches a branch by its UUID from the database.
+ * @route GET /api/v1/branch/:uuid
  * @param req
  * @param res
  */
@@ -83,14 +122,14 @@ export const show: RequestHandler = async (
 ): Promise<void> => {
   const { uuid } = req.params;
   try {
-    const schools = await prisma.school.findUnique({
+    const branch = await prisma.branch.findUnique({
       where: { uuid },
     });
     res.status(200).json({
       status: 200,
       success: true,
-      message: 'schools',
-      data: { schools },
+      message: 'branch',
+      data: { branch },
     });
   } catch (error: any) {
     res.status(400).json({
@@ -102,9 +141,9 @@ export const show: RequestHandler = async (
 };
 
 /**
- * Update a school by UUID
- * @description This function updates a school by its UUID in the database.
- * @route PUT /api/v1/school/:uuid
+ * Update a branch by UUID
+ * @description This function updates a branch by its UUID in the database.
+ * @route PUT /api/v1/branch/:uuid
  * @param req
  * @param res
  */
@@ -113,13 +152,12 @@ export const update: RequestHandler = async (
   res: Response,
 ): Promise<void> => {
   const { uuid } = req.params;
-  const { name, email, contact, address } = req.body;
+  const { name, contact, address } = req.body;
   try {
-    const school = await prisma.school.update({
+    const branch = await prisma.branch.update({
       where: { uuid },
       data: {
         name,
-        email,
         contact,
         address,
       },
@@ -127,8 +165,8 @@ export const update: RequestHandler = async (
     res.status(200).json({
       status: 200,
       success: true,
-      message: 'School updated successfully',
-      data: { school },
+      message: 'Branch updated successfully',
+      data: { branch },
     });
   } catch (error: any) {
     res.status(400).json({
@@ -140,9 +178,9 @@ export const update: RequestHandler = async (
 };
 
 /**
- * Delete a school by UUID
- * @description This function deletes a school by its UUID from the database.
- * @route DELETE /api/v1/school/:uuid
+ * Delete a branch by UUID
+ * @description This function deletes a branch by its UUID from the database.
+ * @route DELETE /api/v1/branch/:uuid
  * @param req
  * @param res
  */
@@ -152,14 +190,14 @@ export const remove: RequestHandler = async (
 ): Promise<void> => {
   const { uuid } = req.params;
   try {
-    const school = await prisma.school.delete({
+    const branch = await prisma.branch.delete({
       where: { uuid },
     });
     res.status(200).json({
       status: 200,
       success: true,
-      message: 'School deleted successfully',
-      data: { school },
+      message: 'Branch deleted successfully',
+      data: { branch },
     });
   } catch (error: any) {
     res.status(400).json({

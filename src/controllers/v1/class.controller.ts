@@ -1,20 +1,19 @@
-import { promises } from 'dns';
 import prisma from '../../config/prisma.config';
-import e, { RequestHandler, Request, Response } from 'express';
+import { RequestHandler, Request, Response } from 'express';
 
 /**
  * @desc Get all classes
- * @route GET /api/v1/schools/:school_uuid/classes
+ * @route GET /api/v1/branch/:branch_uuid/classes
  * @access Public
  */
 export const index: RequestHandler = async (req: Request, res: Response) => {
-  const { school } = req.headers;
-  if (school) {
-    const school_uuid = school as string;
+  const { branch } = req.headers;
+  if (branch) {
+    const branch_uuid = branch as string;
     try {
       const classes = await prisma.class.findMany({
         where: {
-          school_uuid,
+          branch_uuid,
         },
       });
       res.status(200).json({
@@ -34,7 +33,7 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
     res.status(400).json({
       status: 400,
       success: false,
-      message: 'School UUID is required',
+      message: 'Branch UUID is required',
     });
   }
 };
@@ -45,15 +44,15 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
  * @access Public
  */
 export const create: RequestHandler = async (req: Request, res: Response) => {
-  const { school } = req.headers;
+  const { branch } = req.headers;
   const { name } = req.body;
 
-  if (school && name) {
-    const school_uuid = school as string;
+  if (branch && name) {
+    const branch_uuid = branch as string;
     try {
       const newClass = await prisma.class.create({
         data: {
-          school_uuid,
+          branch_uuid,
           name,
         },
       });
@@ -91,15 +90,12 @@ export const show: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<any> => {
-  const { school } = req.headers;
-  const { class_uuid } = req.params;
-  if (school || class_uuid) {
-    const school_uuid = school as string;
+  const { uuid } = req.params;
+  if (uuid) {
     try {
       const classData = await prisma.class.findUnique({
         where: {
-          school_uuid,
-          uuid: class_uuid,
+          uuid,
         },
       });
       if (!classData) {

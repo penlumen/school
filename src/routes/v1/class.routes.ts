@@ -11,6 +11,6 @@ const router = Router();
 
 router.get('index', index);
 router.post('create', create);
-router.get('show', show);
+router.get('show/:uuid', show);
 
 export default router;
