@@ -1,6 +1,6 @@
 on:
   push:
-name: 🚀 Deploy fastbuka on push
+name: 🚀 Deploy on push
 jobs:
   web-deploy:
     name: 🎉 Deploy

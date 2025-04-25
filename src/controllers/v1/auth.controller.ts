@@ -90,7 +90,7 @@ export const register: RequestHandler = async (
         data: { token, user, school },
       });
     } else {
-      if (role.toLowerCase() === 'admin' || role.toLowerCase() === 'root') {
+      if (role.toUpperCase() === 'ROOT' || role.toUpperCase() === 'ADMIN') {
         res.status(403).json({
           status: 403,
           success: false,
@@ -101,9 +101,9 @@ export const register: RequestHandler = async (
 
       const existingUser = await prisma.user.findFirst({
         where: {
-          role,
-          email,
           school_uuid: currentUser.school_uuid,
+          role: role.toUpperCase(),
+          email,
         },
       });
 
@@ -120,10 +120,10 @@ export const register: RequestHandler = async (
 
       const newUser = await prisma.user.create({
         data: {
-          role,
+          school_uuid: currentUser.school_uuid,
+          role: role.toUpperCase(),
           email,
           password: hashPassword,
-          school_uuid: currentUser.school_uuid,
         },
       });
 
@@ -161,7 +161,7 @@ export const session: RequestHandler = async (
     res.status(400).json({
       status: 400,
       success: false,
-      message: 'Header schoolToken is required',
+      message: 'Header SchoolToken is required',
     });
     return;
   }
@@ -181,7 +181,7 @@ export const session: RequestHandler = async (
     res.status(400).json({
       status: 400,
       success: false,
-      message: 'Email, password, role, and school UUID are required',
+      message: 'Email, password, role are required',
     });
     return;
   }
@@ -192,8 +192,8 @@ export const session: RequestHandler = async (
       where: {
         school_uuid_email_role: {
           school_uuid: schoolData.uuid,
+          role: role.toUpperCase(),
           email,
-          role,
         },
       },
     });
