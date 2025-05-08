@@ -120,12 +120,21 @@ export const register: RequestHandler = async (
 
       const newUser = await prisma.user.create({
         data: {
-          school_uuid: currentUser.school_uuid,
           role: role.toUpperCase(),
-          email,
+          school_uuid: currentUser.school_uuid,
           password: hashPassword,
+          email,
         },
       });
+
+      if (newUser) {
+        await prisma.branch.create({
+          data: {
+            name: 'Main Branch',
+            school_uuid: currentUser.school_uuid,
+          },
+        });
+      }
 
       res.status(201).json({
         status: 201,
@@ -144,11 +153,11 @@ export const register: RequestHandler = async (
 };
 
 /**
- * Session
+ * Login
  * @param req
  * @param res
  */
-export const session: RequestHandler = async (
+export const login: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<void> => {

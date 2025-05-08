@@ -36,7 +36,7 @@ export const index: RequestHandler = async (
 
   try {
     const branches = await prisma.branch.findMany({
-      where: { uuid: decoded.school_uuid },
+      where: { school_uuid: decoded.school_uuid },
     });
     res.status(200).json({
       status: 200,

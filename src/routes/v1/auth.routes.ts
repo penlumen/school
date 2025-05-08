@@ -1,14 +1,10 @@
 import { Router } from 'express';
-import {
-  register,
-  session,
-  profile,
-} from '../../controllers/v1/auth.controller';
+import { register, login, profile } from '../../controllers/v1/auth.controller';
 
 const router = Router();
 
 router.post('/register', register);
-router.post('/session', session);
+router.post('/login', login);
 router.get('/profile', profile);
 
 export default router;

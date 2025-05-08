@@ -17,7 +17,7 @@ app.use('/api/v1', authRoutes);
 app.use('/api/v1', schoolRoutes);
 app.use('/api/v1', classRoutes);
 
-const PORT = process.env.PORT || 5432;
+const PORT = process.env.PORT || 5445;
 app.listen(PORT, () =>
   console.log(`Server is running on port http://localhost:${PORT}`),
 );

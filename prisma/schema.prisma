@@ -32,7 +32,7 @@ model User {
   password    String
   contact     String?
   alt_contact String?
-  profile     String?
+  avatar      String?
   address     String?
   role        Role     @default(ADMIN)
   status      String   @default("active")
