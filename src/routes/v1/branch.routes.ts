@@ -9,10 +9,10 @@ import {
 
 const router = Router();
 
-router.get('/branches', index);
-router.post('/branch', create);
-router.get('/branch/:uuid', show);
-router.patch('/branch/:uuid', update);
-router.delete('/branch/:uuid', remove);
+router.get('/branch/index', index);
+router.post('/branch/create', create);
+router.get('/branch/show/:uuid', show);
+router.patch('/branch/update/:uuid', update);
+router.delete('/branch/remove/:uuid', remove);
 
 export default router;

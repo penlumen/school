@@ -9,8 +9,8 @@ import {
 
 const router = Router();
 
-router.get('index', index);
-router.post('create', create);
-router.get('show/:uuid', show);
+router.get('/class/index', index);
+router.post('/class/create', create);
+router.get('/class/show/:uuid', show);
 
 export default router;

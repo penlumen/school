@@ -3,6 +3,7 @@ import prisma from './prisma.config';
 
 type User = {
   uuid: string;
+  role: string;
   email: string;
   school_uuid: string;
 };
@@ -16,7 +17,12 @@ export const useMiddleware = () => {
    */
   const generateToken = ({ user }: { user: User }) => {
     const token = jwt.sign(
-      { uuid: user.uuid, email: user.email, school_uuid: user.school_uuid },
+      {
+        uuid: user.uuid,
+        role: user.role,
+        email: user.email,
+        school_uuid: user.school_uuid,
+      },
       process.env.JWT_SECRET || 'default_secret',
       { expiresIn: '7d' },
     );

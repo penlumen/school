@@ -127,11 +127,23 @@ export const show: RequestHandler = async (
   }
 };
 
+
+/**
+ * Update class
+ * @param req 
+ * @param res 
+ */
 export const update: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<any> => {};
 
+
+/**
+ * Delete class
+ * @param req 
+ * @param res 
+ */
 export const remove: RequestHandler = async (
   req: Request,
   res: Response,

@@ -35,14 +35,20 @@ export const index: RequestHandler = async (
   }
 
   try {
-    const branches = await prisma.branch.findMany({
-      where: { school_uuid: decoded.school_uuid },
+    const branch_acccess = await prisma.branchAccess.findMany({
+      where: {
+        user_uuid: decoded.uuid,
+        school_uuid: decoded.school_uuid,
+      },
+      include: {
+        branch: true,
+      },
     });
     res.status(200).json({
       status: 200,
       success: true,
-      message: 'Branches',
-      data: { branches },
+      message: 'Branche Acccess',
+      data: { branch_acccess },
     });
   } catch (error: any) {
     res.status(400).json({
@@ -87,18 +93,34 @@ export const create: RequestHandler = async (
   }
 
   try {
-    const branch = await prisma.branch.create({
-      data: {
-        name,
-        contact,
-        school_uuid: decoded.school_uuid,
-      },
+    const result = await prisma.$transaction(async (tx) => {
+      const branch = await tx.branch.create({
+        data: {
+          name,
+          // email,
+          contact,
+          address,
+          school_uuid: decoded.school_uuid,
+        },
+      });
+
+      await tx.branchAccess.create({
+        data: {
+          role: decoded.role,
+          user_uuid: decoded.uuid,
+          branch_uuid: branch.uuid,
+          school_uuid: decoded.school_uuid,
+        },
+      });
+
+      return branch;
     });
+
     res.status(201).json({
       status: 201,
       success: true,
       message: 'Branch created successfully',
-      data: { branch },
+      data: { branch: result },
     });
   } catch (error: any) {
     res.status(400).json({

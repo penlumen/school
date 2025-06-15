@@ -14,7 +14,16 @@ export const register: RequestHandler = async (
 ): Promise<void> => {
   const { createHash } = useHashing();
   const { generateToken, verifyToken } = useMiddleware();
-  const { email, password, role } = req.body;
+  const {
+    name,
+    email,
+    password,
+    role,
+    position,
+    contact,
+    alt_contact,
+    address,
+  } = req.body;
 
   let currentUser: any = null;
   const token = req.headers.authorization;
@@ -60,13 +69,37 @@ export const register: RequestHandler = async (
           },
         });
 
-        const randomName =
-          email.split('@')[0] + Math.floor(Math.random() * 1000);
+        let generatedName = email.split('@')[0];
+
+        let nameToCheck = generatedName;
+        let counter = 1;
+        while (await tx.school.findUnique({ where: { slug: nameToCheck } })) {
+          nameToCheck = `${generatedName}${counter}`;
+          counter++;
+        }
+        generatedName = nameToCheck;
+
         const school = await tx.school.create({
           data: {
             email,
-            slug: randomName,
-            name: randomName,
+            slug: generatedName,
+            name: generatedName,
+          },
+        });
+
+        const branch = await tx.branch.create({
+          data: {
+            school_uuid: school.uuid,
+            name: school.name,
+          },
+        });
+
+        await tx.branchAccess.create({
+          data: {
+            role: user.role,
+            user_uuid: user.uuid,
+            school_uuid: school.uuid,
+            branch_uuid: branch.uuid,
           },
         });
 
@@ -117,30 +150,45 @@ export const register: RequestHandler = async (
       }
 
       const hashPassword = await createHash(password);
+      const branch_uuid = req.headers['x-branch-session'] as string;
 
-      const newUser = await prisma.user.create({
-        data: {
-          role: role.toUpperCase(),
-          school_uuid: currentUser.school_uuid,
-          password: hashPassword,
-          email,
-        },
-      });
-
-      if (newUser) {
-        await prisma.branch.create({
+      const formatRole = role.toUpperCase();
+      const result = await prisma.$transaction(async (tx) => {
+        const newUser = await tx.user.create({
           data: {
-            name: 'Main Branch',
+            name,
+            email,
+            address,
+            contact,
+            alt_contact,
+            // position,
+            role: formatRole,
+            password: hashPassword,
             school_uuid: currentUser.school_uuid,
           },
         });
-      }
+
+        if (newUser) {
+          await tx.branchAccess.create({
+            data: {
+              branch_uuid,
+              role: newUser.role,
+              user_uuid: newUser.uuid,
+              school_uuid: currentUser.school_uuid,
+            },
+          });
+        }
+
+        return newUser;
+      });
+
+      const newUser = result;
 
       res.status(201).json({
         status: 201,
         success: true,
         message: 'User created successfully',
-        data: newUser,
+        data: { newUser },
       });
     }
   } catch (error: any) {
@@ -163,7 +211,8 @@ export const login: RequestHandler = async (
 ): Promise<void> => {
   const { compareHash } = useHashing();
   const { checkSchoolToken, generateToken } = useMiddleware();
-  const schoolToken = req.headers.schooltoken as string;
+  const schoolToken = req.headers['x-school-token'] as string;
+
   const { email, password, role } = req.body;
 
   if (!schoolToken) {
