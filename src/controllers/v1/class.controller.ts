@@ -45,15 +45,17 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
  */
 export const create: RequestHandler = async (req: Request, res: Response) => {
   const { branch } = req.headers;
-  const { name } = req.body;
+  const { name, capacity, teacher_uuid } = req.body;
 
   if (branch && name) {
     const branch_uuid = branch as string;
     try {
       const newClass = await prisma.class.create({
         data: {
-          branch_uuid,
           name,
+          // capacity,
+          branch_uuid,
+          // teacher_uuid,
         },
       });
       res.status(201).json({
@@ -127,22 +129,20 @@ export const show: RequestHandler = async (
   }
 };
 
-
 /**
  * Update class
- * @param req 
- * @param res 
+ * @param req
+ * @param res
  */
 export const update: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<any> => {};
 
-
 /**
  * Delete class
- * @param req 
- * @param res 
+ * @param req
+ * @param res
  */
 export const remove: RequestHandler = async (
   req: Request,

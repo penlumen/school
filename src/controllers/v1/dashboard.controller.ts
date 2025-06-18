@@ -10,7 +10,8 @@ export const cards = async (req: Request, res: Response): Promise<any> => {
     res.status(401).json({
       status: 401,
       success: false,
-      message: 'Unauthorized',
+      message: 'Unauthenticated',
+      error: 'unauthenticated',
     });
     return;
   }
@@ -19,7 +20,8 @@ export const cards = async (req: Request, res: Response): Promise<any> => {
     res.status(401).json({
       status: 401,
       success: false,
-      message: 'Unauthorized',
+      message: 'Unauthenticated',
+      error: 'unauthenticated',
     });
     return;
   }
@@ -63,10 +65,10 @@ export const cards = async (req: Request, res: Response): Promise<any> => {
         success: true,
         message: 'Dashboard',
         data: {
-          total_students,
           total_parents,
           total_staffs,
           total_classes,
+          total_students,
         },
       });
     } catch (error: any) {

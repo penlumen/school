@@ -43,6 +43,7 @@ model User {
 
   school         School? @relation(fields: [school_uuid], references: [uuid])
 
+  heading        Class[]
   students       Student[]
   access         BranchAccess[]
   control        AccessControl[]
@@ -142,15 +143,18 @@ model Student {
 
 // ========== CLASS ==========
 model Class {
-  id          Int      @id @default(autoincrement())
-  uuid        String   @unique @default(uuid())
-  branch_uuid String
-  name        String
-  status      String   @default("active")
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  uuid          String   @unique @default(uuid())
+  branch_uuid   String
+  teacher_uuid  String?
+  name          String
+  capacity      Float    @default(0)
+  status        String   @default("active")
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
 
   branch   Branch?   @relation(fields: [branch_uuid], references: [uuid])
+  teacher  User?     @relation(fields: [teacher_uuid], references: [uuid])
   subjects Subject[]
   students Student[]
 }

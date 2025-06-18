@@ -160,8 +160,8 @@ export const register: RequestHandler = async (
             email,
             address,
             contact,
-            alt_contact,
             // position,
+            alt_contact,
             role: formatRole,
             password: hashPassword,
             school_uuid: currentUser.school_uuid,
@@ -224,9 +224,9 @@ export const login: RequestHandler = async (
     return;
   }
 
-  const schoolData = await checkSchoolToken(schoolToken);
+  const school = await checkSchoolToken(schoolToken);
 
-  if (!schoolData) {
+  if (!school) {
     res.status(400).json({
       status: 400,
       success: false,
@@ -234,6 +234,7 @@ export const login: RequestHandler = async (
     });
     return;
   }
+  console.log(role);
 
   if (!email || !password || !role) {
     res.status(400).json({
@@ -246,10 +247,11 @@ export const login: RequestHandler = async (
 
   try {
     let user: any = null;
+    console.log(user);
     user = await prisma.user.findUnique({
       where: {
         school_uuid_email_role: {
-          school_uuid: schoolData.uuid,
+          school_uuid: school.uuid,
           role: role.toUpperCase(),
           email,
         },

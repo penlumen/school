@@ -19,7 +19,8 @@ export const index = async (req: Request, res: Response) => {
     res.status(401).json({
       status: 401,
       success: false,
-      message: 'Unauthorized',
+      message: 'Unauthenticated',
+      error: 'unauthenticated',
     });
     return;
   }
@@ -30,7 +31,8 @@ export const index = async (req: Request, res: Response) => {
     res.status(400).json({
       status: 400,
       success: false,
-      message: 'Unauthorized',
+      message: 'Unauthenticated',
+      error: 'unauthenticated',
     });
   }
 

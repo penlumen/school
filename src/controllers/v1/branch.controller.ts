@@ -20,7 +20,8 @@ export const index: RequestHandler = async (
     res.status(401).json({
       status: 401,
       success: false,
-      message: 'Unauthorized',
+      message: 'Unauthenticated',
+      error: 'unauthenticated',
     });
     return;
   }
@@ -30,6 +31,7 @@ export const index: RequestHandler = async (
       status: 401,
       success: false,
       message: 'Unauthorized',
+      error: 'unauthenticated',
     });
     return;
   }
@@ -78,7 +80,8 @@ export const create: RequestHandler = async (
     res.status(401).json({
       status: 401,
       success: false,
-      message: 'Unauthorized',
+      message: 'Unauthenticated',
+      error: 'unauthenticated',
     });
     return;
   }
@@ -87,7 +90,17 @@ export const create: RequestHandler = async (
     res.status(401).json({
       status: 401,
       success: false,
-      message: 'Unauthorized',
+      message: 'Unauthenticated',
+      error: 'unauthenticated',
+    });
+    return;
+  }
+
+  if (!name) {
+    res.status(422).json({
+      status: 422,
+      success: false,
+      message: 'Name is required',
     });
     return;
   }
@@ -174,12 +187,13 @@ export const update: RequestHandler = async (
   res: Response,
 ): Promise<void> => {
   const { uuid } = req.params;
-  const { name, contact, address } = req.body;
+  const { name, email, contact, address } = req.body;
   try {
     const branch = await prisma.branch.update({
       where: { uuid },
       data: {
         name,
+        // email,
         contact,
         address,
       },
