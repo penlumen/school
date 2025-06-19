@@ -61,7 +61,7 @@ export const register: RequestHandler = async (
       }
 
       const hashPassword = await createHash(password);
-      const result = await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx: any) => {
         const user = await tx.user.create({
           data: {
             email,
@@ -153,7 +153,7 @@ export const register: RequestHandler = async (
       const branch_uuid = req.headers['x-branch-session'] as string;
 
       const formatRole = role.toUpperCase();
-      const result = await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx: any) => {
         const newUser = await tx.user.create({
           data: {
             name,

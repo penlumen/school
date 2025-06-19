@@ -106,7 +106,7 @@ export const create: RequestHandler = async (
   }
 
   try {
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       const branch = await tx.branch.create({
         data: {
           name,

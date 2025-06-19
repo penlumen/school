@@ -20,11 +20,13 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
         },
       });
 
-      const classesWithStudentCount = classes.map((cls) => ({
+      const classesWithStudentCount = classes.map((cls: any) => ({
         ...cls,
         studentCount: cls.students.length,
       }));
+
       classes = classesWithStudentCount;
+
       res.status(200).json({
         status: 200,
         success: true,
@@ -62,9 +64,9 @@ export const create: RequestHandler = async (req: Request, res: Response) => {
       const newClass = await prisma.class.create({
         data: {
           name,
-          capacity,
+          // capacity,
           branch_uuid,
-          teacher_uuid,
+          // teacher_uuid,
         },
       });
       res.status(201).json({
