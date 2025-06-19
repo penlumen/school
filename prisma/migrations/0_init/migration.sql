@@ -11,14 +11,25 @@ CREATE TABLE "User" (
     "password" TEXT NOT NULL,
     "contact" TEXT,
     "alt_contact" TEXT,
-    "profile" TEXT,
+    "avatar" TEXT,
     "address" TEXT,
     "role" "Role" NOT NULL DEFAULT 'ADMIN',
+    "position" TEXT NOT NULL DEFAULT 'guardian',
     "status" TEXT NOT NULL DEFAULT 'active',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AccessControl" (
+    "id" SERIAL NOT NULL,
+    "user_uuid" TEXT NOT NULL,
+    "branch_uuid" TEXT NOT NULL,
+    "access" TEXT NOT NULL,
+
+    CONSTRAINT "AccessControl_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -30,7 +41,7 @@ CREATE TABLE "School" (
     "slug" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "contact" TEXT,
-    "profile" TEXT,
+    "avatar" TEXT,
     "address" TEXT,
     "city" TEXT,
     "state" TEXT,
@@ -48,13 +59,25 @@ CREATE TABLE "Branch" (
     "uuid" TEXT NOT NULL,
     "school_uuid" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "email" TEXT,
     "contact" TEXT,
-    "profile" TEXT,
+    "avatar" TEXT,
     "address" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Branch_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "BranchAccess" (
+    "id" SERIAL NOT NULL,
+    "role" "Role" NOT NULL,
+    "user_uuid" TEXT NOT NULL,
+    "school_uuid" TEXT NOT NULL,
+    "branch_uuid" TEXT NOT NULL,
+
+    CONSTRAINT "BranchAccess_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -66,7 +89,7 @@ CREATE TABLE "Student" (
     "class_uuid" TEXT NOT NULL,
     "reg_number" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "profile" TEXT,
+    "avatar" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -78,7 +101,9 @@ CREATE TABLE "Class" (
     "id" SERIAL NOT NULL,
     "uuid" TEXT NOT NULL,
     "branch_uuid" TEXT NOT NULL,
+    "teacher_uuid" TEXT,
     "name" TEXT NOT NULL,
+    "capacity" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "status" TEXT NOT NULL DEFAULT 'active',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -150,6 +175,9 @@ CREATE UNIQUE INDEX "User_uuid_key" ON "User"("uuid");
 CREATE UNIQUE INDEX "User_school_uuid_email_role_key" ON "User"("school_uuid", "email", "role");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "AccessControl_user_uuid_branch_uuid_access_key" ON "AccessControl"("user_uuid", "branch_uuid", "access");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "School_uuid_key" ON "School"("uuid");
 
 -- CreateIndex
@@ -163,6 +191,9 @@ CREATE UNIQUE INDEX "School_slug_key" ON "School"("slug");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Branch_uuid_key" ON "Branch"("uuid");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "BranchAccess_user_uuid_branch_uuid_role_key" ON "BranchAccess"("user_uuid", "branch_uuid", "role");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Student_uuid_key" ON "Student"("uuid");
@@ -192,7 +223,22 @@ CREATE UNIQUE INDEX "Assessments_result_uuid_subject_key" ON "Assessments"("resu
 ALTER TABLE "User" ADD CONSTRAINT "User_school_uuid_fkey" FOREIGN KEY ("school_uuid") REFERENCES "School"("uuid") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "AccessControl" ADD CONSTRAINT "AccessControl_user_uuid_fkey" FOREIGN KEY ("user_uuid") REFERENCES "User"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AccessControl" ADD CONSTRAINT "AccessControl_branch_uuid_fkey" FOREIGN KEY ("branch_uuid") REFERENCES "Branch"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Branch" ADD CONSTRAINT "Branch_school_uuid_fkey" FOREIGN KEY ("school_uuid") REFERENCES "School"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BranchAccess" ADD CONSTRAINT "BranchAccess_user_uuid_fkey" FOREIGN KEY ("user_uuid") REFERENCES "User"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BranchAccess" ADD CONSTRAINT "BranchAccess_school_uuid_fkey" FOREIGN KEY ("school_uuid") REFERENCES "School"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BranchAccess" ADD CONSTRAINT "BranchAccess_branch_uuid_fkey" FOREIGN KEY ("branch_uuid") REFERENCES "Branch"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Student" ADD CONSTRAINT "Student_parent_uuid_fkey" FOREIGN KEY ("parent_uuid") REFERENCES "User"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -207,6 +253,9 @@ ALTER TABLE "Student" ADD CONSTRAINT "Student_class_uuid_fkey" FOREIGN KEY ("cla
 ALTER TABLE "Class" ADD CONSTRAINT "Class_branch_uuid_fkey" FOREIGN KEY ("branch_uuid") REFERENCES "Branch"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Class" ADD CONSTRAINT "Class_teacher_uuid_fkey" FOREIGN KEY ("teacher_uuid") REFERENCES "User"("uuid") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Subject" ADD CONSTRAINT "Subject_class_uuid_fkey" FOREIGN KEY ("class_uuid") REFERENCES "Class"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -217,3 +266,4 @@ ALTER TABLE "Result" ADD CONSTRAINT "Result_student_uuid_fkey" FOREIGN KEY ("stu
 
 -- AddForeignKey
 ALTER TABLE "Assessments" ADD CONSTRAINT "Assessments_result_uuid_fkey" FOREIGN KEY ("result_uuid") REFERENCES "Result"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+

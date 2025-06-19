@@ -8,7 +8,7 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "generated"
+  output   = "./generated/prisma"
 }
 
 datasource db {
@@ -25,42 +25,42 @@ enum Role {
 
 // ========== USER ==========
 model User {
-  id             Int      @id @default(autoincrement())
-  uuid           String   @unique @default(uuid())
-  school_uuid    String?
-  name           String?
-  email          String
-  password       String
-  contact        String?
-  alt_contact    String?
-  avatar         String?
-  address        String?
-  role           Role     @default(ADMIN)
-  position       String   @default("guardian")
-  status         String   @default("active")
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(uuid())
+  school_uuid String?
+  name        String?
+  email       String
+  password    String
+  contact     String?
+  alt_contact String?
+  avatar      String?
+  address     String?
+  role        Role     @default(ADMIN)
+  position    String   @default("guardian")
+  status      String   @default("active")
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
-  school         School? @relation(fields: [school_uuid], references: [uuid])
+  school School? @relation(fields: [school_uuid], references: [uuid])
 
-  heading        Class[]
-  students       Student[]
-  access         BranchAccess[]
-  control        AccessControl[]
+  heading  Class[]
+  students Student[]
+  access   BranchAccess[]
+  control  AccessControl[]
 
   @@unique([school_uuid, email, role])
 }
 
 model AccessControl {
-  id            Int      @id @default(autoincrement())
-  user_uuid     String
-  branch_uuid   String
-  access        String
+  id          Int    @id @default(autoincrement())
+  user_uuid   String
+  branch_uuid String
+  access      String
+
+  user   User?   @relation(fields: [user_uuid], references: [uuid])
+  branch Branch? @relation(fields: [branch_uuid], references: [uuid])
 
   @@unique([user_uuid, branch_uuid, access])
-
-  user          User? @relation(fields: [user_uuid], references: [uuid])
-  branch        Branch? @relation(fields: [branch_uuid], references: [uuid])
 }
 
 // ========== SCHOOL ==========
@@ -99,25 +99,26 @@ model Branch {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
-  grades      Grade[]
-  classes     Class[]
-  students    Student[]
-  control     AccessControl[]
-  access      BranchAccess[]
-  school      School    @relation(fields: [school_uuid], references: [uuid])
+  grades   Grade[]
+  classes  Class[]
+  students Student[]
+  control  AccessControl[]
+  access   BranchAccess[]
+  school   School          @relation(fields: [school_uuid], references: [uuid])
 }
 
 model BranchAccess {
-  id          Int      @id @default(autoincrement())
+  id          Int    @id @default(autoincrement())
   role        Role
   user_uuid   String
   school_uuid String
   branch_uuid String
-  @@unique([user_uuid, branch_uuid, role])
 
-  user        User?     @relation(fields: [user_uuid], references: [uuid])
-  school      School?   @relation(fields: [school_uuid], references: [uuid])
-  branch      Branch?   @relation(fields: [branch_uuid], references: [uuid])
+  user   User?   @relation(fields: [user_uuid], references: [uuid])
+  school School? @relation(fields: [school_uuid], references: [uuid])
+  branch Branch? @relation(fields: [branch_uuid], references: [uuid])
+
+  @@unique([user_uuid, branch_uuid, role])
 }
 
 // ========== STUDENT ==========
@@ -143,15 +144,15 @@ model Student {
 
 // ========== CLASS ==========
 model Class {
-  id            Int      @id @default(autoincrement())
-  uuid          String   @unique @default(uuid())
-  branch_uuid   String
-  teacher_uuid  String?
-  name          String
-  capacity      Float    @default(0)
-  status        String   @default("active")
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  uuid         String   @unique @default(uuid())
+  branch_uuid  String
+  teacher_uuid String?
+  name         String
+  capacity     Int?     @default(0)
+  status       String   @default("active")
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
 
   branch   Branch?   @relation(fields: [branch_uuid], references: [uuid])
   teacher  User?     @relation(fields: [teacher_uuid], references: [uuid])

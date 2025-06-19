@@ -7,15 +7,24 @@ import { RequestHandler, Request, Response } from 'express';
  * @access Public
  */
 export const index: RequestHandler = async (req: Request, res: Response) => {
-  const { branch } = req.headers;
+  const branch = req.headers['x-branch-session'] as string;
   if (branch) {
     const branch_uuid = branch as string;
     try {
-      const classes = await prisma.class.findMany({
+      let classes = await prisma.class.findMany({
         where: {
           branch_uuid,
         },
+        include: {
+          students: true,
+        },
       });
+
+      const classesWithStudentCount = classes.map((cls) => ({
+        ...cls,
+        studentCount: cls.students.length,
+      }));
+      classes = classesWithStudentCount;
       res.status(200).json({
         status: 200,
         success: true,
@@ -44,7 +53,7 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
  * @access Public
  */
 export const create: RequestHandler = async (req: Request, res: Response) => {
-  const { branch } = req.headers;
+  const branch = req.headers['x-branch-session'] as string;
   const { name, capacity, teacher_uuid } = req.body;
 
   if (branch && name) {
@@ -53,9 +62,9 @@ export const create: RequestHandler = async (req: Request, res: Response) => {
       const newClass = await prisma.class.create({
         data: {
           name,
-          // capacity,
+          capacity,
           branch_uuid,
-          // teacher_uuid,
+          teacher_uuid,
         },
       });
       res.status(201).json({
