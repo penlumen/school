@@ -103,7 +103,7 @@ CREATE TABLE "Class" (
     "branch_uuid" TEXT NOT NULL,
     "teacher_uuid" TEXT,
     "name" TEXT NOT NULL,
-    "capacity" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "capacity" INTEGER DEFAULT 0,
     "status" TEXT NOT NULL DEFAULT 'active',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -266,4 +266,3 @@ ALTER TABLE "Result" ADD CONSTRAINT "Result_student_uuid_fkey" FOREIGN KEY ("stu
 
 -- AddForeignKey
 ALTER TABLE "Assessments" ADD CONSTRAINT "Assessments_result_uuid_fkey" FOREIGN KEY ("result_uuid") REFERENCES "Result"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
-
