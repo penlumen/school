@@ -44,7 +44,7 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
     res.status(400).json({
       status: 400,
       success: false,
-      message: 'Branch UUID is required',
+      message: 'Unauthorized',
     });
   }
 };
@@ -61,19 +61,19 @@ export const create: RequestHandler = async (req: Request, res: Response) => {
   if (branch && name) {
     const branch_uuid = branch as string;
     try {
-      const newClass = await prisma.class.create({
+      const result = await prisma.class.create({
         data: {
           name,
-          // capacity,
+          capacity,
           branch_uuid,
-          // teacher_uuid,
+          teacher_uuid,
         },
       });
       res.status(201).json({
         status: 201,
         success: true,
         message: 'Class created successfully',
-        data: { class: newClass },
+        data: { class: result },
       });
     } catch (error: any) {
       res.status(400).json({

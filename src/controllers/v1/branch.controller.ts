@@ -110,7 +110,7 @@ export const create: RequestHandler = async (
       const branch = await tx.branch.create({
         data: {
           name,
-          // email,
+          email,
           contact,
           address,
           school_uuid: decoded.school_uuid,
@@ -193,7 +193,7 @@ export const update: RequestHandler = async (
       where: { uuid },
       data: {
         name,
-        // email,
+        email,
         contact,
         address,
       },

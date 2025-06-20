@@ -2,7 +2,7 @@ import prisma from '../../config/prisma.config';
 import { useMiddleware } from '../../config/middleware';
 import { RequestHandler, Request, Response } from 'express';
 
-export const index = async (req: Request, res: Response) => {
+export const index: RequestHandler = async (req: Request, res: Response) => {
   const { verifyToken } = useMiddleware();
   const token = req.headers.authorization;
 
@@ -31,8 +31,7 @@ export const index = async (req: Request, res: Response) => {
     res.status(400).json({
       status: 400,
       success: false,
-      message: 'Unauthenticated',
-      error: 'unauthenticated',
+      message: 'Unauthorized',
     });
   }
 

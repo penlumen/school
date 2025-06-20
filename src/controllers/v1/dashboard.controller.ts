@@ -2,7 +2,10 @@ import prisma from '../../config/prisma.config';
 import { useMiddleware } from '../../config/middleware';
 import { RequestHandler, Request, Response } from 'express';
 
-export const cards = async (req: Request, res: Response): Promise<any> => {
+export const cards: RequestHandler = async (
+  req: Request,
+  res: Response,
+): Promise<any> => {
   const { verifyToken } = useMiddleware();
   const token = req.headers.authorization;
 

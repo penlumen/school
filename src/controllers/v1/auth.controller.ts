@@ -16,13 +16,13 @@ export const register: RequestHandler = async (
   const { generateToken, verifyToken } = useMiddleware();
   const {
     name,
+    role,
     email,
     password,
-    role,
     position,
+    address,
     contact,
     alt_contact,
-    address,
   } = req.body;
 
   let currentUser: any = null;
@@ -64,8 +64,10 @@ export const register: RequestHandler = async (
       const result = await prisma.$transaction(async (tx: any) => {
         const user = await tx.user.create({
           data: {
+            name,
             email,
             password: hashPassword,
+            position: 'administrator',
           },
         });
 
@@ -160,7 +162,7 @@ export const register: RequestHandler = async (
             email,
             address,
             contact,
-            // position,
+            position,
             alt_contact,
             role: formatRole,
             password: hashPassword,

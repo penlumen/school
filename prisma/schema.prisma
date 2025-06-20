@@ -131,6 +131,7 @@ model Student {
   reg_number  String
   name        String
   avatar      String?
+  status      String   @default("active")
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
@@ -180,6 +181,7 @@ model Grade {
   score       Float
   grade       String
   remark      String
+  description String?
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
