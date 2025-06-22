@@ -56,6 +56,11 @@ model AccessControl {
   user_uuid   String
   branch_uuid String
   access      String
+  read        Boolean @default(false)
+  write       Boolean @default(false)
+  delete      Boolean @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
   user   User?   @relation(fields: [user_uuid], references: [uuid])
   branch Branch? @relation(fields: [branch_uuid], references: [uuid])

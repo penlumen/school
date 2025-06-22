@@ -1,14 +1,21 @@
 import prisma from '../../config/prisma.config';
+import { useMiddleware } from '../../config/middleware';
 import { RequestHandler, Request, Response } from 'express';
+
+const { verifyToken } = useMiddleware();
 
 export const index: RequestHandler = async (req: Request, res: Response) => {
   const branch_uuid = req.headers['x-branch-session'] as string;
+  const token = req.headers.authorization || null;
+  verifyToken(token, res);
+
   if (!branch_uuid) {
     res.status(400).json({
       status: 400,
       success: false,
       message: 'Unauthorized',
     });
+    return;
   }
   const grades = await prisma.grade.findMany({
     where: {
@@ -26,6 +33,9 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
 
 export const create: RequestHandler = async (req: Request, res: Response) => {
   const { score, grade, remark, description } = req.body;
+  const token = req.headers.authorization || null;
+  const decoded = verifyToken(token, res);
+
   if (!score || !grade || !remark) {
     res.status(422).json({
       status: 422,
@@ -40,6 +50,7 @@ export const create: RequestHandler = async (req: Request, res: Response) => {
       success: false,
       message: 'Unauthorized',
     });
+    return;
   }
 
   const result = await prisma.grade.create({

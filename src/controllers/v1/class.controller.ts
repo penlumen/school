@@ -1,5 +1,8 @@
 import prisma from '../../config/prisma.config';
 import { RequestHandler, Request, Response } from 'express';
+import { useMiddleware } from '../../config/middleware';
+
+const { verifyToken } = useMiddleware();
 
 /**
  * @desc Get all classes
@@ -8,6 +11,9 @@ import { RequestHandler, Request, Response } from 'express';
  */
 export const index: RequestHandler = async (req: Request, res: Response) => {
   const branch = req.headers['x-branch-session'] as string;
+  const token = req.headers.authorization || null;
+  verifyToken(token, res);
+
   if (branch) {
     const branch_uuid = branch as string;
     try {
@@ -39,6 +45,7 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
         success: false,
         message: error.message,
       });
+      return;
     }
   } else {
     res.status(400).json({
@@ -46,6 +53,7 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
       success: false,
       message: 'Unauthorized',
     });
+    return;
   }
 };
 
@@ -57,6 +65,8 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
 export const create: RequestHandler = async (req: Request, res: Response) => {
   const branch = req.headers['x-branch-session'] as string;
   const { name, capacity, teacher_uuid } = req.body;
+  const token = req.headers.authorization || null;
+  verifyToken(token, res);
 
   if (branch && name) {
     const branch_uuid = branch as string;
@@ -81,6 +91,7 @@ export const create: RequestHandler = async (req: Request, res: Response) => {
         success: false,
         message: error.message,
       });
+      return;
     }
   } else {
     res.status(400).json({
@@ -88,6 +99,7 @@ export const create: RequestHandler = async (req: Request, res: Response) => {
       success: false,
       message: 'School UUID and class name are required',
     });
+    return;
   }
 };
 
@@ -104,6 +116,9 @@ export const show: RequestHandler = async (
   res: Response,
 ): Promise<any> => {
   const { uuid } = req.params;
+  const token = req.headers.authorization || null;
+  verifyToken(token, res);
+
   if (uuid) {
     try {
       const classData = await prisma.class.findUnique({
@@ -117,6 +132,7 @@ export const show: RequestHandler = async (
           success: false,
           message: 'Class not found',
         });
+        return;
       }
       res.status(200).json({
         status: 200,
@@ -130,6 +146,7 @@ export const show: RequestHandler = async (
         success: false,
         message: error.message,
       });
+      return;
     }
   } else {
     res.status(400).json({
@@ -137,6 +154,7 @@ export const show: RequestHandler = async (
       success: false,
       message: 'School UUID and class UUID are required',
     });
+    return;
   }
 };
 
@@ -148,7 +166,10 @@ export const show: RequestHandler = async (
 export const update: RequestHandler = async (
   req: Request,
   res: Response,
-): Promise<any> => {};
+): Promise<any> => {
+  const token = req.headers.authorization || null;
+  verifyToken(token, res);
+};
 
 /**
  * Delete class
@@ -158,4 +179,7 @@ export const update: RequestHandler = async (
 export const remove: RequestHandler = async (
   req: Request,
   res: Response,
-): Promise<any> => {};
+): Promise<any> => {
+  const token = req.headers.authorization || null;
+  verifyToken(token, res);
+};

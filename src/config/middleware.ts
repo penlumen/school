@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import prisma from './prisma.config';
+import { Response } from 'express';
 
 type User = {
   uuid: string;
@@ -35,17 +36,38 @@ export const useMiddleware = () => {
    * @param res
    * @param next
    */
-  const verifyToken = (token: string | null) => {
+  const verifyToken = (token: string | null, res: Response) => {
     let decoded: any;
     if (!token) {
-      return null;
+      res.status(401).json({
+        status: 401,
+        success: false,
+        message: 'Unauthenticated',
+        error: 'unauthenticated',
+      });
+      return;
     }
     try {
       token = token.split(' ')[1];
       decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_secret');
+      if (!decoded) {
+        res.status(401).json({
+          status: 401,
+          success: false,
+          message: 'Unauthenticated',
+          error: 'unauthenticated',
+        });
+        return;
+      }
       return decoded;
     } catch (error) {
-      return null;
+      res.status(401).json({
+        status: 401,
+        success: false,
+        message: 'Unauthenticated',
+        error: 'unauthenticated',
+      });
+      return;
     }
   };
 

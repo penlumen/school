@@ -3,6 +3,8 @@ import { useHashing } from '../../config/hashing';
 import { useMiddleware } from '../../config/middleware';
 import { RequestHandler, Request, Response } from 'express';
 
+const { createHash, compareHash } = useHashing();
+const { generateToken, verifyToken, checkSchoolToken } = useMiddleware();
 /**
  * Register
  * @param req
@@ -12,30 +14,7 @@ export const register: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { createHash } = useHashing();
-  const { generateToken, verifyToken } = useMiddleware();
-  const {
-    name,
-    role,
-    email,
-    password,
-    position,
-    address,
-    contact,
-    alt_contact,
-  } = req.body;
-
-  let currentUser: any = null;
-  const token = req.headers.authorization;
-
-  if (token) {
-    const decoded = verifyToken(token);
-    if (decoded) {
-      currentUser = await prisma.user.findUnique({
-        where: { uuid: decoded.uuid },
-      });
-    }
-  }
+  const { name, role, email, password } = req.body;
 
   if (!email || !password || !role) {
     res.status(400).json({
@@ -47,152 +26,82 @@ export const register: RequestHandler = async (
   }
 
   try {
-    if (!currentUser) {
-      const existingSchool = await prisma.school.findUnique({
-        where: { email },
+    const existingSchool = await prisma.school.findUnique({
+      where: { email },
+    });
+    if (existingSchool) {
+      res.status(409).json({
+        status: 409,
+        success: false,
+        message: 'Email already exists',
       });
-      if (existingSchool) {
-        res.status(409).json({
-          status: 409,
-          success: false,
-          message: 'Email already exists',
-        });
-        return;
-      }
+      return;
+    }
 
-      const hashPassword = await createHash(password);
-      const result = await prisma.$transaction(async (tx: any) => {
-        const user = await tx.user.create({
-          data: {
-            name,
-            email,
-            password: hashPassword,
-            position: 'administrator',
-          },
-        });
-
-        let generatedName = email.split('@')[0];
-
-        let nameToCheck = generatedName;
-        let counter = 1;
-        while (await tx.school.findUnique({ where: { slug: nameToCheck } })) {
-          nameToCheck = `${generatedName}${counter}`;
-          counter++;
-        }
-        generatedName = nameToCheck;
-
-        const school = await tx.school.create({
-          data: {
-            email,
-            slug: generatedName,
-            name: generatedName,
-          },
-        });
-
-        const branch = await tx.branch.create({
-          data: {
-            school_uuid: school.uuid,
-            name: school.name,
-          },
-        });
-
-        await tx.branchAccess.create({
-          data: {
-            role: user.role,
-            user_uuid: user.uuid,
-            school_uuid: school.uuid,
-            branch_uuid: branch.uuid,
-          },
-        });
-
-        await tx.user.update({
-          where: { uuid: user.uuid },
-          data: { school_uuid: school.uuid },
-        });
-
-        return { user, school };
-      });
-
-      const { user, school } = result;
-      const token = generateToken({
-        user: { ...user, school_uuid: result.school.uuid },
-      });
-
-      res.status(201).json({
-        status: 201,
-        success: true,
-        message: 'School and Admin User created successfully',
-        data: { token, user, school },
-      });
-    } else {
-      if (role.toUpperCase() === 'ROOT' || role.toUpperCase() === 'ADMIN') {
-        res.status(403).json({
-          status: 403,
-          success: false,
-          message: 'Cannot create Admin or Root account',
-        });
-        return;
-      }
-
-      const existingUser = await prisma.user.findFirst({
-        where: {
-          school_uuid: currentUser.school_uuid,
-          role: role.toUpperCase(),
+    const hashPassword = await createHash(password);
+    const result = await prisma.$transaction(async (tx: any) => {
+      const user = await tx.user.create({
+        data: {
+          name,
           email,
+          password: hashPassword,
+          position: 'administrator',
         },
       });
 
-      if (existingUser) {
-        res.status(409).json({
-          status: 409,
-          success: false,
-          message: 'Email already exists for this school',
-        });
-        return;
+      let generatedName = email.split('@')[0];
+
+      let nameToCheck = generatedName;
+      let counter = 1;
+      while (await tx.school.findUnique({ where: { slug: nameToCheck } })) {
+        nameToCheck = `${generatedName}${counter}`;
+        counter++;
       }
+      generatedName = nameToCheck;
 
-      const hashPassword = await createHash(password);
-      const branch_uuid = req.headers['x-branch-session'] as string;
-
-      const formatRole = role.toUpperCase();
-      const result = await prisma.$transaction(async (tx: any) => {
-        const newUser = await tx.user.create({
-          data: {
-            name,
-            email,
-            address,
-            contact,
-            position,
-            alt_contact,
-            role: formatRole,
-            password: hashPassword,
-            school_uuid: currentUser.school_uuid,
-          },
-        });
-
-        if (newUser) {
-          await tx.branchAccess.create({
-            data: {
-              branch_uuid,
-              role: newUser.role,
-              user_uuid: newUser.uuid,
-              school_uuid: currentUser.school_uuid,
-            },
-          });
-        }
-
-        return newUser;
+      const school = await tx.school.create({
+        data: {
+          email,
+          slug: generatedName,
+          name: generatedName,
+        },
       });
 
-      const newUser = result;
-
-      res.status(201).json({
-        status: 201,
-        success: true,
-        message: 'User created successfully',
-        data: { newUser },
+      const branch = await tx.branch.create({
+        data: {
+          school_uuid: school.uuid,
+          name: school.name,
+        },
       });
-    }
+
+      await tx.branchAccess.create({
+        data: {
+          role: user.role,
+          user_uuid: user.uuid,
+          school_uuid: school.uuid,
+          branch_uuid: branch.uuid,
+        },
+      });
+
+      await tx.user.update({
+        where: { uuid: user.uuid },
+        data: { school_uuid: school.uuid },
+      });
+
+      return { user, school };
+    });
+
+    const { user, school } = result;
+    const token = generateToken({
+      user: { ...user, school_uuid: result.school.uuid },
+    });
+
+    res.status(201).json({
+      status: 201,
+      success: true,
+      message: 'School and Admin User created successfully',
+      data: { token, user, school },
+    });
   } catch (error: any) {
     res.status(500).json({
       status: 500,
@@ -211,11 +120,8 @@ export const login: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { compareHash } = useHashing();
-  const { checkSchoolToken, generateToken } = useMiddleware();
-  const schoolToken = req.headers['x-school-token'] as string;
-
   const { email, password, role } = req.body;
+  const schoolToken = req.headers['x-school-token'] as string;
 
   if (!schoolToken) {
     res.status(400).json({
@@ -236,7 +142,6 @@ export const login: RequestHandler = async (
     });
     return;
   }
-  console.log(role);
 
   if (!email || !password || !role) {
     res.status(400).json({
@@ -294,6 +199,7 @@ export const login: RequestHandler = async (
       success: false,
       message: error.message || 'Something went wrong',
     });
+    return;
   }
 };
 
@@ -307,26 +213,8 @@ export const profile: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { verifyToken } = useMiddleware();
-  const token = req.headers.authorization;
-  if (!token) {
-    res.status(401).json({
-      status: 401,
-      success: false,
-      message: 'Unauthorized',
-    });
-    return;
-  }
-
-  const decoded = verifyToken(token);
-  if (!decoded) {
-    res.status(401).json({
-      status: 401,
-      success: false,
-      message: 'Unauthorized',
-    });
-    return;
-  }
+  const token = req.headers.authorization || null;
+  const decoded = verifyToken(token, res);
 
   try {
     const user = await prisma.user.findUnique({
@@ -341,6 +229,7 @@ export const profile: RequestHandler = async (
         success: false,
         message: 'Session terminated',
       });
+      return;
     } else {
       res.status(200).json({
         status: 200,
@@ -355,5 +244,6 @@ export const profile: RequestHandler = async (
       success: false,
       message: error.message,
     });
+    return;
   }
 };

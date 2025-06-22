@@ -2,6 +2,8 @@ import prisma from '../../config/prisma.config';
 import { useMiddleware } from '../../config/middleware';
 import { RequestHandler, Request, Response } from 'express';
 
+const { verifyToken } = useMiddleware();
+
 /**
  * Fetch all branches
  * @description This function fetches all branches from the database.
@@ -13,28 +15,8 @@ export const index: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { verifyToken } = useMiddleware();
-  const token = req.headers.authorization;
-
-  if (!token) {
-    res.status(401).json({
-      status: 401,
-      success: false,
-      message: 'Unauthenticated',
-      error: 'unauthenticated',
-    });
-    return;
-  }
-  const decoded = verifyToken(token);
-  if (!decoded) {
-    res.status(401).json({
-      status: 401,
-      success: false,
-      message: 'Unauthorized',
-      error: 'unauthenticated',
-    });
-    return;
-  }
+  const token = req.headers.authorization || null;
+  const decoded = verifyToken(token, res);
 
   try {
     const branch_acccess = await prisma.branchAccess.findMany({
@@ -58,6 +40,7 @@ export const index: RequestHandler = async (
       success: false,
       message: error.message,
     });
+    return;
   }
 };
 
@@ -72,29 +55,9 @@ export const create: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { verifyToken } = useMiddleware();
-  const token = req.headers.authorization;
+  const token = req.headers.authorization || null;
   const { name, email, contact, address } = req.body;
-
-  if (!token) {
-    res.status(401).json({
-      status: 401,
-      success: false,
-      message: 'Unauthenticated',
-      error: 'unauthenticated',
-    });
-    return;
-  }
-  const decoded = verifyToken(token);
-  if (!decoded) {
-    res.status(401).json({
-      status: 401,
-      success: false,
-      message: 'Unauthenticated',
-      error: 'unauthenticated',
-    });
-    return;
-  }
+  const decoded = verifyToken(token, res);
 
   if (!name) {
     res.status(422).json({
@@ -141,6 +104,7 @@ export const create: RequestHandler = async (
       success: false,
       message: error.message,
     });
+    return;
   }
 };
 
@@ -156,6 +120,9 @@ export const show: RequestHandler = async (
   res: Response,
 ): Promise<void> => {
   const { uuid } = req.params;
+  const token = req.headers.authorization || null;
+  verifyToken(token, res);
+
   try {
     const branch = await prisma.branch.findUnique({
       where: { uuid },
@@ -172,6 +139,7 @@ export const show: RequestHandler = async (
       success: false,
       message: error.message,
     });
+    return;
   }
 };
 
@@ -187,7 +155,10 @@ export const update: RequestHandler = async (
   res: Response,
 ): Promise<void> => {
   const { uuid } = req.params;
+  const token = req.headers.authorization || null;
   const { name, email, contact, address } = req.body;
+  verifyToken(token, res);
+
   try {
     const branch = await prisma.branch.update({
       where: { uuid },
@@ -210,7 +181,74 @@ export const update: RequestHandler = async (
       success: false,
       message: error.message,
     });
+    return;
   }
+};
+
+export const createAccess: RequestHandler = async (
+  req: Request,
+  res: Response,
+) => {
+  const token = req.headers.authorization || null;
+  const branch_uuid = req.headers['x-branch-session'] as string;
+  const { user_uuid } = req.body;
+  verifyToken(token, res);
+
+  if (!branch_uuid) {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
+
+  if (!user_uuid) {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'User uuid is required',
+    });
+    return;
+  }
+  const user = await prisma.user.findUnique({
+    where: {
+      uuid: user_uuid,
+    },
+  });
+
+  if (!user) {
+    res.status(404).json({
+      status: 404,
+      success: false,
+      message: 'User not found',
+    });
+    return;
+  }
+
+  if (!user.school_uuid) {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'User does not have a valid school_uuid',
+    });
+    return;
+  }
+
+  await prisma.branchAccess.create({
+    data: {
+      branch_uuid,
+      role: user.role,
+      user_uuid: user.uuid,
+      school_uuid: user.school_uuid,
+    },
+  });
+
+  res.status(201).json({
+    status: 201,
+    success: true,
+    message: 'Access created',
+  });
 };
 
 /**
@@ -225,6 +263,9 @@ export const remove: RequestHandler = async (
   res: Response,
 ): Promise<void> => {
   const { uuid } = req.params;
+  const token = req.headers.authorization || null;
+  verifyToken(token, res);
+
   try {
     const branch = await prisma.branch.delete({
       where: { uuid },
@@ -241,5 +282,6 @@ export const remove: RequestHandler = async (
       success: false,
       message: error.message,
     });
+    return;
   }
 };

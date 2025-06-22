@@ -4,6 +4,7 @@ import {
   create,
   show,
   update,
+  createAccess,
   remove,
 } from '../../controllers/v1/branch.controller';
 
@@ -13,6 +14,7 @@ router.get('/branch/index', index);
 router.post('/branch/create', create);
 router.get('/branch/show/:uuid', show);
 router.patch('/branch/update/:uuid', update);
+router.post('/branch/create/access', createAccess);
 router.delete('/branch/remove/:uuid', remove);
 
 export default router;

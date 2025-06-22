@@ -2,32 +2,14 @@ import prisma from '../../config/prisma.config';
 import { useMiddleware } from '../../config/middleware';
 import { RequestHandler, Request, Response } from 'express';
 
+const { verifyToken } = useMiddleware();
+
 export const cards: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<any> => {
-  const { verifyToken } = useMiddleware();
-  const token = req.headers.authorization;
-
-  if (!token) {
-    res.status(401).json({
-      status: 401,
-      success: false,
-      message: 'Unauthenticated',
-      error: 'unauthenticated',
-    });
-    return;
-  }
-  const decoded = verifyToken(token);
-  if (!decoded) {
-    res.status(401).json({
-      status: 401,
-      success: false,
-      message: 'Unauthenticated',
-      error: 'unauthenticated',
-    });
-    return;
-  }
+  const token = req.headers.authorization || null;
+  verifyToken(token, res);
 
   const branch = req.headers['x-branch-session'] as string;
   if (branch) {
@@ -80,6 +62,7 @@ export const cards: RequestHandler = async (
         success: false,
         message: error.message,
       });
+      return;
     }
   } else {
     res.status(400).json({
@@ -87,5 +70,6 @@ export const cards: RequestHandler = async (
       success: false,
       message: 'Unauthorized branch',
     });
+    return;
   }
 };

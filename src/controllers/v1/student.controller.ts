@@ -1,11 +1,16 @@
 import prisma from '../../config/prisma.config';
+import { useMiddleware } from '../../config/middleware';
 import { RequestHandler, Request, Response } from 'express';
+
+const { verifyToken } = useMiddleware();
 
 export const create: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<any> => {
   const { name, reg_number, parent_uuid, class_uuid } = req.body;
+  const token = req.headers.authorization || null;
+  verifyToken(token, res);
 
   if (!name || !parent_uuid || !class_uuid || !reg_number) {
     res.status(422).json({
@@ -13,6 +18,7 @@ export const create: RequestHandler = async (
       success: false,
       message: 'Name, Parent, class and Registration number are required',
     });
+    return;
   }
 
   const branch_uuid = req.headers['x-branch-session'] as string;
@@ -22,6 +28,7 @@ export const create: RequestHandler = async (
       success: false,
       message: 'Unauthorized',
     });
+    return;
   }
 
   const existingReg = await prisma.student.findUnique({
@@ -39,6 +46,7 @@ export const create: RequestHandler = async (
       success: false,
       message: 'Registration number already taken',
     });
+    return;
   }
 
   const result = await prisma.student.create({
@@ -64,12 +72,16 @@ export const index: RequestHandler = async (
   res: Response,
 ): Promise<any> => {
   const branch_uuid = req.headers['x-branch-session'] as string;
+  const token = req.headers.authorization || null;
+  verifyToken(token, res);
+
   if (!branch_uuid) {
     res.status(400).json({
       status: 400,
       success: false,
       message: 'Unauthorized',
     });
+    return;
   }
 
   const students = await prisma.student.findMany({
