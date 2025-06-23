@@ -12,5 +12,7 @@ const router = Router();
 router.get('/class/index', index);
 router.post('/class/create', create);
 router.get('/class/show/:uuid', show);
+router.patch('/class/update/:uuid', update);
+router.delete('/class/delete/:uuid', remove);
 
 export default router;

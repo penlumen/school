@@ -6,6 +6,13 @@ import { useHashing } from '../../config/hashing';
 const { createHash } = useHashing();
 const { verifyToken } = useMiddleware();
 
+/**
+ * Get all users in a branch
+ * @route GET /api/v1/users
+ * @param req
+ * @param res
+ * @returns
+ */
 export const index: RequestHandler = async (req: Request, res: Response) => {
   const branch_uuid = req.headers['x-branch-session'] as string;
   const role = req.query.role as 'STAFF' | 'PARENT';
@@ -61,6 +68,13 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Create a new user
+ * @route POST /api/v1/users
+ * @param req
+ * @param res
+ * @returns
+ */
 export const create: RequestHandler = async (
   req: Request,
   res: Response,
@@ -194,6 +208,208 @@ export const create: RequestHandler = async (
       success: true,
       message: 'User created successfully',
       data: { newUser },
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      status: 500,
+      success: false,
+      message: error.message,
+    });
+    return;
+  }
+};
+
+/**
+ * Update a user
+ * @route PUT /api/v1/users/:uuid
+ * @param req
+ * @param res
+ * @returns
+ */
+export const update: RequestHandler = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const { uuid } = req.params;
+  const {
+    name,
+    role,
+    email,
+    password,
+    position,
+    address,
+    contact,
+    alt_contact,
+  } = req.body;
+  const token = req.headers.authorization || null;
+  verifyToken(token, res);
+
+  if (!uuid) {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'User UUID is required',
+    });
+    return;
+  }
+
+  if (!email || !name || !position) {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Email, role, name and position are required',
+    });
+    return;
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { uuid },
+    });
+
+    if (!user) {
+      res.status(404).json({
+        status: 404,
+        success: false,
+        message: 'User not found',
+      });
+      return;
+    }
+
+    const branch_uuid = req.headers['x-branch-session'] as string;
+    if (!branch_uuid) {
+      res.status(400).json({
+        status: 400,
+        success: false,
+        message: 'Unauthorized branch',
+      });
+      return;
+    }
+
+    const existingUser = await prisma.user.findFirst({
+      where: { uuid },
+    });
+
+    if (!existingUser) {
+      res.status(404).json({
+        status: 404,
+        success: false,
+        message: 'This user does not exist in the school records.',
+      });
+      return;
+    }
+    const hashPassword = password ? await createHash(password) : user.password;
+    const updatedUser = await prisma.user.update({
+      where: { uuid },
+      data: {
+        name,
+        email,
+        address,
+        contact,
+        position,
+        alt_contact,
+        password: hashPassword,
+      },
+    });
+
+    res.status(200).json({
+      status: 200,
+      success: true,
+      message: 'User updated successfully',
+      data: { user: updatedUser },
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      status: 500,
+      success: false,
+      message: error.message,
+    });
+    return;
+  }
+};
+
+/**
+ * Remove a user
+ * @route DELETE /api/v1/users/:uuid
+ * @param req
+ * @param res
+ * @returns
+ */
+export const remove: RequestHandler = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const token = req.headers.authorization || null;
+  const { uuid } = req.params;
+  verifyToken(token, res);
+
+  if (!uuid) {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'User UUID is required',
+    });
+    return;
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { uuid },
+      include: {
+        access: true,
+        heading: true,
+        students: true,
+      },
+    });
+
+    if (!user) {
+      res.status(404).json({
+        status: 404,
+        success: false,
+        message: 'User not found',
+      });
+      return;
+    } else if (user.heading.length > 0) {
+      res.status(400).json({
+        status: 400,
+        success: false,
+        message: 'User has associated classes and cannot be deleted',
+      });
+      return;
+    } else if (user.students.length > 0) {
+      res.status(400).json({
+        status: 400,
+        success: false,
+        message: 'User has associated students and cannot be deleted',
+      });
+    }
+
+    if (
+      user.role.toUpperCase() === 'ROOT' ||
+      user.role.toUpperCase() === 'ADMIN'
+    ) {
+      res.status(403).json({
+        status: 403,
+        success: false,
+        message: 'Cannot delete Admin or Root account',
+      });
+      return;
+    }
+
+    await prisma.branchAccess.deleteMany({
+      where: {
+        user_uuid: uuid,
+      },
+    });
+
+    await prisma.user.delete({
+      where: { uuid },
+    });
+
+    res.status(200).json({
+      status: 200,
+      success: true,
+      message: 'User deleted successfully',
     });
   } catch (error: any) {
     res.status(500).json({

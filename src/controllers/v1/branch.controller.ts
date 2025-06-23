@@ -19,7 +19,7 @@ export const index: RequestHandler = async (
   const decoded = verifyToken(token, res);
 
   try {
-    const branch_acccess = await prisma.branchAccess.findMany({
+    const branch_access = await prisma.branchAccess.findMany({
       where: {
         user_uuid: decoded.uuid,
         school_uuid: decoded.school_uuid,
@@ -32,7 +32,7 @@ export const index: RequestHandler = async (
       status: 200,
       success: true,
       message: 'Branche Acccess',
-      data: { branch_acccess },
+      data: { branch_access },
     });
   } catch (error: any) {
     res.status(400).json({
@@ -127,6 +127,7 @@ export const show: RequestHandler = async (
     const branch = await prisma.branch.findUnique({
       where: { uuid },
     });
+
     res.status(200).json({
       status: 200,
       success: true,
@@ -169,6 +170,16 @@ export const update: RequestHandler = async (
         address,
       },
     });
+
+    if (!branch) {
+      res.status(404).json({
+        status: 404,
+        success: false,
+        message: 'Branch not found',
+      });
+      return;
+    }
+
     res.status(200).json({
       status: 200,
       success: true,
@@ -269,7 +280,37 @@ export const remove: RequestHandler = async (
   try {
     const branch = await prisma.branch.delete({
       where: { uuid },
+      include: {
+        access: true,
+        classes: true,
+      },
     });
+
+    if (!branch) {
+      res.status(404).json({
+        status: 404,
+        success: false,
+        message: 'Branch not found',
+      });
+      return;
+    }
+
+    if (branch.access.length > 0) {
+      res.status(400).json({
+        status: 400,
+        success: false,
+        message: 'Branch has associated access and cannot be deleted',
+      });
+      return;
+    } else if (branch.classes.length > 0) {
+      res.status(400).json({
+        status: 400,
+        success: false,
+        message: 'Branch has associated classes and cannot be deleted',
+      });
+      return;
+    }
+
     res.status(200).json({
       status: 200,
       success: true,

@@ -1,6 +1,6 @@
 import prisma from '../../config/prisma.config';
-import { RequestHandler, Request, Response } from 'express';
 import { useMiddleware } from '../../config/middleware';
+import { RequestHandler, Request, Response } from 'express';
 
 const { verifyToken } = useMiddleware();
 
@@ -125,6 +125,10 @@ export const show: RequestHandler = async (
         where: {
           uuid,
         },
+        include: {
+          teacher: true,
+          students: true,
+        },
       });
       if (!classData) {
         return res.status(404).json({
@@ -167,8 +171,43 @@ export const update: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<any> => {
+  const { uuid } = req.params;
+  const { name, capacity, teacher_uuid } = req.body;
   const token = req.headers.authorization || null;
   verifyToken(token, res);
+
+  try {
+    const updatedClass = await prisma.class.update({
+      where: { uuid },
+      data: {
+        name,
+        capacity,
+        teacher_uuid,
+      },
+    });
+
+    if (!updatedClass) {
+      return res.status(404).json({
+        status: 404,
+        success: false,
+        message: 'Class not found',
+      });
+    }
+
+    res.status(200).json({
+      status: 200,
+      success: true,
+      message: 'Class updated successfully',
+      data: { class: updatedClass },
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: error.message,
+    });
+    return;
+  }
 };
 
 /**
@@ -181,5 +220,45 @@ export const remove: RequestHandler = async (
   res: Response,
 ): Promise<any> => {
   const token = req.headers.authorization || null;
+  const { uuid } = req.params;
   verifyToken(token, res);
+
+  try {
+    const classWithStudents = await prisma.class.findUnique({
+      where: { uuid },
+      include: { students: true },
+    });
+
+    if (!classWithStudents) {
+      return res.status(404).json({
+        status: 404,
+        success: false,
+        message: 'Class not found',
+      });
+    }
+
+    if (classWithStudents && classWithStudents.students.length > 0) {
+      return res.status(400).json({
+        status: 400,
+        success: false,
+        message: 'Cannot delete class with students enrolled',
+      });
+    }
+
+    await prisma.class.delete({
+      where: { uuid },
+    });
+    res.status(200).json({
+      status: 200,
+      success: true,
+      message: 'Class deleted successfully',
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: error.message,
+    });
+    return;
+  }
 };
