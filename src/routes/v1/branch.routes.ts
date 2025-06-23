@@ -15,6 +15,6 @@ router.post('/branch/create', create);
 router.get('/branch/show/:uuid', show);
 router.patch('/branch/update/:uuid', update);
 router.post('/branch/create/access', createAccess);
-router.delete('/branch/remove/:uuid', remove);
+router.delete('/branch/delete/:uuid', remove);
 
 export default router;

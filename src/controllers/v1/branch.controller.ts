@@ -278,11 +278,11 @@ export const remove: RequestHandler = async (
   verifyToken(token, res);
 
   try {
-    const branch = await prisma.branch.delete({
+    const branch = await prisma.branch.findUnique({
       where: { uuid },
       include: {
-        access: true,
         classes: true,
+        grades: true,
       },
     });
 
@@ -295,14 +295,7 @@ export const remove: RequestHandler = async (
       return;
     }
 
-    if (branch.access.length > 0) {
-      res.status(400).json({
-        status: 400,
-        success: false,
-        message: 'Branch has associated access and cannot be deleted',
-      });
-      return;
-    } else if (branch.classes.length > 0) {
+    if (branch.classes.length > 0) {
       res.status(400).json({
         status: 400,
         success: false,
@@ -311,11 +304,26 @@ export const remove: RequestHandler = async (
       return;
     }
 
+    await prisma.branchAccess.deleteMany({
+      where: { branch_uuid: uuid },
+    });
+
+    await prisma.grade.deleteMany({
+      where: { branch_uuid: uuid },
+    });
+
+    await prisma.branch.delete({
+      where: { uuid },
+      include: {
+        access: true,
+        classes: true,
+      },
+    });
+
     res.status(200).json({
       status: 200,
       success: true,
       message: 'Branch deleted successfully',
-      data: { branch },
     });
   } catch (error: any) {
     res.status(400).json({

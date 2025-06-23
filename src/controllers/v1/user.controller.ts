@@ -231,16 +231,8 @@ export const update: RequestHandler = async (
   res: Response,
 ): Promise<void> => {
   const { uuid } = req.params;
-  const {
-    name,
-    role,
-    email,
-    password,
-    position,
-    address,
-    contact,
-    alt_contact,
-  } = req.body;
+  const { name, email, password, position, address, contact, alt_contact } =
+    req.body;
   const token = req.headers.authorization || null;
   verifyToken(token, res);
 
