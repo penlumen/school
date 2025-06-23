@@ -282,7 +282,6 @@ export const remove: RequestHandler = async (
       where: { uuid },
       include: {
         classes: true,
-        grades: true,
       },
     });
 
@@ -295,6 +294,10 @@ export const remove: RequestHandler = async (
       return;
     }
 
+    await prisma.grade.deleteMany({
+      where: { branch_uuid: uuid },
+    });
+
     if (branch.classes.length > 0) {
       res.status(400).json({
         status: 400,
@@ -305,12 +308,26 @@ export const remove: RequestHandler = async (
     }
 
     await prisma.branchAccess.deleteMany({
-      where: { branch_uuid: uuid },
+      where: {
+        branch_uuid: uuid,
+        user_uuid: uuid,
+      },
     });
 
-    await prisma.grade.deleteMany({
-      where: { branch_uuid: uuid },
+    const existingMultipleBranches = await prisma.branchAccess.findMany({
+      where: {
+        user_uuid: uuid,
+        NOT: {
+          branch_uuid: uuid,
+        },
+      },
     });
+
+    if (!existingMultipleBranches || existingMultipleBranches.length === 0) {
+      await prisma.user.delete({
+        where: { uuid },
+      });
+    }
 
     await prisma.branch.delete({
       where: { uuid },

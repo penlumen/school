@@ -388,16 +388,38 @@ export const remove: RequestHandler = async (
       return;
     }
 
+    const branch_uuid = req.headers['x-branch-session'] as string;
+    if (!branch_uuid) {
+      res.status(400).json({
+        status: 400,
+        success: false,
+        message: 'Unauthorized branch',
+      });
+      return;
+    }
+
     await prisma.branchAccess.deleteMany({
       where: {
+        branch_uuid,
         user_uuid: uuid,
       },
     });
 
-    await prisma.user.delete({
-      where: { uuid },
+    const existingMultipleBranches = await prisma.branchAccess.findMany({
+      where: {
+        user_uuid: uuid,
+        NOT: {
+          branch_uuid,
+        },
+      },
     });
 
+    if (!existingMultipleBranches || existingMultipleBranches.length === 0) {
+      await prisma.user.delete({
+        where: { uuid },
+      });
+    }
+    
     res.status(200).json({
       status: 200,
       success: true,
