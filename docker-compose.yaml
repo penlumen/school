@@ -1,55 +1,38 @@
 version: '3'
 services:
-  fastbuka-api:
+  school-api:
     build:
       context: .
       dockerfile: Dockerfile
-    image: fastbuka-api:1.0.0
-    container_name: fastbuka-api
+    image: school-api:1.0.0
+    container_name: school-api
     restart: unless-stopped
     ports:
       - '3000:3000'
     environment:
       NODE_ENV: production
+      DATABASE_URL: "postgresql://admin:password@postgres-db:5432/school?schema=public"
     depends_on:
-      mongo:
+      postgres-db:
         condition: service_healthy
-    command: >
-      sh -c "npx prisma generate &&
-             npx prisma db push &&
-             npm run start:prod"
 
-  mongo:
-    container_name: mongo
-    image: mongo:latest
+  postgres-db:
+    container_name: postgres
+    image: postgres:latest
     restart: unless-stopped
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
-      MONGO_INITDB_DATABASE: fastbuka
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: school
     ports:
-      - '27017:27017'
+      - '5432:5432'
     volumes:
-      - mongo-data:/data/db
+      - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+      test: ['CMD-SHELL', 'pg_isready -U admin']
       interval: 10s
       timeout: 5s
       retries: 5
 
-  mongo-express:
-    container_name: mongo-express
-    image: mongo-express:latest
-    restart: unless-stopped
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
-      ME_CONFIG_MONGODB_ADMINPASSWORD: password
-      ME_CONFIG_MONGODB_SERVER: mongo
-    ports:
-      - '8081:8081'
-    depends_on:
-      mongo:
-        condition: service_healthy
-
 volumes:
-  mongo-data:
+  postgres-data:
