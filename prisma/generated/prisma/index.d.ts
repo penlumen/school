@@ -3453,6 +3453,11 @@ export namespace Prisma {
     user_uuid: string | null
     branch_uuid: string | null
     access: string | null
+    read: boolean | null
+    write: boolean | null
+    delete: boolean | null
+    created_at: Date | null
+    updated_at: Date | null
   }
 
   export type AccessControlMaxAggregateOutputType = {
@@ -3460,6 +3465,11 @@ export namespace Prisma {
     user_uuid: string | null
     branch_uuid: string | null
     access: string | null
+    read: boolean | null
+    write: boolean | null
+    delete: boolean | null
+    created_at: Date | null
+    updated_at: Date | null
   }
 
   export type AccessControlCountAggregateOutputType = {
@@ -3467,6 +3477,11 @@ export namespace Prisma {
     user_uuid: number
     branch_uuid: number
     access: number
+    read: number
+    write: number
+    delete: number
+    created_at: number
+    updated_at: number
     _all: number
   }
 
@@ -3484,6 +3499,11 @@ export namespace Prisma {
     user_uuid?: true
     branch_uuid?: true
     access?: true
+    read?: true
+    write?: true
+    delete?: true
+    created_at?: true
+    updated_at?: true
   }
 
   export type AccessControlMaxAggregateInputType = {
@@ -3491,6 +3511,11 @@ export namespace Prisma {
     user_uuid?: true
     branch_uuid?: true
     access?: true
+    read?: true
+    write?: true
+    delete?: true
+    created_at?: true
+    updated_at?: true
   }
 
   export type AccessControlCountAggregateInputType = {
@@ -3498,6 +3523,11 @@ export namespace Prisma {
     user_uuid?: true
     branch_uuid?: true
     access?: true
+    read?: true
+    write?: true
+    delete?: true
+    created_at?: true
+    updated_at?: true
     _all?: true
   }
 
@@ -3592,6 +3622,11 @@ export namespace Prisma {
     user_uuid: string
     branch_uuid: string
     access: string
+    read: boolean
+    write: boolean
+    delete: boolean
+    created_at: Date
+    updated_at: Date
     _count: AccessControlCountAggregateOutputType | null
     _avg: AccessControlAvgAggregateOutputType | null
     _sum: AccessControlSumAggregateOutputType | null
@@ -3618,6 +3653,11 @@ export namespace Prisma {
     user_uuid?: boolean
     branch_uuid?: boolean
     access?: boolean
+    read?: boolean
+    write?: boolean
+    delete?: boolean
+    created_at?: boolean
+    updated_at?: boolean
     user?: boolean | AccessControl$userArgs<ExtArgs>
     branch?: boolean | AccessControl$branchArgs<ExtArgs>
   }, ExtArgs["result"]["accessControl"]>
@@ -3627,6 +3667,11 @@ export namespace Prisma {
     user_uuid?: boolean
     branch_uuid?: boolean
     access?: boolean
+    read?: boolean
+    write?: boolean
+    delete?: boolean
+    created_at?: boolean
+    updated_at?: boolean
     user?: boolean | AccessControl$userArgs<ExtArgs>
     branch?: boolean | AccessControl$branchArgs<ExtArgs>
   }, ExtArgs["result"]["accessControl"]>
@@ -3636,6 +3681,11 @@ export namespace Prisma {
     user_uuid?: boolean
     branch_uuid?: boolean
     access?: boolean
+    read?: boolean
+    write?: boolean
+    delete?: boolean
+    created_at?: boolean
+    updated_at?: boolean
     user?: boolean | AccessControl$userArgs<ExtArgs>
     branch?: boolean | AccessControl$branchArgs<ExtArgs>
   }, ExtArgs["result"]["accessControl"]>
@@ -3645,9 +3695,14 @@ export namespace Prisma {
     user_uuid?: boolean
     branch_uuid?: boolean
     access?: boolean
+    read?: boolean
+    write?: boolean
+    delete?: boolean
+    created_at?: boolean
+    updated_at?: boolean
   }
 
-  export type AccessControlOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "user_uuid" | "branch_uuid" | "access", ExtArgs["result"]["accessControl"]>
+  export type AccessControlOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "user_uuid" | "branch_uuid" | "access" | "read" | "write" | "delete" | "created_at" | "updated_at", ExtArgs["result"]["accessControl"]>
   export type AccessControlInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | AccessControl$userArgs<ExtArgs>
     branch?: boolean | AccessControl$branchArgs<ExtArgs>
@@ -3672,6 +3727,11 @@ export namespace Prisma {
       user_uuid: string
       branch_uuid: string
       access: string
+      read: boolean
+      write: boolean
+      delete: boolean
+      created_at: Date
+      updated_at: Date
     }, ExtArgs["result"]["accessControl"]>
     composites: {}
   }
@@ -4101,6 +4161,11 @@ export namespace Prisma {
     readonly user_uuid: FieldRef<"AccessControl", 'String'>
     readonly branch_uuid: FieldRef<"AccessControl", 'String'>
     readonly access: FieldRef<"AccessControl", 'String'>
+    readonly read: FieldRef<"AccessControl", 'Boolean'>
+    readonly write: FieldRef<"AccessControl", 'Boolean'>
+    readonly delete: FieldRef<"AccessControl", 'Boolean'>
+    readonly created_at: FieldRef<"AccessControl", 'DateTime'>
+    readonly updated_at: FieldRef<"AccessControl", 'DateTime'>
   }
     
 
@@ -15490,7 +15555,12 @@ export namespace Prisma {
     id: 'id',
     user_uuid: 'user_uuid',
     branch_uuid: 'branch_uuid',
-    access: 'access'
+    access: 'access',
+    read: 'read',
+    write: 'write',
+    delete: 'delete',
+    created_at: 'created_at',
+    updated_at: 'updated_at'
   };
 
   export type AccessControlScalarFieldEnum = (typeof AccessControlScalarFieldEnum)[keyof typeof AccessControlScalarFieldEnum]
@@ -15720,6 +15790,13 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'Boolean'
+   */
+  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+  /**
    * Reference to a field of type 'Float'
    */
   export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -15864,6 +15941,11 @@ export namespace Prisma {
     user_uuid?: StringFilter<"AccessControl"> | string
     branch_uuid?: StringFilter<"AccessControl"> | string
     access?: StringFilter<"AccessControl"> | string
+    read?: BoolFilter<"AccessControl"> | boolean
+    write?: BoolFilter<"AccessControl"> | boolean
+    delete?: BoolFilter<"AccessControl"> | boolean
+    created_at?: DateTimeFilter<"AccessControl"> | Date | string
+    updated_at?: DateTimeFilter<"AccessControl"> | Date | string
     user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     branch?: XOR<BranchNullableScalarRelationFilter, BranchWhereInput> | null
   }
@@ -15873,6 +15955,11 @@ export namespace Prisma {
     user_uuid?: SortOrder
     branch_uuid?: SortOrder
     access?: SortOrder
+    read?: SortOrder
+    write?: SortOrder
+    delete?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
     user?: UserOrderByWithRelationInput
     branch?: BranchOrderByWithRelationInput
   }
@@ -15886,6 +15973,11 @@ export namespace Prisma {
     user_uuid?: StringFilter<"AccessControl"> | string
     branch_uuid?: StringFilter<"AccessControl"> | string
     access?: StringFilter<"AccessControl"> | string
+    read?: BoolFilter<"AccessControl"> | boolean
+    write?: BoolFilter<"AccessControl"> | boolean
+    delete?: BoolFilter<"AccessControl"> | boolean
+    created_at?: DateTimeFilter<"AccessControl"> | Date | string
+    updated_at?: DateTimeFilter<"AccessControl"> | Date | string
     user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     branch?: XOR<BranchNullableScalarRelationFilter, BranchWhereInput> | null
   }, "id" | "user_uuid_branch_uuid_access">
@@ -15895,6 +15987,11 @@ export namespace Prisma {
     user_uuid?: SortOrder
     branch_uuid?: SortOrder
     access?: SortOrder
+    read?: SortOrder
+    write?: SortOrder
+    delete?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
     _count?: AccessControlCountOrderByAggregateInput
     _avg?: AccessControlAvgOrderByAggregateInput
     _max?: AccessControlMaxOrderByAggregateInput
@@ -15910,6 +16007,11 @@ export namespace Prisma {
     user_uuid?: StringWithAggregatesFilter<"AccessControl"> | string
     branch_uuid?: StringWithAggregatesFilter<"AccessControl"> | string
     access?: StringWithAggregatesFilter<"AccessControl"> | string
+    read?: BoolWithAggregatesFilter<"AccessControl"> | boolean
+    write?: BoolWithAggregatesFilter<"AccessControl"> | boolean
+    delete?: BoolWithAggregatesFilter<"AccessControl"> | boolean
+    created_at?: DateTimeWithAggregatesFilter<"AccessControl"> | Date | string
+    updated_at?: DateTimeWithAggregatesFilter<"AccessControl"> | Date | string
   }
 
   export type SchoolWhereInput = {
@@ -16811,6 +16913,11 @@ export namespace Prisma {
 
   export type AccessControlCreateInput = {
     access: string
+    read?: boolean
+    write?: boolean
+    delete?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
     user?: UserCreateNestedOneWithoutControlInput
     branch?: BranchCreateNestedOneWithoutControlInput
   }
@@ -16820,10 +16927,20 @@ export namespace Prisma {
     user_uuid: string
     branch_uuid: string
     access: string
+    read?: boolean
+    write?: boolean
+    delete?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
   }
 
   export type AccessControlUpdateInput = {
     access?: StringFieldUpdateOperationsInput | string
+    read?: BoolFieldUpdateOperationsInput | boolean
+    write?: BoolFieldUpdateOperationsInput | boolean
+    delete?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     user?: UserUpdateOneWithoutControlNestedInput
     branch?: BranchUpdateOneWithoutControlNestedInput
   }
@@ -16833,6 +16950,11 @@ export namespace Prisma {
     user_uuid?: StringFieldUpdateOperationsInput | string
     branch_uuid?: StringFieldUpdateOperationsInput | string
     access?: StringFieldUpdateOperationsInput | string
+    read?: BoolFieldUpdateOperationsInput | boolean
+    write?: BoolFieldUpdateOperationsInput | boolean
+    delete?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type AccessControlCreateManyInput = {
@@ -16840,10 +16962,20 @@ export namespace Prisma {
     user_uuid: string
     branch_uuid: string
     access: string
+    read?: boolean
+    write?: boolean
+    delete?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
   }
 
   export type AccessControlUpdateManyMutationInput = {
     access?: StringFieldUpdateOperationsInput | string
+    read?: BoolFieldUpdateOperationsInput | boolean
+    write?: BoolFieldUpdateOperationsInput | boolean
+    delete?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type AccessControlUncheckedUpdateManyInput = {
@@ -16851,6 +16983,11 @@ export namespace Prisma {
     user_uuid?: StringFieldUpdateOperationsInput | string
     branch_uuid?: StringFieldUpdateOperationsInput | string
     access?: StringFieldUpdateOperationsInput | string
+    read?: BoolFieldUpdateOperationsInput | boolean
+    write?: BoolFieldUpdateOperationsInput | boolean
+    delete?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type SchoolCreateInput = {
@@ -17891,6 +18028,11 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
+  export type BoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
   export type UserNullableScalarRelationFilter = {
     is?: UserWhereInput | null
     isNot?: UserWhereInput | null
@@ -17912,6 +18054,11 @@ export namespace Prisma {
     user_uuid?: SortOrder
     branch_uuid?: SortOrder
     access?: SortOrder
+    read?: SortOrder
+    write?: SortOrder
+    delete?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
   }
 
   export type AccessControlAvgOrderByAggregateInput = {
@@ -17923,6 +18070,11 @@ export namespace Prisma {
     user_uuid?: SortOrder
     branch_uuid?: SortOrder
     access?: SortOrder
+    read?: SortOrder
+    write?: SortOrder
+    delete?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
   }
 
   export type AccessControlMinOrderByAggregateInput = {
@@ -17930,10 +18082,23 @@ export namespace Prisma {
     user_uuid?: SortOrder
     branch_uuid?: SortOrder
     access?: SortOrder
+    read?: SortOrder
+    write?: SortOrder
+    delete?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
   }
 
   export type AccessControlSumOrderByAggregateInput = {
     id?: SortOrder
+  }
+
+  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type UserListRelationFilter = {
@@ -18736,6 +18901,10 @@ export namespace Prisma {
     create?: XOR<BranchCreateWithoutControlInput, BranchUncheckedCreateWithoutControlInput>
     connectOrCreate?: BranchCreateOrConnectWithoutControlInput
     connect?: BranchWhereUniqueInput
+  }
+
+  export type BoolFieldUpdateOperationsInput = {
+    set?: boolean
   }
 
   export type UserUpdateOneWithoutControlNestedInput = {
@@ -19631,6 +19800,19 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
+  export type NestedBoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
+  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+
   export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel> | null
     in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
@@ -19815,6 +19997,11 @@ export namespace Prisma {
 
   export type AccessControlCreateWithoutUserInput = {
     access: string
+    read?: boolean
+    write?: boolean
+    delete?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
     branch?: BranchCreateNestedOneWithoutControlInput
   }
 
@@ -19822,6 +20009,11 @@ export namespace Prisma {
     id?: number
     branch_uuid: string
     access: string
+    read?: boolean
+    write?: boolean
+    delete?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
   }
 
   export type AccessControlCreateOrConnectWithoutUserInput = {
@@ -19999,6 +20191,11 @@ export namespace Prisma {
     user_uuid?: StringFilter<"AccessControl"> | string
     branch_uuid?: StringFilter<"AccessControl"> | string
     access?: StringFilter<"AccessControl"> | string
+    read?: BoolFilter<"AccessControl"> | boolean
+    write?: BoolFilter<"AccessControl"> | boolean
+    delete?: BoolFilter<"AccessControl"> | boolean
+    created_at?: DateTimeFilter<"AccessControl"> | Date | string
+    updated_at?: DateTimeFilter<"AccessControl"> | Date | string
   }
 
   export type UserCreateWithoutControlInput = {
@@ -20488,6 +20685,11 @@ export namespace Prisma {
 
   export type AccessControlCreateWithoutBranchInput = {
     access: string
+    read?: boolean
+    write?: boolean
+    delete?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
     user?: UserCreateNestedOneWithoutControlInput
   }
 
@@ -20495,6 +20697,11 @@ export namespace Prisma {
     id?: number
     user_uuid: string
     access: string
+    read?: boolean
+    write?: boolean
+    delete?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
   }
 
   export type AccessControlCreateOrConnectWithoutBranchInput = {
@@ -21965,6 +22172,11 @@ export namespace Prisma {
     id?: number
     branch_uuid: string
     access: string
+    read?: boolean
+    write?: boolean
+    delete?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
   }
 
   export type ClassUpdateWithoutTeacherInput = {
@@ -22065,6 +22277,11 @@ export namespace Prisma {
 
   export type AccessControlUpdateWithoutUserInput = {
     access?: StringFieldUpdateOperationsInput | string
+    read?: BoolFieldUpdateOperationsInput | boolean
+    write?: BoolFieldUpdateOperationsInput | boolean
+    delete?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     branch?: BranchUpdateOneWithoutControlNestedInput
   }
 
@@ -22072,12 +22289,22 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     branch_uuid?: StringFieldUpdateOperationsInput | string
     access?: StringFieldUpdateOperationsInput | string
+    read?: BoolFieldUpdateOperationsInput | boolean
+    write?: BoolFieldUpdateOperationsInput | boolean
+    delete?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type AccessControlUncheckedUpdateManyWithoutUserInput = {
     id?: IntFieldUpdateOperationsInput | number
     branch_uuid?: StringFieldUpdateOperationsInput | string
     access?: StringFieldUpdateOperationsInput | string
+    read?: BoolFieldUpdateOperationsInput | boolean
+    write?: BoolFieldUpdateOperationsInput | boolean
+    delete?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type UserCreateManySchoolInput = {
@@ -22278,6 +22505,11 @@ export namespace Prisma {
     id?: number
     user_uuid: string
     access: string
+    read?: boolean
+    write?: boolean
+    delete?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
   }
 
   export type BranchAccessCreateManyBranchInput = {
@@ -22397,6 +22629,11 @@ export namespace Prisma {
 
   export type AccessControlUpdateWithoutBranchInput = {
     access?: StringFieldUpdateOperationsInput | string
+    read?: BoolFieldUpdateOperationsInput | boolean
+    write?: BoolFieldUpdateOperationsInput | boolean
+    delete?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     user?: UserUpdateOneWithoutControlNestedInput
   }
 
@@ -22404,12 +22641,22 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     user_uuid?: StringFieldUpdateOperationsInput | string
     access?: StringFieldUpdateOperationsInput | string
+    read?: BoolFieldUpdateOperationsInput | boolean
+    write?: BoolFieldUpdateOperationsInput | boolean
+    delete?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type AccessControlUncheckedUpdateManyWithoutBranchInput = {
     id?: IntFieldUpdateOperationsInput | number
     user_uuid?: StringFieldUpdateOperationsInput | string
     access?: StringFieldUpdateOperationsInput | string
+    read?: BoolFieldUpdateOperationsInput | boolean
+    write?: BoolFieldUpdateOperationsInput | boolean
+    delete?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type BranchAccessUpdateWithoutBranchInput = {

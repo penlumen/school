@@ -142,7 +142,12 @@ exports.Prisma.AccessControlScalarFieldEnum = {
   id: 'id',
   user_uuid: 'user_uuid',
   branch_uuid: 'branch_uuid',
-  access: 'access'
+  access: 'access',
+  read: 'read',
+  write: 'write',
+  delete: 'delete',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
 };
 
 exports.Prisma.SchoolScalarFieldEnum = {
