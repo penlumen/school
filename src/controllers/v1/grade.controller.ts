@@ -51,6 +51,14 @@ export const create: RequestHandler = async (req: Request, res: Response) => {
   const { score, grade, remark, description } = req.body;
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
+  if (decoded.role != 'ADMIN') {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
 
   if (!score || !grade || !remark) {
     res.status(422).json({
@@ -98,7 +106,15 @@ export const update: RequestHandler = async (req: Request, res: Response) => {
   const { uuid } = req.params;
   const { score, grade, remark, description } = req.body;
   const token = req.headers.authorization || null;
-  verifyToken(token, res);
+  const decoded = verifyToken(token, res);
+  if (decoded.role != 'ADMIN') {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
 
   if (!score || !grade || !remark) {
     res.status(422).json({
@@ -160,7 +176,15 @@ export const update: RequestHandler = async (req: Request, res: Response) => {
 export const remove: RequestHandler = async (req: Request, res: Response) => {
   const { uuid } = req.params;
   const token = req.headers.authorization || null;
-  verifyToken(token, res);
+  const decoded = verifyToken(token, res);
+  if (decoded.role != 'ADMIN') {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
 
   const branch_uuid = req.headers['x-branch-session'] as string;
   if (!branch_uuid) {

@@ -105,6 +105,15 @@ export const create: RequestHandler = async (
     return;
   }
 
+  if (decoded.role != 'ADMIN') {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
+
   if (!email || !password || !role || !name || !position) {
     res.status(400).json({
       status: 400,
@@ -234,7 +243,15 @@ export const update: RequestHandler = async (
   const { name, email, password, position, address, contact, alt_contact } =
     req.body;
   const token = req.headers.authorization || null;
-  verifyToken(token, res);
+  const decoded = verifyToken(token, res);
+  if (decoded.role != 'ADMIN') {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
 
   if (!uuid) {
     res.status(400).json({
@@ -333,7 +350,15 @@ export const remove: RequestHandler = async (
 ): Promise<void> => {
   const token = req.headers.authorization || null;
   const { uuid } = req.params;
-  verifyToken(token, res);
+  const decoded = verifyToken(token, res);
+  if (decoded.role != 'ADMIN') {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
 
   if (!uuid) {
     res.status(400).json({
@@ -419,7 +444,7 @@ export const remove: RequestHandler = async (
         where: { uuid },
       });
     }
-    
+
     res.status(200).json({
       status: 200,
       success: true,

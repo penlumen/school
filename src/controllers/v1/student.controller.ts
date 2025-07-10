@@ -58,7 +58,15 @@ export const create: RequestHandler = async (
 ): Promise<any> => {
   const { name, reg_number, parent_uuid, class_uuid } = req.body;
   const token = req.headers.authorization || null;
-  verifyToken(token, res);
+  const decoded = verifyToken(token, res);
+  if (decoded.role != 'ADMIN') {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
 
   if (!name || !parent_uuid || !class_uuid || !reg_number) {
     res.status(422).json({
@@ -128,7 +136,15 @@ export const update: RequestHandler = async (
   const { uuid } = req.params;
   const { name, reg_number, parent_uuid, class_uuid } = req.body;
   const token = req.headers.authorization || null;
-  verifyToken(token, res);
+  const decoded = verifyToken(token, res);
+  if (decoded.role != 'ADMIN') {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
 
   if (!name || !parent_uuid || !class_uuid || !reg_number) {
     res.status(422).json({
@@ -198,7 +214,15 @@ export const remove: RequestHandler = async (
   const { uuid } = req.params;
   const token = req.headers.authorization || null;
 
-  verifyToken(token, res);
+  const decoded = verifyToken(token, res);
+  if (decoded.role != 'ADMIN') {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
 
   const branch_uuid = req.headers['x-branch-session'] as string;
   if (!branch_uuid) {

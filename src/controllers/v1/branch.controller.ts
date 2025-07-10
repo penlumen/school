@@ -58,6 +58,14 @@ export const create: RequestHandler = async (
   const token = req.headers.authorization || null;
   const { name, email, contact, address } = req.body;
   const decoded = verifyToken(token, res);
+  if (decoded.role != 'ADMIN') {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
 
   if (!name) {
     res.status(422).json({
@@ -121,7 +129,15 @@ export const show: RequestHandler = async (
 ): Promise<void> => {
   const { uuid } = req.params;
   const token = req.headers.authorization || null;
-  verifyToken(token, res);
+  const decoded = verifyToken(token, res);
+  if (decoded.role != 'ADMIN') {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
 
   try {
     const branch = await prisma.branch.findUnique({
@@ -158,7 +174,15 @@ export const update: RequestHandler = async (
   const { uuid } = req.params;
   const token = req.headers.authorization || null;
   const { name, email, contact, address } = req.body;
-  verifyToken(token, res);
+  const decoded = verifyToken(token, res);
+  if (decoded.role != 'ADMIN') {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
 
   try {
     const branch = await prisma.branch.update({
@@ -203,7 +227,15 @@ export const createAccess: RequestHandler = async (
   const token = req.headers.authorization || null;
   const branch_uuid = req.headers['x-branch-session'] as string;
   const { user_uuid } = req.body;
-  verifyToken(token, res);
+  const decoded = verifyToken(token, res);
+  if (decoded.role != 'ADMIN') {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
 
   if (!branch_uuid) {
     res.status(400).json({
@@ -275,7 +307,15 @@ export const remove: RequestHandler = async (
 ): Promise<void> => {
   const { uuid } = req.params;
   const token = req.headers.authorization || null;
-  verifyToken(token, res);
+  const decoded = verifyToken(token, res);
+  if (decoded.role != 'ADMIN') {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
 
   try {
     const branch = await prisma.branch.findUnique({

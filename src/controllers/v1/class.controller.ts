@@ -66,7 +66,15 @@ export const create: RequestHandler = async (req: Request, res: Response) => {
   const branch = req.headers['x-branch-session'] as string;
   const { name, capacity, teacher_uuid } = req.body;
   const token = req.headers.authorization || null;
-  verifyToken(token, res);
+  const decoded = verifyToken(token, res);
+  if (decoded.role != 'ADMIN') {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
 
   if (branch && name) {
     const branch_uuid = branch as string;
@@ -174,7 +182,15 @@ export const update: RequestHandler = async (
   const { uuid } = req.params;
   const { name, capacity, teacher_uuid } = req.body;
   const token = req.headers.authorization || null;
-  verifyToken(token, res);
+  const decoded = verifyToken(token, res);
+  if (decoded.role != 'ADMIN') {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
 
   try {
     const updatedClass = await prisma.class.update({
@@ -221,7 +237,15 @@ export const remove: RequestHandler = async (
 ): Promise<any> => {
   const token = req.headers.authorization || null;
   const { uuid } = req.params;
-  verifyToken(token, res);
+  const decoded = verifyToken(token, res);
+  if (decoded.role != 'ADMIN') {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
 
   try {
     const classWithStudents = await prisma.class.findUnique({
