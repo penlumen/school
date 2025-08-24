@@ -24,6 +24,9 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
         include: {
           students: true,
         },
+        orderBy: {
+          created_at: 'asc',
+        },
       });
 
       const classesWithStudentCount = classes.map((cls: any) => ({
