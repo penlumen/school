@@ -142,7 +142,7 @@ export const show: RequestHandler = async (
         },
       });
       if (!classData) {
-        return res.status(404).json({
+        res.status(404).json({
           status: 404,
           success: false,
           message: 'Class not found',
