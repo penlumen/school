@@ -46,6 +46,41 @@ export const index: RequestHandler = async (
   });
 };
 
+export const show: RequestHandler = async (
+  req: Request,
+  res: Response,
+): Promise<any> => {
+  const { uuid } = req.params;
+  const token = req.headers.authorization || null;
+  verifyToken(token, res);
+
+  const student = await prisma.student.findUnique({
+    where: {
+      uuid,
+    },
+    include: {
+      parent: true,
+      class: true,
+    },
+  });
+
+  if (!student) {
+    res.status(404).json({
+      status: 404,
+      success: false,
+      message: 'Student not found',
+    });
+    return;
+  }
+
+  res.status(200).json({
+    status: 200,
+    success: true,
+    message: 'Student',
+    data: { student },
+  });
+};
+
 /**
  * Create a new student
  * @param req

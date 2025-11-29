@@ -29,7 +29,7 @@ export type AggregateAssessments = {
 export type AssessmentsAvgAggregateOutputType = {
   id: number | null
   assignment: number | null
-  assesment: number | null
+  assessment: number | null
   examination: number | null
   overall: number | null
 }
@@ -37,7 +37,7 @@ export type AssessmentsAvgAggregateOutputType = {
 export type AssessmentsSumAggregateOutputType = {
   id: number | null
   assignment: number | null
-  assesment: number | null
+  assessment: number | null
   examination: number | null
   overall: number | null
 }
@@ -48,7 +48,7 @@ export type AssessmentsMinAggregateOutputType = {
   result_uuid: string | null
   subject: string | null
   assignment: number | null
-  assesment: number | null
+  assessment: number | null
   examination: number | null
   overall: number | null
   grade: string | null
@@ -62,7 +62,7 @@ export type AssessmentsMaxAggregateOutputType = {
   result_uuid: string | null
   subject: string | null
   assignment: number | null
-  assesment: number | null
+  assessment: number | null
   examination: number | null
   overall: number | null
   grade: string | null
@@ -76,7 +76,7 @@ export type AssessmentsCountAggregateOutputType = {
   result_uuid: number
   subject: number
   assignment: number
-  assesment: number
+  assessment: number
   examination: number
   overall: number
   grade: number
@@ -89,7 +89,7 @@ export type AssessmentsCountAggregateOutputType = {
 export type AssessmentsAvgAggregateInputType = {
   id?: true
   assignment?: true
-  assesment?: true
+  assessment?: true
   examination?: true
   overall?: true
 }
@@ -97,7 +97,7 @@ export type AssessmentsAvgAggregateInputType = {
 export type AssessmentsSumAggregateInputType = {
   id?: true
   assignment?: true
-  assesment?: true
+  assessment?: true
   examination?: true
   overall?: true
 }
@@ -108,7 +108,7 @@ export type AssessmentsMinAggregateInputType = {
   result_uuid?: true
   subject?: true
   assignment?: true
-  assesment?: true
+  assessment?: true
   examination?: true
   overall?: true
   grade?: true
@@ -122,7 +122,7 @@ export type AssessmentsMaxAggregateInputType = {
   result_uuid?: true
   subject?: true
   assignment?: true
-  assesment?: true
+  assessment?: true
   examination?: true
   overall?: true
   grade?: true
@@ -136,7 +136,7 @@ export type AssessmentsCountAggregateInputType = {
   result_uuid?: true
   subject?: true
   assignment?: true
-  assesment?: true
+  assessment?: true
   examination?: true
   overall?: true
   grade?: true
@@ -237,7 +237,7 @@ export type AssessmentsGroupByOutputType = {
   result_uuid: string
   subject: string
   assignment: number
-  assesment: number
+  assessment: number
   examination: number
   overall: number
   grade: string | null
@@ -274,7 +274,7 @@ export type AssessmentsWhereInput = {
   result_uuid?: Prisma.StringFilter<"Assessments"> | string
   subject?: Prisma.StringFilter<"Assessments"> | string
   assignment?: Prisma.FloatFilter<"Assessments"> | number
-  assesment?: Prisma.FloatFilter<"Assessments"> | number
+  assessment?: Prisma.FloatFilter<"Assessments"> | number
   examination?: Prisma.FloatFilter<"Assessments"> | number
   overall?: Prisma.FloatFilter<"Assessments"> | number
   grade?: Prisma.StringNullableFilter<"Assessments"> | string | null
@@ -289,7 +289,7 @@ export type AssessmentsOrderByWithRelationInput = {
   result_uuid?: Prisma.SortOrder
   subject?: Prisma.SortOrder
   assignment?: Prisma.SortOrder
-  assesment?: Prisma.SortOrder
+  assessment?: Prisma.SortOrder
   examination?: Prisma.SortOrder
   overall?: Prisma.SortOrder
   grade?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -308,7 +308,7 @@ export type AssessmentsWhereUniqueInput = Prisma.AtLeast<{
   result_uuid?: Prisma.StringFilter<"Assessments"> | string
   subject?: Prisma.StringFilter<"Assessments"> | string
   assignment?: Prisma.FloatFilter<"Assessments"> | number
-  assesment?: Prisma.FloatFilter<"Assessments"> | number
+  assessment?: Prisma.FloatFilter<"Assessments"> | number
   examination?: Prisma.FloatFilter<"Assessments"> | number
   overall?: Prisma.FloatFilter<"Assessments"> | number
   grade?: Prisma.StringNullableFilter<"Assessments"> | string | null
@@ -323,7 +323,7 @@ export type AssessmentsOrderByWithAggregationInput = {
   result_uuid?: Prisma.SortOrder
   subject?: Prisma.SortOrder
   assignment?: Prisma.SortOrder
-  assesment?: Prisma.SortOrder
+  assessment?: Prisma.SortOrder
   examination?: Prisma.SortOrder
   overall?: Prisma.SortOrder
   grade?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -345,7 +345,7 @@ export type AssessmentsScalarWhereWithAggregatesInput = {
   result_uuid?: Prisma.StringWithAggregatesFilter<"Assessments"> | string
   subject?: Prisma.StringWithAggregatesFilter<"Assessments"> | string
   assignment?: Prisma.FloatWithAggregatesFilter<"Assessments"> | number
-  assesment?: Prisma.FloatWithAggregatesFilter<"Assessments"> | number
+  assessment?: Prisma.FloatWithAggregatesFilter<"Assessments"> | number
   examination?: Prisma.FloatWithAggregatesFilter<"Assessments"> | number
   overall?: Prisma.FloatWithAggregatesFilter<"Assessments"> | number
   grade?: Prisma.StringNullableWithAggregatesFilter<"Assessments"> | string | null
@@ -357,7 +357,7 @@ export type AssessmentsCreateInput = {
   uuid?: string
   subject: string
   assignment?: number
-  assesment?: number
+  assessment?: number
   examination?: number
   overall?: number
   grade?: string | null
@@ -372,7 +372,7 @@ export type AssessmentsUncheckedCreateInput = {
   result_uuid: string
   subject: string
   assignment?: number
-  assesment?: number
+  assessment?: number
   examination?: number
   overall?: number
   grade?: string | null
@@ -384,7 +384,7 @@ export type AssessmentsUpdateInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   subject?: Prisma.StringFieldUpdateOperationsInput | string
   assignment?: Prisma.FloatFieldUpdateOperationsInput | number
-  assesment?: Prisma.FloatFieldUpdateOperationsInput | number
+  assessment?: Prisma.FloatFieldUpdateOperationsInput | number
   examination?: Prisma.FloatFieldUpdateOperationsInput | number
   overall?: Prisma.FloatFieldUpdateOperationsInput | number
   grade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -399,7 +399,7 @@ export type AssessmentsUncheckedUpdateInput = {
   result_uuid?: Prisma.StringFieldUpdateOperationsInput | string
   subject?: Prisma.StringFieldUpdateOperationsInput | string
   assignment?: Prisma.FloatFieldUpdateOperationsInput | number
-  assesment?: Prisma.FloatFieldUpdateOperationsInput | number
+  assessment?: Prisma.FloatFieldUpdateOperationsInput | number
   examination?: Prisma.FloatFieldUpdateOperationsInput | number
   overall?: Prisma.FloatFieldUpdateOperationsInput | number
   grade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -413,7 +413,7 @@ export type AssessmentsCreateManyInput = {
   result_uuid: string
   subject: string
   assignment?: number
-  assesment?: number
+  assessment?: number
   examination?: number
   overall?: number
   grade?: string | null
@@ -425,7 +425,7 @@ export type AssessmentsUpdateManyMutationInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   subject?: Prisma.StringFieldUpdateOperationsInput | string
   assignment?: Prisma.FloatFieldUpdateOperationsInput | number
-  assesment?: Prisma.FloatFieldUpdateOperationsInput | number
+  assessment?: Prisma.FloatFieldUpdateOperationsInput | number
   examination?: Prisma.FloatFieldUpdateOperationsInput | number
   overall?: Prisma.FloatFieldUpdateOperationsInput | number
   grade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -439,7 +439,7 @@ export type AssessmentsUncheckedUpdateManyInput = {
   result_uuid?: Prisma.StringFieldUpdateOperationsInput | string
   subject?: Prisma.StringFieldUpdateOperationsInput | string
   assignment?: Prisma.FloatFieldUpdateOperationsInput | number
-  assesment?: Prisma.FloatFieldUpdateOperationsInput | number
+  assessment?: Prisma.FloatFieldUpdateOperationsInput | number
   examination?: Prisma.FloatFieldUpdateOperationsInput | number
   overall?: Prisma.FloatFieldUpdateOperationsInput | number
   grade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -468,7 +468,7 @@ export type AssessmentsCountOrderByAggregateInput = {
   result_uuid?: Prisma.SortOrder
   subject?: Prisma.SortOrder
   assignment?: Prisma.SortOrder
-  assesment?: Prisma.SortOrder
+  assessment?: Prisma.SortOrder
   examination?: Prisma.SortOrder
   overall?: Prisma.SortOrder
   grade?: Prisma.SortOrder
@@ -479,7 +479,7 @@ export type AssessmentsCountOrderByAggregateInput = {
 export type AssessmentsAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
   assignment?: Prisma.SortOrder
-  assesment?: Prisma.SortOrder
+  assessment?: Prisma.SortOrder
   examination?: Prisma.SortOrder
   overall?: Prisma.SortOrder
 }
@@ -490,7 +490,7 @@ export type AssessmentsMaxOrderByAggregateInput = {
   result_uuid?: Prisma.SortOrder
   subject?: Prisma.SortOrder
   assignment?: Prisma.SortOrder
-  assesment?: Prisma.SortOrder
+  assessment?: Prisma.SortOrder
   examination?: Prisma.SortOrder
   overall?: Prisma.SortOrder
   grade?: Prisma.SortOrder
@@ -504,7 +504,7 @@ export type AssessmentsMinOrderByAggregateInput = {
   result_uuid?: Prisma.SortOrder
   subject?: Prisma.SortOrder
   assignment?: Prisma.SortOrder
-  assesment?: Prisma.SortOrder
+  assessment?: Prisma.SortOrder
   examination?: Prisma.SortOrder
   overall?: Prisma.SortOrder
   grade?: Prisma.SortOrder
@@ -515,7 +515,7 @@ export type AssessmentsMinOrderByAggregateInput = {
 export type AssessmentsSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
   assignment?: Prisma.SortOrder
-  assesment?: Prisma.SortOrder
+  assessment?: Prisma.SortOrder
   examination?: Prisma.SortOrder
   overall?: Prisma.SortOrder
 }
@@ -566,7 +566,7 @@ export type AssessmentsCreateWithoutResultInput = {
   uuid?: string
   subject: string
   assignment?: number
-  assesment?: number
+  assessment?: number
   examination?: number
   overall?: number
   grade?: string | null
@@ -579,7 +579,7 @@ export type AssessmentsUncheckedCreateWithoutResultInput = {
   uuid?: string
   subject: string
   assignment?: number
-  assesment?: number
+  assessment?: number
   examination?: number
   overall?: number
   grade?: string | null
@@ -622,7 +622,7 @@ export type AssessmentsScalarWhereInput = {
   result_uuid?: Prisma.StringFilter<"Assessments"> | string
   subject?: Prisma.StringFilter<"Assessments"> | string
   assignment?: Prisma.FloatFilter<"Assessments"> | number
-  assesment?: Prisma.FloatFilter<"Assessments"> | number
+  assessment?: Prisma.FloatFilter<"Assessments"> | number
   examination?: Prisma.FloatFilter<"Assessments"> | number
   overall?: Prisma.FloatFilter<"Assessments"> | number
   grade?: Prisma.StringNullableFilter<"Assessments"> | string | null
@@ -635,7 +635,7 @@ export type AssessmentsCreateManyResultInput = {
   uuid?: string
   subject: string
   assignment?: number
-  assesment?: number
+  assessment?: number
   examination?: number
   overall?: number
   grade?: string | null
@@ -647,7 +647,7 @@ export type AssessmentsUpdateWithoutResultInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   subject?: Prisma.StringFieldUpdateOperationsInput | string
   assignment?: Prisma.FloatFieldUpdateOperationsInput | number
-  assesment?: Prisma.FloatFieldUpdateOperationsInput | number
+  assessment?: Prisma.FloatFieldUpdateOperationsInput | number
   examination?: Prisma.FloatFieldUpdateOperationsInput | number
   overall?: Prisma.FloatFieldUpdateOperationsInput | number
   grade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -660,7 +660,7 @@ export type AssessmentsUncheckedUpdateWithoutResultInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   subject?: Prisma.StringFieldUpdateOperationsInput | string
   assignment?: Prisma.FloatFieldUpdateOperationsInput | number
-  assesment?: Prisma.FloatFieldUpdateOperationsInput | number
+  assessment?: Prisma.FloatFieldUpdateOperationsInput | number
   examination?: Prisma.FloatFieldUpdateOperationsInput | number
   overall?: Prisma.FloatFieldUpdateOperationsInput | number
   grade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -673,7 +673,7 @@ export type AssessmentsUncheckedUpdateManyWithoutResultInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   subject?: Prisma.StringFieldUpdateOperationsInput | string
   assignment?: Prisma.FloatFieldUpdateOperationsInput | number
-  assesment?: Prisma.FloatFieldUpdateOperationsInput | number
+  assessment?: Prisma.FloatFieldUpdateOperationsInput | number
   examination?: Prisma.FloatFieldUpdateOperationsInput | number
   overall?: Prisma.FloatFieldUpdateOperationsInput | number
   grade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -689,7 +689,7 @@ export type AssessmentsSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   result_uuid?: boolean
   subject?: boolean
   assignment?: boolean
-  assesment?: boolean
+  assessment?: boolean
   examination?: boolean
   overall?: boolean
   grade?: boolean
@@ -704,7 +704,7 @@ export type AssessmentsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   result_uuid?: boolean
   subject?: boolean
   assignment?: boolean
-  assesment?: boolean
+  assessment?: boolean
   examination?: boolean
   overall?: boolean
   grade?: boolean
@@ -719,7 +719,7 @@ export type AssessmentsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   result_uuid?: boolean
   subject?: boolean
   assignment?: boolean
-  assesment?: boolean
+  assessment?: boolean
   examination?: boolean
   overall?: boolean
   grade?: boolean
@@ -734,7 +734,7 @@ export type AssessmentsSelectScalar = {
   result_uuid?: boolean
   subject?: boolean
   assignment?: boolean
-  assesment?: boolean
+  assessment?: boolean
   examination?: boolean
   overall?: boolean
   grade?: boolean
@@ -742,7 +742,7 @@ export type AssessmentsSelectScalar = {
   updated_at?: boolean
 }
 
-export type AssessmentsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "uuid" | "result_uuid" | "subject" | "assignment" | "assesment" | "examination" | "overall" | "grade" | "created_at" | "updated_at", ExtArgs["result"]["assessments"]>
+export type AssessmentsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "uuid" | "result_uuid" | "subject" | "assignment" | "assessment" | "examination" | "overall" | "grade" | "created_at" | "updated_at", ExtArgs["result"]["assessments"]>
 export type AssessmentsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   result?: boolean | Prisma.Assessments$resultArgs<ExtArgs>
 }
@@ -764,7 +764,7 @@ export type $AssessmentsPayload<ExtArgs extends runtime.Types.Extensions.Interna
     result_uuid: string
     subject: string
     assignment: number
-    assesment: number
+    assessment: number
     examination: number
     overall: number
     grade: string | null
@@ -1199,7 +1199,7 @@ export interface AssessmentsFieldRefs {
   readonly result_uuid: Prisma.FieldRef<"Assessments", 'String'>
   readonly subject: Prisma.FieldRef<"Assessments", 'String'>
   readonly assignment: Prisma.FieldRef<"Assessments", 'Float'>
-  readonly assesment: Prisma.FieldRef<"Assessments", 'Float'>
+  readonly assessment: Prisma.FieldRef<"Assessments", 'Float'>
   readonly examination: Prisma.FieldRef<"Assessments", 'Float'>
   readonly overall: Prisma.FieldRef<"Assessments", 'Float'>
   readonly grade: Prisma.FieldRef<"Assessments", 'String'>

@@ -1423,8 +1423,10 @@ export const ResultScalarFieldEnum = {
   uuid: 'uuid',
   student_uuid: 'student_uuid',
   class_name: 'class_name',
-  grade: 'grade',
-  remark: 'remark',
+  overall: 'overall',
+  status: 'status',
+  teacher_remark: 'teacher_remark',
+  principal_remark: 'principal_remark',
   created_at: 'created_at',
   updated_at: 'updated_at'
 } as const
@@ -1438,7 +1440,7 @@ export const AssessmentsScalarFieldEnum = {
   result_uuid: 'result_uuid',
   subject: 'subject',
   assignment: 'assignment',
-  assesment: 'assesment',
+  assessment: 'assessment',
   examination: 'examination',
   overall: 'overall',
   grade: 'grade',
@@ -1553,6 +1555,20 @@ export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, '
  * Reference to a field of type 'Float[]'
  */
 export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+    
+
+
+/**
+ * Reference to a field of type 'ResultStatus'
+ */
+export type EnumResultStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ResultStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'ResultStatus[]'
+ */
+export type ListEnumResultStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ResultStatus[]'>
     
 
 /**

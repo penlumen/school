@@ -228,8 +228,10 @@ export const ResultScalarFieldEnum = {
   uuid: 'uuid',
   student_uuid: 'student_uuid',
   class_name: 'class_name',
-  grade: 'grade',
-  remark: 'remark',
+  overall: 'overall',
+  status: 'status',
+  teacher_remark: 'teacher_remark',
+  principal_remark: 'principal_remark',
   created_at: 'created_at',
   updated_at: 'updated_at'
 } as const
@@ -243,7 +245,7 @@ export const AssessmentsScalarFieldEnum = {
   result_uuid: 'result_uuid',
   subject: 'subject',
   assignment: 'assignment',
-  assesment: 'assesment',
+  assessment: 'assessment',
   examination: 'examination',
   overall: 'overall',
   grade: 'grade',

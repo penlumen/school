@@ -1,0 +1,250 @@
+import prisma from '../../config/prisma.config';
+import { useMiddleware } from '../../config/middleware';
+import { RequestHandler, Request, Response } from 'express';
+
+const { verifyToken } = useMiddleware();
+
+export const index: RequestHandler = async (
+  req: Request,
+  res: Response,
+): Promise<any> => {
+  const branch_uuid = req.headers['x-branch-session'] as string;
+  const status = req.query.status as 'PENDING' | 'APPROVED' | 'REJECTED';
+  const token = req.headers.authorization || null;
+  verifyToken(token, res);
+  if (!branch_uuid) {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Branch session header is required',
+    });
+    return;
+  }
+
+  try {
+    const results = await prisma.result.findMany({
+      where: {
+        status,
+        student: {
+          branch_uuid,
+        },
+      },
+      include: {
+        student: true,
+        assessments: true,
+      },
+      take: 20,
+    });
+    res.json(results);
+  } catch (error) {
+    return res.status(500).json({
+      status: 500,
+      success: false,
+      message: 'Failed to fetch results',
+    });
+  }
+};
+
+export const show: RequestHandler = async (
+  req: Request,
+  res: Response,
+): Promise<any> => {
+  const token = req.headers.authorization || null;
+  verifyToken(token, res);
+
+  const { student_uuid } = req.params;
+  try {
+    const results = await prisma.result.findMany({
+      where: {
+        student: {
+          uuid: student_uuid,
+        },
+      },
+      include: {
+        student: true,
+        assessments: true,
+      },
+    });
+    res.json(results);
+  } catch (error) {
+    return res.status(500).json({
+      status: 500,
+      success: false,
+      message: 'Failed to fetch results',
+    });
+  }
+};
+
+export const create: RequestHandler = async (
+  req: Request,
+  res: Response,
+): Promise<any> => {
+  const { student_uuid } = req.params;
+  const token = req.headers.authorization || null;
+  verifyToken(token, res);
+
+  const student = await prisma.student.findUnique({
+    where: { uuid: student_uuid },
+    include: {
+      class: {
+        include: {
+          subjects: true,
+        },
+      },
+    },
+  });
+
+  if (!student) {
+    return res.status(404).json({
+      status: 404,
+      success: false,
+      message: 'Student not found',
+    });
+  }
+
+  const existingResult = await prisma.result.findFirst({
+    where: {
+      student_uuid: student!.uuid,
+      class_name: student!.class.name,
+    },
+  });
+
+  if (existingResult) {
+    return res.status(400).json({
+      status: 400,
+      success: false,
+      message: `Result already exists for this student in ${
+        student!.class.name
+      }`,
+    });
+  }
+
+  const result = await prisma.result.create({
+    data: {
+      student_uuid: student!.uuid,
+      class_name: student!.class.name,
+    },
+  });
+
+  await prisma.assessments.createMany({
+    data: student.class.subjects.map((subject) => ({
+      result_uuid: result.uuid,
+      subject: subject.name,
+    })),
+  });
+
+  return res.status(201).json({
+    status: 201,
+    success: true,
+    message: 'Result created successfully',
+  });
+};
+
+export const update: RequestHandler = async (
+  req: Request,
+  res: Response,
+): Promise<any> => {
+  const { result_uuid } = req.params;
+  const { result, assessments } = req.body;
+  const token = req.headers.authorization || null;
+  verifyToken(token, res);
+
+  if (!Array.isArray(assessments)) {
+    return res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'assessments must be an array',
+    });
+  }
+
+  for (const item of assessments) {
+    if (
+      !item.uuid ||
+      item.assignment === undefined ||
+      item.assessment === undefined ||
+      item.examination === undefined
+    ) {
+      return res.status(400).json({
+        status: 400,
+        success: false,
+        message: 'uuid, assignment, assessment and examination are required',
+      });
+    }
+  }
+
+  const computedAssessments = assessments.map((a: any) => {
+    const overall =
+      Number(a.assignment) + Number(a.assessment) + Number(a.examination);
+
+    return {
+      uuid: a.uuid,
+      assignment: Number(a.assignment),
+      assessment: Number(a.assessment),
+      examination: Number(a.examination),
+      overall: Number(overall),
+    };
+  });
+
+  const updates = computedAssessments.map((a) =>
+    prisma.assessments.update({
+      where: { uuid: a.uuid },
+      data: {
+        assignment: a.assignment,
+        assessment: a.assessment,
+        examination: a.examination,
+        overall: a.overall,
+      },
+    }),
+  );
+
+  const total = computedAssessments.reduce((sum, a) => sum + a.overall, 0);
+  const average = total / computedAssessments.length;
+
+  await prisma.$transaction(updates);
+
+  await prisma.result.update({
+    where: { uuid: result_uuid },
+    data: {
+      overall: total,
+      teacher_remark: result?.teacher_remark ?? '',
+      principal_remark: result?.principal_remark ?? '',
+    },
+  });
+
+  return res.status(200).json({
+    status: 200,
+    success: true,
+    message: 'Result updated successfully',
+  });
+};
+
+export const remove: RequestHandler = async (
+  req: Request,
+  res: Response,
+): Promise<any> => {
+  const { result_uuid } = req.params;
+  const token = req.headers.authorization || null;
+  verifyToken(token, res);
+
+  try {
+    await prisma.assessments.deleteMany({
+      where: { result_uuid },
+    });
+
+    await prisma.result.delete({
+      where: { uuid: result_uuid },
+    });
+
+    return res.status(200).json({
+      status: 200,
+      success: true,
+      message: 'Result deleted successfully',
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: 500,
+      success: false,
+      message: 'Failed to delete result',
+    });
+  }
+};

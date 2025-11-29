@@ -28,10 +28,12 @@ export type AggregateResult = {
 
 export type ResultAvgAggregateOutputType = {
   id: number | null
+  overall: number | null
 }
 
 export type ResultSumAggregateOutputType = {
   id: number | null
+  overall: number | null
 }
 
 export type ResultMinAggregateOutputType = {
@@ -39,8 +41,10 @@ export type ResultMinAggregateOutputType = {
   uuid: string | null
   student_uuid: string | null
   class_name: string | null
-  grade: string | null
-  remark: string | null
+  overall: number | null
+  status: $Enums.ResultStatus | null
+  teacher_remark: string | null
+  principal_remark: string | null
   created_at: Date | null
   updated_at: Date | null
 }
@@ -50,8 +54,10 @@ export type ResultMaxAggregateOutputType = {
   uuid: string | null
   student_uuid: string | null
   class_name: string | null
-  grade: string | null
-  remark: string | null
+  overall: number | null
+  status: $Enums.ResultStatus | null
+  teacher_remark: string | null
+  principal_remark: string | null
   created_at: Date | null
   updated_at: Date | null
 }
@@ -61,8 +67,10 @@ export type ResultCountAggregateOutputType = {
   uuid: number
   student_uuid: number
   class_name: number
-  grade: number
-  remark: number
+  overall: number
+  status: number
+  teacher_remark: number
+  principal_remark: number
   created_at: number
   updated_at: number
   _all: number
@@ -71,10 +79,12 @@ export type ResultCountAggregateOutputType = {
 
 export type ResultAvgAggregateInputType = {
   id?: true
+  overall?: true
 }
 
 export type ResultSumAggregateInputType = {
   id?: true
+  overall?: true
 }
 
 export type ResultMinAggregateInputType = {
@@ -82,8 +92,10 @@ export type ResultMinAggregateInputType = {
   uuid?: true
   student_uuid?: true
   class_name?: true
-  grade?: true
-  remark?: true
+  overall?: true
+  status?: true
+  teacher_remark?: true
+  principal_remark?: true
   created_at?: true
   updated_at?: true
 }
@@ -93,8 +105,10 @@ export type ResultMaxAggregateInputType = {
   uuid?: true
   student_uuid?: true
   class_name?: true
-  grade?: true
-  remark?: true
+  overall?: true
+  status?: true
+  teacher_remark?: true
+  principal_remark?: true
   created_at?: true
   updated_at?: true
 }
@@ -104,8 +118,10 @@ export type ResultCountAggregateInputType = {
   uuid?: true
   student_uuid?: true
   class_name?: true
-  grade?: true
-  remark?: true
+  overall?: true
+  status?: true
+  teacher_remark?: true
+  principal_remark?: true
   created_at?: true
   updated_at?: true
   _all?: true
@@ -202,8 +218,10 @@ export type ResultGroupByOutputType = {
   uuid: string
   student_uuid: string
   class_name: string
-  grade: string | null
-  remark: string | null
+  overall: number
+  status: $Enums.ResultStatus
+  teacher_remark: string | null
+  principal_remark: string | null
   created_at: Date
   updated_at: Date
   _count: ResultCountAggregateOutputType | null
@@ -236,8 +254,10 @@ export type ResultWhereInput = {
   uuid?: Prisma.StringFilter<"Result"> | string
   student_uuid?: Prisma.StringFilter<"Result"> | string
   class_name?: Prisma.StringFilter<"Result"> | string
-  grade?: Prisma.StringNullableFilter<"Result"> | string | null
-  remark?: Prisma.StringNullableFilter<"Result"> | string | null
+  overall?: Prisma.FloatFilter<"Result"> | number
+  status?: Prisma.EnumResultStatusFilter<"Result"> | $Enums.ResultStatus
+  teacher_remark?: Prisma.StringNullableFilter<"Result"> | string | null
+  principal_remark?: Prisma.StringNullableFilter<"Result"> | string | null
   created_at?: Prisma.DateTimeFilter<"Result"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"Result"> | Date | string
   student?: Prisma.XOR<Prisma.StudentNullableScalarRelationFilter, Prisma.StudentWhereInput> | null
@@ -249,8 +269,10 @@ export type ResultOrderByWithRelationInput = {
   uuid?: Prisma.SortOrder
   student_uuid?: Prisma.SortOrder
   class_name?: Prisma.SortOrder
-  grade?: Prisma.SortOrderInput | Prisma.SortOrder
-  remark?: Prisma.SortOrderInput | Prisma.SortOrder
+  overall?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  teacher_remark?: Prisma.SortOrderInput | Prisma.SortOrder
+  principal_remark?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   student?: Prisma.StudentOrderByWithRelationInput
@@ -265,8 +287,10 @@ export type ResultWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.ResultWhereInput | Prisma.ResultWhereInput[]
   student_uuid?: Prisma.StringFilter<"Result"> | string
   class_name?: Prisma.StringFilter<"Result"> | string
-  grade?: Prisma.StringNullableFilter<"Result"> | string | null
-  remark?: Prisma.StringNullableFilter<"Result"> | string | null
+  overall?: Prisma.FloatFilter<"Result"> | number
+  status?: Prisma.EnumResultStatusFilter<"Result"> | $Enums.ResultStatus
+  teacher_remark?: Prisma.StringNullableFilter<"Result"> | string | null
+  principal_remark?: Prisma.StringNullableFilter<"Result"> | string | null
   created_at?: Prisma.DateTimeFilter<"Result"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"Result"> | Date | string
   student?: Prisma.XOR<Prisma.StudentNullableScalarRelationFilter, Prisma.StudentWhereInput> | null
@@ -278,8 +302,10 @@ export type ResultOrderByWithAggregationInput = {
   uuid?: Prisma.SortOrder
   student_uuid?: Prisma.SortOrder
   class_name?: Prisma.SortOrder
-  grade?: Prisma.SortOrderInput | Prisma.SortOrder
-  remark?: Prisma.SortOrderInput | Prisma.SortOrder
+  overall?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  teacher_remark?: Prisma.SortOrderInput | Prisma.SortOrder
+  principal_remark?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   _count?: Prisma.ResultCountOrderByAggregateInput
@@ -297,8 +323,10 @@ export type ResultScalarWhereWithAggregatesInput = {
   uuid?: Prisma.StringWithAggregatesFilter<"Result"> | string
   student_uuid?: Prisma.StringWithAggregatesFilter<"Result"> | string
   class_name?: Prisma.StringWithAggregatesFilter<"Result"> | string
-  grade?: Prisma.StringNullableWithAggregatesFilter<"Result"> | string | null
-  remark?: Prisma.StringNullableWithAggregatesFilter<"Result"> | string | null
+  overall?: Prisma.FloatWithAggregatesFilter<"Result"> | number
+  status?: Prisma.EnumResultStatusWithAggregatesFilter<"Result"> | $Enums.ResultStatus
+  teacher_remark?: Prisma.StringNullableWithAggregatesFilter<"Result"> | string | null
+  principal_remark?: Prisma.StringNullableWithAggregatesFilter<"Result"> | string | null
   created_at?: Prisma.DateTimeWithAggregatesFilter<"Result"> | Date | string
   updated_at?: Prisma.DateTimeWithAggregatesFilter<"Result"> | Date | string
 }
@@ -306,8 +334,10 @@ export type ResultScalarWhereWithAggregatesInput = {
 export type ResultCreateInput = {
   uuid?: string
   class_name: string
-  grade?: string | null
-  remark?: string | null
+  overall?: number
+  status?: $Enums.ResultStatus
+  teacher_remark?: string | null
+  principal_remark?: string | null
   created_at?: Date | string
   updated_at?: Date | string
   student?: Prisma.StudentCreateNestedOneWithoutResultsInput
@@ -319,8 +349,10 @@ export type ResultUncheckedCreateInput = {
   uuid?: string
   student_uuid: string
   class_name: string
-  grade?: string | null
-  remark?: string | null
+  overall?: number
+  status?: $Enums.ResultStatus
+  teacher_remark?: string | null
+  principal_remark?: string | null
   created_at?: Date | string
   updated_at?: Date | string
   assessments?: Prisma.AssessmentsUncheckedCreateNestedManyWithoutResultInput
@@ -329,8 +361,10 @@ export type ResultUncheckedCreateInput = {
 export type ResultUpdateInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   class_name?: Prisma.StringFieldUpdateOperationsInput | string
-  grade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  overall?: Prisma.FloatFieldUpdateOperationsInput | number
+  status?: Prisma.EnumResultStatusFieldUpdateOperationsInput | $Enums.ResultStatus
+  teacher_remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  principal_remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   student?: Prisma.StudentUpdateOneWithoutResultsNestedInput
@@ -342,8 +376,10 @@ export type ResultUncheckedUpdateInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   student_uuid?: Prisma.StringFieldUpdateOperationsInput | string
   class_name?: Prisma.StringFieldUpdateOperationsInput | string
-  grade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  overall?: Prisma.FloatFieldUpdateOperationsInput | number
+  status?: Prisma.EnumResultStatusFieldUpdateOperationsInput | $Enums.ResultStatus
+  teacher_remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  principal_remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   assessments?: Prisma.AssessmentsUncheckedUpdateManyWithoutResultNestedInput
@@ -354,8 +390,10 @@ export type ResultCreateManyInput = {
   uuid?: string
   student_uuid: string
   class_name: string
-  grade?: string | null
-  remark?: string | null
+  overall?: number
+  status?: $Enums.ResultStatus
+  teacher_remark?: string | null
+  principal_remark?: string | null
   created_at?: Date | string
   updated_at?: Date | string
 }
@@ -363,8 +401,10 @@ export type ResultCreateManyInput = {
 export type ResultUpdateManyMutationInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   class_name?: Prisma.StringFieldUpdateOperationsInput | string
-  grade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  overall?: Prisma.FloatFieldUpdateOperationsInput | number
+  status?: Prisma.EnumResultStatusFieldUpdateOperationsInput | $Enums.ResultStatus
+  teacher_remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  principal_remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -374,8 +414,10 @@ export type ResultUncheckedUpdateManyInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   student_uuid?: Prisma.StringFieldUpdateOperationsInput | string
   class_name?: Prisma.StringFieldUpdateOperationsInput | string
-  grade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  overall?: Prisma.FloatFieldUpdateOperationsInput | number
+  status?: Prisma.EnumResultStatusFieldUpdateOperationsInput | $Enums.ResultStatus
+  teacher_remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  principal_remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -395,14 +437,17 @@ export type ResultCountOrderByAggregateInput = {
   uuid?: Prisma.SortOrder
   student_uuid?: Prisma.SortOrder
   class_name?: Prisma.SortOrder
-  grade?: Prisma.SortOrder
-  remark?: Prisma.SortOrder
+  overall?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  teacher_remark?: Prisma.SortOrder
+  principal_remark?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
 }
 
 export type ResultAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  overall?: Prisma.SortOrder
 }
 
 export type ResultMaxOrderByAggregateInput = {
@@ -410,8 +455,10 @@ export type ResultMaxOrderByAggregateInput = {
   uuid?: Prisma.SortOrder
   student_uuid?: Prisma.SortOrder
   class_name?: Prisma.SortOrder
-  grade?: Prisma.SortOrder
-  remark?: Prisma.SortOrder
+  overall?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  teacher_remark?: Prisma.SortOrder
+  principal_remark?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
 }
@@ -421,14 +468,17 @@ export type ResultMinOrderByAggregateInput = {
   uuid?: Prisma.SortOrder
   student_uuid?: Prisma.SortOrder
   class_name?: Prisma.SortOrder
-  grade?: Prisma.SortOrder
-  remark?: Prisma.SortOrder
+  overall?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  teacher_remark?: Prisma.SortOrder
+  principal_remark?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
 }
 
 export type ResultSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  overall?: Prisma.SortOrder
 }
 
 export type ResultNullableScalarRelationFilter = {
@@ -478,6 +528,10 @@ export type ResultUncheckedUpdateManyWithoutStudentNestedInput = {
   deleteMany?: Prisma.ResultScalarWhereInput | Prisma.ResultScalarWhereInput[]
 }
 
+export type EnumResultStatusFieldUpdateOperationsInput = {
+  set?: $Enums.ResultStatus
+}
+
 export type ResultCreateNestedOneWithoutAssessmentsInput = {
   create?: Prisma.XOR<Prisma.ResultCreateWithoutAssessmentsInput, Prisma.ResultUncheckedCreateWithoutAssessmentsInput>
   connectOrCreate?: Prisma.ResultCreateOrConnectWithoutAssessmentsInput
@@ -497,8 +551,10 @@ export type ResultUpdateOneWithoutAssessmentsNestedInput = {
 export type ResultCreateWithoutStudentInput = {
   uuid?: string
   class_name: string
-  grade?: string | null
-  remark?: string | null
+  overall?: number
+  status?: $Enums.ResultStatus
+  teacher_remark?: string | null
+  principal_remark?: string | null
   created_at?: Date | string
   updated_at?: Date | string
   assessments?: Prisma.AssessmentsCreateNestedManyWithoutResultInput
@@ -508,8 +564,10 @@ export type ResultUncheckedCreateWithoutStudentInput = {
   id?: number
   uuid?: string
   class_name: string
-  grade?: string | null
-  remark?: string | null
+  overall?: number
+  status?: $Enums.ResultStatus
+  teacher_remark?: string | null
+  principal_remark?: string | null
   created_at?: Date | string
   updated_at?: Date | string
   assessments?: Prisma.AssessmentsUncheckedCreateNestedManyWithoutResultInput
@@ -549,8 +607,10 @@ export type ResultScalarWhereInput = {
   uuid?: Prisma.StringFilter<"Result"> | string
   student_uuid?: Prisma.StringFilter<"Result"> | string
   class_name?: Prisma.StringFilter<"Result"> | string
-  grade?: Prisma.StringNullableFilter<"Result"> | string | null
-  remark?: Prisma.StringNullableFilter<"Result"> | string | null
+  overall?: Prisma.FloatFilter<"Result"> | number
+  status?: Prisma.EnumResultStatusFilter<"Result"> | $Enums.ResultStatus
+  teacher_remark?: Prisma.StringNullableFilter<"Result"> | string | null
+  principal_remark?: Prisma.StringNullableFilter<"Result"> | string | null
   created_at?: Prisma.DateTimeFilter<"Result"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"Result"> | Date | string
 }
@@ -558,8 +618,10 @@ export type ResultScalarWhereInput = {
 export type ResultCreateWithoutAssessmentsInput = {
   uuid?: string
   class_name: string
-  grade?: string | null
-  remark?: string | null
+  overall?: number
+  status?: $Enums.ResultStatus
+  teacher_remark?: string | null
+  principal_remark?: string | null
   created_at?: Date | string
   updated_at?: Date | string
   student?: Prisma.StudentCreateNestedOneWithoutResultsInput
@@ -570,8 +632,10 @@ export type ResultUncheckedCreateWithoutAssessmentsInput = {
   uuid?: string
   student_uuid: string
   class_name: string
-  grade?: string | null
-  remark?: string | null
+  overall?: number
+  status?: $Enums.ResultStatus
+  teacher_remark?: string | null
+  principal_remark?: string | null
   created_at?: Date | string
   updated_at?: Date | string
 }
@@ -595,8 +659,10 @@ export type ResultUpdateToOneWithWhereWithoutAssessmentsInput = {
 export type ResultUpdateWithoutAssessmentsInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   class_name?: Prisma.StringFieldUpdateOperationsInput | string
-  grade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  overall?: Prisma.FloatFieldUpdateOperationsInput | number
+  status?: Prisma.EnumResultStatusFieldUpdateOperationsInput | $Enums.ResultStatus
+  teacher_remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  principal_remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   student?: Prisma.StudentUpdateOneWithoutResultsNestedInput
@@ -607,8 +673,10 @@ export type ResultUncheckedUpdateWithoutAssessmentsInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   student_uuid?: Prisma.StringFieldUpdateOperationsInput | string
   class_name?: Prisma.StringFieldUpdateOperationsInput | string
-  grade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  overall?: Prisma.FloatFieldUpdateOperationsInput | number
+  status?: Prisma.EnumResultStatusFieldUpdateOperationsInput | $Enums.ResultStatus
+  teacher_remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  principal_remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -617,8 +685,10 @@ export type ResultCreateManyStudentInput = {
   id?: number
   uuid?: string
   class_name: string
-  grade?: string | null
-  remark?: string | null
+  overall?: number
+  status?: $Enums.ResultStatus
+  teacher_remark?: string | null
+  principal_remark?: string | null
   created_at?: Date | string
   updated_at?: Date | string
 }
@@ -626,8 +696,10 @@ export type ResultCreateManyStudentInput = {
 export type ResultUpdateWithoutStudentInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   class_name?: Prisma.StringFieldUpdateOperationsInput | string
-  grade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  overall?: Prisma.FloatFieldUpdateOperationsInput | number
+  status?: Prisma.EnumResultStatusFieldUpdateOperationsInput | $Enums.ResultStatus
+  teacher_remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  principal_remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   assessments?: Prisma.AssessmentsUpdateManyWithoutResultNestedInput
@@ -637,8 +709,10 @@ export type ResultUncheckedUpdateWithoutStudentInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   class_name?: Prisma.StringFieldUpdateOperationsInput | string
-  grade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  overall?: Prisma.FloatFieldUpdateOperationsInput | number
+  status?: Prisma.EnumResultStatusFieldUpdateOperationsInput | $Enums.ResultStatus
+  teacher_remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  principal_remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   assessments?: Prisma.AssessmentsUncheckedUpdateManyWithoutResultNestedInput
@@ -648,8 +722,10 @@ export type ResultUncheckedUpdateManyWithoutStudentInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   class_name?: Prisma.StringFieldUpdateOperationsInput | string
-  grade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  overall?: Prisma.FloatFieldUpdateOperationsInput | number
+  status?: Prisma.EnumResultStatusFieldUpdateOperationsInput | $Enums.ResultStatus
+  teacher_remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  principal_remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -690,8 +766,10 @@ export type ResultSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   uuid?: boolean
   student_uuid?: boolean
   class_name?: boolean
-  grade?: boolean
-  remark?: boolean
+  overall?: boolean
+  status?: boolean
+  teacher_remark?: boolean
+  principal_remark?: boolean
   created_at?: boolean
   updated_at?: boolean
   student?: boolean | Prisma.Result$studentArgs<ExtArgs>
@@ -704,8 +782,10 @@ export type ResultSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   uuid?: boolean
   student_uuid?: boolean
   class_name?: boolean
-  grade?: boolean
-  remark?: boolean
+  overall?: boolean
+  status?: boolean
+  teacher_remark?: boolean
+  principal_remark?: boolean
   created_at?: boolean
   updated_at?: boolean
   student?: boolean | Prisma.Result$studentArgs<ExtArgs>
@@ -716,8 +796,10 @@ export type ResultSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   uuid?: boolean
   student_uuid?: boolean
   class_name?: boolean
-  grade?: boolean
-  remark?: boolean
+  overall?: boolean
+  status?: boolean
+  teacher_remark?: boolean
+  principal_remark?: boolean
   created_at?: boolean
   updated_at?: boolean
   student?: boolean | Prisma.Result$studentArgs<ExtArgs>
@@ -728,13 +810,15 @@ export type ResultSelectScalar = {
   uuid?: boolean
   student_uuid?: boolean
   class_name?: boolean
-  grade?: boolean
-  remark?: boolean
+  overall?: boolean
+  status?: boolean
+  teacher_remark?: boolean
+  principal_remark?: boolean
   created_at?: boolean
   updated_at?: boolean
 }
 
-export type ResultOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "uuid" | "student_uuid" | "class_name" | "grade" | "remark" | "created_at" | "updated_at", ExtArgs["result"]["result"]>
+export type ResultOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "uuid" | "student_uuid" | "class_name" | "overall" | "status" | "teacher_remark" | "principal_remark" | "created_at" | "updated_at", ExtArgs["result"]["result"]>
 export type ResultInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   student?: boolean | Prisma.Result$studentArgs<ExtArgs>
   assessments?: boolean | Prisma.Result$assessmentsArgs<ExtArgs>
@@ -758,8 +842,10 @@ export type $ResultPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     uuid: string
     student_uuid: string
     class_name: string
-    grade: string | null
-    remark: string | null
+    overall: number
+    status: $Enums.ResultStatus
+    teacher_remark: string | null
+    principal_remark: string | null
     created_at: Date
     updated_at: Date
   }, ExtArgs["result"]["result"]>
@@ -1191,8 +1277,10 @@ export interface ResultFieldRefs {
   readonly uuid: Prisma.FieldRef<"Result", 'String'>
   readonly student_uuid: Prisma.FieldRef<"Result", 'String'>
   readonly class_name: Prisma.FieldRef<"Result", 'String'>
-  readonly grade: Prisma.FieldRef<"Result", 'String'>
-  readonly remark: Prisma.FieldRef<"Result", 'String'>
+  readonly overall: Prisma.FieldRef<"Result", 'Float'>
+  readonly status: Prisma.FieldRef<"Result", 'ResultStatus'>
+  readonly teacher_remark: Prisma.FieldRef<"Result", 'String'>
+  readonly principal_remark: Prisma.FieldRef<"Result", 'String'>
   readonly created_at: Prisma.FieldRef<"Result", 'DateTime'>
   readonly updated_at: Prisma.FieldRef<"Result", 'DateTime'>
 }

@@ -68,6 +68,44 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
   }
 };
 
+export const show: RequestHandler = async (req: Request, res: Response) => {
+  const { uuid } = req.params;
+  const token = req.headers.authorization || null;
+  verifyToken(token, res);
+  if (!uuid) {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'UUID is required',
+    });
+    return;
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { uuid },
+    include: {
+      heading: true,
+      students: true,
+    },
+  });
+
+  if (!user) {
+    res.status(404).json({
+      status: 404,
+      success: false,
+      message: 'User not found',
+    });
+    return;
+  }
+
+  res.status(200).json({
+    status: 200,
+    success: true,
+    message: 'User retrieved',
+    data: { user },
+  });
+};
+
 /**
  * Create a new user
  * @route POST /api/v1/users
