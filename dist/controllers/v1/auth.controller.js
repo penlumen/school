@@ -116,7 +116,6 @@ exports.register = register;
  * @param res
  */
 const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { email, password, role } = req.body;
     const schoolToken = req.headers['x-school-token'];
     if (!schoolToken) {
         res.status(400).json({
@@ -135,6 +134,7 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         });
         return;
     }
+    const { email, password, role } = req.body;
     if (!email || !password || !role) {
         res.status(400).json({
             status: 400,

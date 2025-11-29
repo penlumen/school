@@ -61,7 +61,15 @@ exports.index = index;
 const create = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { name, reg_number, parent_uuid, class_uuid } = req.body;
     const token = req.headers.authorization || null;
-    verifyToken(token, res);
+    const decoded = verifyToken(token, res);
+    if (decoded.role != 'ADMIN') {
+        res.status(400).json({
+            status: 400,
+            success: false,
+            message: 'Unauthorized',
+        });
+        return;
+    }
     if (!name || !parent_uuid || !class_uuid || !reg_number) {
         res.status(422).json({
             status: 422,
@@ -122,7 +130,15 @@ const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { uuid } = req.params;
     const { name, reg_number, parent_uuid, class_uuid } = req.body;
     const token = req.headers.authorization || null;
-    verifyToken(token, res);
+    const decoded = verifyToken(token, res);
+    if (decoded.role != 'ADMIN') {
+        res.status(400).json({
+            status: 400,
+            success: false,
+            message: 'Unauthorized',
+        });
+        return;
+    }
     if (!name || !parent_uuid || !class_uuid || !reg_number) {
         res.status(422).json({
             status: 422,
@@ -182,7 +198,15 @@ exports.update = update;
 const remove = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { uuid } = req.params;
     const token = req.headers.authorization || null;
-    verifyToken(token, res);
+    const decoded = verifyToken(token, res);
+    if (decoded.role != 'ADMIN') {
+        res.status(400).json({
+            status: 400,
+            success: false,
+            message: 'Unauthorized',
+        });
+        return;
+    }
     const branch_uuid = req.headers['x-branch-session'];
     if (!branch_uuid) {
         res.status(400).json({

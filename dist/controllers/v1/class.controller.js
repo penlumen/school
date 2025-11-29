@@ -35,6 +35,9 @@ const index = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 include: {
                     students: true,
                 },
+                orderBy: {
+                    created_at: 'asc',
+                },
             });
             const classesWithStudentCount = classes.map((cls) => (Object.assign(Object.assign({}, cls), { studentCount: cls.students.length })));
             classes = classesWithStudentCount;
@@ -73,7 +76,15 @@ const create = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const branch = req.headers['x-branch-session'];
     const { name, capacity, teacher_uuid } = req.body;
     const token = req.headers.authorization || null;
-    verifyToken(token, res);
+    const decoded = verifyToken(token, res);
+    if (decoded.role != 'ADMIN') {
+        res.status(400).json({
+            status: 400,
+            success: false,
+            message: 'Unauthorized',
+        });
+        return;
+    }
     if (branch && name) {
         const branch_uuid = branch;
         try {
@@ -135,7 +146,7 @@ const show = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 },
             });
             if (!classData) {
-                return res.status(404).json({
+                res.status(404).json({
                     status: 404,
                     success: false,
                     message: 'Class not found',
@@ -177,7 +188,15 @@ const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { uuid } = req.params;
     const { name, capacity, teacher_uuid } = req.body;
     const token = req.headers.authorization || null;
-    verifyToken(token, res);
+    const decoded = verifyToken(token, res);
+    if (decoded.role != 'ADMIN') {
+        res.status(400).json({
+            status: 400,
+            success: false,
+            message: 'Unauthorized',
+        });
+        return;
+    }
     try {
         const updatedClass = yield prisma_config_1.default.class.update({
             where: { uuid },
@@ -219,7 +238,15 @@ exports.update = update;
 const remove = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const token = req.headers.authorization || null;
     const { uuid } = req.params;
-    verifyToken(token, res);
+    const decoded = verifyToken(token, res);
+    if (decoded.role != 'ADMIN') {
+        res.status(400).json({
+            status: 400,
+            success: false,
+            message: 'Unauthorized',
+        });
+        return;
+    }
     try {
         const classWithStudents = yield prisma_config_1.default.class.findUnique({
             where: { uuid },
