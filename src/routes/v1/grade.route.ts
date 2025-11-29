@@ -1,5 +1,10 @@
 import { Router } from 'express';
-import { create, index, remove, update } from '../../controllers/v1/grade.controller';
+import {
+  create,
+  index,
+  remove,
+  update,
+} from '../../controllers/v1/grade.controller';
 
 const router = Router();
 

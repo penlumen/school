@@ -7,6 +7,7 @@ import userRoutes from './routes/v1/user.routes';
 import schoolRoutes from './routes/v1/branch.routes';
 import GradeRoutes from './routes/v1/grade.route';
 import classRoutes from './routes/v1/class.routes';
+import subjectRoutes from './routes/v1/subject.routes';
 import StudentRoutes from './routes/v1/student.routes';
 import dashboardRoutes from './routes/v1/dashboard.routes';
 
@@ -22,6 +23,7 @@ app.use('/api/v1', userRoutes);
 app.use('/api/v1', schoolRoutes);
 app.use('/api/v1', GradeRoutes);
 app.use('/api/v1', classRoutes);
+app.use('/api/v1', subjectRoutes);
 app.use('/api/v1', StudentRoutes);
 app.use('/api/v1', dashboardRoutes);
 

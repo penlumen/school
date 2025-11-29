@@ -120,9 +120,7 @@ export const login: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { email, password, role } = req.body;
   const schoolToken = req.headers['x-school-token'] as string;
-
   if (!schoolToken) {
     res.status(400).json({
       status: 400,
@@ -133,7 +131,6 @@ export const login: RequestHandler = async (
   }
 
   const school = await checkSchoolToken(schoolToken);
-
   if (!school) {
     res.status(400).json({
       status: 400,
@@ -143,6 +140,7 @@ export const login: RequestHandler = async (
     return;
   }
 
+  const { email, password, role } = req.body;
   if (!email || !password || !role) {
     res.status(400).json({
       status: 400,

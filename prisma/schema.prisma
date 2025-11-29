@@ -7,8 +7,8 @@
 // PRISMA SCHEMA FILE
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "./generated/prisma"
+  provider      = "prisma-client"
+  output        = "./generated/prisma"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
@@ -53,13 +53,13 @@ model User {
 }
 
 model AccessControl {
-  id          Int    @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   user_uuid   String
   branch_uuid String
   access      String
-  read        Boolean @default(false)
-  write       Boolean @default(false)
-  delete      Boolean @default(false)
+  read        Boolean  @default(false)
+  write       Boolean  @default(false)
+  delete      Boolean  @default(false)
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
@@ -119,6 +119,8 @@ model BranchAccess {
   user_uuid   String
   school_uuid String
   branch_uuid String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt @default(now())
 
   user   User?   @relation(fields: [user_uuid], references: [uuid])
   school School? @relation(fields: [school_uuid], references: [uuid])
@@ -177,6 +179,8 @@ model Subject {
   updated_at DateTime @updatedAt
 
   class Class? @relation(fields: [class_uuid], references: [uuid])
+
+  @@unique([class_uuid, name])
 }
 
 // ========== GRADE ==========
@@ -200,8 +204,8 @@ model Result {
   uuid         String   @unique @default(uuid())
   student_uuid String
   class_name   String
-  grade        String
-  remark       String
+  grade        String?
+  remark       String?
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
@@ -215,11 +219,11 @@ model Assessments {
   uuid        String   @unique @default(uuid())
   result_uuid String
   subject     String
-  assignment  Float
-  assesment   Float
-  examination Float
-  overall     Float
-  grade       String
+  assignment  Float    @default(0)
+  assesment   Float    @default(0)
+  examination Float    @default(0)
+  overall     Float    @default(0)
+  grade       String?
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
