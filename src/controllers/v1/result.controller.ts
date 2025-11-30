@@ -35,7 +35,12 @@ export const index: RequestHandler = async (
       },
       take: 20,
     });
-    res.json(results);
+    return res.status(200).json({
+      status: 200,
+      success: true,
+      message: 'Successfully fetched results',
+      data: { results },
+    });
   } catch (error) {
     return res.status(500).json({
       status: 500,
@@ -43,6 +48,46 @@ export const index: RequestHandler = async (
       message: 'Failed to fetch results',
     });
   }
+};
+
+export const view: RequestHandler = async (
+  req: Request,
+  res: Response,
+): Promise<any> => {
+  const token = req.headers.authorization || null;
+  verifyToken(token, res);
+
+  const { result_uuid } = req.params;
+  if (!result_uuid) {
+    return res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Result result_uuid is required',
+    });
+  }
+
+  const result = await prisma.result.findUnique({
+    where: {
+      uuid: result_uuid,
+    },
+    include: {
+      student: true,
+      assessments: true,
+    },
+  });
+  if (!result) {
+    return res.status(404).json({
+      status: 404,
+      success: false,
+      message: 'Result not found',
+    });
+  }
+  return res.status(200).json({
+    status: 200,
+    success: true,
+    message: 'Successfully fetched result',
+    data: { result },
+  });
 };
 
 export const show: RequestHandler = async (
@@ -65,7 +110,12 @@ export const show: RequestHandler = async (
         assessments: true,
       },
     });
-    res.json(results);
+    return res.status(200).json({
+      status: 200,
+      success: true,
+      message: 'Successfully fetched results',
+      data: { results },
+    });
   } catch (error) {
     return res.status(500).json({
       status: 500,
@@ -137,6 +187,7 @@ export const create: RequestHandler = async (
     status: 201,
     success: true,
     message: 'Result created successfully',
+    data: { result },
   });
 };
 
@@ -202,12 +253,16 @@ export const update: RequestHandler = async (
 
   await prisma.$transaction(updates);
 
-  await prisma.result.update({
+  const updated = await prisma.result.update({
     where: { uuid: result_uuid },
     data: {
       overall: total,
       teacher_remark: result?.teacher_remark ?? '',
       principal_remark: result?.principal_remark ?? '',
+    },
+    include: {
+      student: true,
+      assessments: true,
     },
   });
 
@@ -215,6 +270,7 @@ export const update: RequestHandler = async (
     status: 200,
     success: true,
     message: 'Result updated successfully',
+    data: { result: updated },
   });
 };
 

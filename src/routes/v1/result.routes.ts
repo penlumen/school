@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   show,
+  view,
   index,
   create,
   remove,
@@ -10,6 +11,7 @@ import {
 const router = Router();
 
 router.get('/result/index', index);
+router.get('/result/view/:result_uuid', view);
 router.get('/result/show/:student_uuid', show);
 router.post('/result/create/:student_uuid', create);
 router.patch('/result/update/:result_uuid', update);
