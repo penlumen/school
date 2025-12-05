@@ -1,6 +1,6 @@
 import prisma from '../../config/prisma.config';
 import { useMiddleware } from '../../config/middleware';
-import { RequestHandler, Request, Response } from 'express';
+import { Request, RequestHandler, Response } from 'express';
 
 const { verifyToken } = useMiddleware();
 
@@ -30,6 +30,26 @@ export const index: RequestHandler = async (
     success: true,
     message: 'Subjects retrieved',
     data: { subjects },
+  });
+};
+
+export const show: RequestHandler = async (
+  req: Request,
+  res: Response,
+): Promise<any> => {
+  const { subject_uuid } = req.params;
+  const token = req.headers.authorization || null;
+  verifyToken(token, res);
+
+  const subject = await prisma.subject.findUnique({
+    where: { uuid: subject_uuid },
+  });
+
+  res.status(200).json({
+    status: 200,
+    success: true,
+    message: 'Subject deleted',
+    data: { subject },
   });
 };
 
