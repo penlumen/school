@@ -24,6 +24,13 @@ enum Role {
   PARENT
 }
 
+enum Position {
+  ADMINISTRATIVE
+  ACARDEMIC
+  GUARDIAN
+  PARENT
+}
+
 enum ResultStatus {
   APPROVED
   PENDING
@@ -43,7 +50,7 @@ model User {
   avatar      String?
   address     String?
   role        Role     @default(ADMIN)
-  position    String   @default("guardian")
+  position    String   @default(GUARDIAN)
   status      String   @default("active")
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt

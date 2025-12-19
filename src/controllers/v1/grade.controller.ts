@@ -51,7 +51,7 @@ export const create: RequestHandler = async (req: Request, res: Response) => {
   const { score, grade, remark, description } = req.body;
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
-  if (decoded.role != 'ADMIN') {
+  if (decoded.position != 'ADMINISTRATIVE') {
     res.status(400).json({
       status: 400,
       success: false,
@@ -107,7 +107,7 @@ export const update: RequestHandler = async (req: Request, res: Response) => {
   const { score, grade, remark, description } = req.body;
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
-  if (decoded.role != 'ADMIN') {
+  if (decoded.position != 'ADMINISTRATIVE') {
     res.status(400).json({
       status: 400,
       success: false,
@@ -177,7 +177,7 @@ export const remove: RequestHandler = async (req: Request, res: Response) => {
   const { uuid } = req.params;
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
-  if (decoded.role != 'ADMIN') {
+  if (decoded.position != 'ADMINISTRATIVE') {
     res.status(400).json({
       status: 400,
       success: false,

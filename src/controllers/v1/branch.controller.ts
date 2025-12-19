@@ -1,6 +1,6 @@
 import prisma from '../../config/prisma.config';
 import { useMiddleware } from '../../config/middleware';
-import { RequestHandler, Request, Response } from 'express';
+import { Request, RequestHandler, Response } from 'express';
 
 const { verifyToken } = useMiddleware();
 
@@ -31,7 +31,7 @@ export const index: RequestHandler = async (
     res.status(200).json({
       status: 200,
       success: true,
-      message: 'Branche Acccess',
+      message: 'Branches Access',
       data: { branch_access },
     });
   } catch (error: any) {

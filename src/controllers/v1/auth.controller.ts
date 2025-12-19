@@ -45,7 +45,7 @@ export const register: RequestHandler = async (
           name,
           email,
           password: hashPassword,
-          position: 'administrator',
+          position: 'ADMINISTRATIVE',
         },
       });
 

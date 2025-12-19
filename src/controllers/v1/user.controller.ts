@@ -1,6 +1,6 @@
 import prisma from '../../config/prisma.config';
 import { useMiddleware } from '../../config/middleware';
-import { RequestHandler, Request, Response } from 'express';
+import { Request, RequestHandler, Response } from 'express';
 import { useHashing } from '../../config/hashing';
 
 const { createHash } = useHashing();
@@ -143,7 +143,7 @@ export const create: RequestHandler = async (
     return;
   }
 
-  if (decoded.role != 'ADMIN') {
+  if (decoded.position !== 'ADMINISTRATIVE') {
     res.status(400).json({
       status: 400,
       success: false,
@@ -282,7 +282,7 @@ export const update: RequestHandler = async (
     req.body;
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
-  if (decoded.role != 'ADMIN') {
+  if (decoded.position != 'ADMINISTRATIVE') {
     res.status(400).json({
       status: 400,
       success: false,
@@ -389,7 +389,7 @@ export const remove: RequestHandler = async (
   const token = req.headers.authorization || null;
   const { uuid } = req.params;
   const decoded = verifyToken(token, res);
-  if (decoded.role != 'ADMIN') {
+  if (decoded.position != 'ADMINISTRATIVE') {
     res.status(400).json({
       status: 400,
       success: false,

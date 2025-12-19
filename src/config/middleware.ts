@@ -6,6 +6,7 @@ type User = {
   uuid: string;
   role: string;
   email: string;
+  position: string;
   school_uuid: string;
 };
 
@@ -22,6 +23,7 @@ export const useMiddleware = () => {
         uuid: user.uuid,
         role: user.role,
         email: user.email,
+        position: user.position,
         school_uuid: user.school_uuid,
       },
       process.env.JWT_SECRET || 'default_secret',

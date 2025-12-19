@@ -33,7 +33,7 @@ export const index: RequestHandler = async (
         student: true,
         assessments: true,
       },
-      take: 20,
+      // take: 20,
     });
     return res.status(200).json({
       status: 200,

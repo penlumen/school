@@ -65,7 +65,7 @@ export const create: RequestHandler = async (
 ): Promise<any> => {
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
-  if (decoded.role != 'ADMIN') {
+  if (decoded.position != 'ADMINISTRATIVE') {
     res.status(400).json({
       status: 400,
       success: false,
@@ -131,7 +131,7 @@ export const update: RequestHandler = async (
 ): Promise<any> => {
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
-  if (decoded.role != 'ADMIN') {
+  if (decoded.position != 'ADMINISTRATIVE') {
     res.status(400).json({
       status: 400,
       success: false,
@@ -198,7 +198,7 @@ export const remove: RequestHandler = async (
 ): Promise<any> => {
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
-  if (decoded.role != 'ADMIN') {
+  if (decoded.position != 'ADMINISTRATIVE') {
     res.status(400).json({
       status: 400,
       success: false,

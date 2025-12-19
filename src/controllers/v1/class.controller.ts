@@ -1,6 +1,6 @@
 import prisma from '../../config/prisma.config';
 import { useMiddleware } from '../../config/middleware';
-import { RequestHandler, Request, Response } from 'express';
+import { Request, RequestHandler, Response } from 'express';
 
 const { verifyToken } = useMiddleware();
 
@@ -70,7 +70,7 @@ export const create: RequestHandler = async (req: Request, res: Response) => {
   const { name, capacity, teacher_uuid } = req.body;
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
-  if (decoded.role != 'ADMIN') {
+  if (decoded.postion != 'ADMINISTRATIVE') {
     res.status(400).json({
       status: 400,
       success: false,
@@ -186,7 +186,7 @@ export const update: RequestHandler = async (
   const { name, capacity, teacher_uuid } = req.body;
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
-  if (decoded.role != 'ADMIN') {
+  if (decoded.postion != 'ADMINISTRATIVE') {
     res.status(400).json({
       status: 400,
       success: false,
@@ -241,7 +241,7 @@ export const remove: RequestHandler = async (
   const token = req.headers.authorization || null;
   const { uuid } = req.params;
   const decoded = verifyToken(token, res);
-  if (decoded.role != 'ADMIN') {
+  if (decoded.postion != 'ADMINISTRATIVE') {
     res.status(400).json({
       status: 400,
       success: false,
