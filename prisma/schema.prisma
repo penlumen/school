@@ -50,7 +50,7 @@ model User {
   avatar      String?
   address     String?
   role        Role     @default(ADMIN)
-  position    String   @default(GUARDIAN)
+  position    Position @default(GUARDIAN)
   status      String   @default("active")
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
