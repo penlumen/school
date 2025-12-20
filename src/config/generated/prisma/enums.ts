@@ -19,6 +19,16 @@ export const Role = {
 export type Role = (typeof Role)[keyof typeof Role]
 
 
+export const Position = {
+  ADMINISTRATIVE: 'ADMINISTRATIVE',
+  ACARDEMIC: 'ACARDEMIC',
+  GUARDIAN: 'GUARDIAN',
+  PARENT: 'PARENT'
+} as const
+
+export type Position = (typeof Position)[keyof typeof Position]
+
+
 export const ResultStatus = {
   APPROVED: 'APPROVED',
   PENDING: 'PENDING',
