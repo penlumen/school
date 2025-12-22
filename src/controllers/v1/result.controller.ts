@@ -15,27 +15,6 @@ export const index: RequestHandler = async (
   const limit = Number(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
-  const studentSearchFilter = search
-    ? {
-      student: {
-        OR: [
-          {
-            name: {
-              contains: search,
-              mode: 'insensitive',
-            },
-          },
-          {
-            reg_number: {
-              contains: search,
-              mode: 'insensitive',
-            },
-          },
-        ],
-      },
-    } : {};
-
-
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
 
@@ -55,7 +34,22 @@ export const index: RequestHandler = async (
           ...(status && { status }),
           student: {
             branch_uuid,
-            ...(studentSearchFilter && studentSearchFilter),
+            ...(search && {
+              OR: [
+                {
+                  name: {
+                    contains: search,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  reg_number: {
+                    contains: search,
+                    mode: 'insensitive',
+                  },
+                },
+              ],
+            }),
           },
         },
         include: {
@@ -73,14 +67,28 @@ export const index: RequestHandler = async (
       });
 
       const classes_names = classes.map(c => c.name);
-
       results = await prisma.result.findMany({
         where: {
           ...(status && { status }),
           class_name: { in: classes_names },
           student: {
             branch_uuid,
-            ...(studentSearchFilter && studentSearchFilter),
+            ...(search && {
+              OR: [
+                {
+                  name: {
+                    contains: search,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  reg_number: {
+                    contains: search,
+                    mode: 'insensitive',
+                  },
+                },
+              ],
+            }),
           },
         },
         include: {
