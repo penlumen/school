@@ -10,9 +10,31 @@ export const index: RequestHandler = async (
 ): Promise<any> => {
   const branch_uuid = req.headers['x-branch-session'] as string;
   const status = req.query.status as 'PENDING' | 'APPROVED' | 'REJECTED' | undefined;
+  const search = req.query.search as string;
   const page = Number(req.query.page) || 1;
   const limit = Number(req.query.limit) || 10;
   const skip = (page - 1) * limit;
+
+  const studentSearchFilter = search
+    ? {
+      student: {
+        OR: [
+          {
+            name: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+          {
+            reg_number: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+        ],
+      },
+    } : {};
+
 
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
@@ -31,7 +53,10 @@ export const index: RequestHandler = async (
       results = await prisma.result.findMany({
         where: {
           ...(status && { status }),
-          student: { branch_uuid },
+          student: {
+            branch_uuid,
+            ...(studentSearchFilter && studentSearchFilter),
+          },
         },
         include: {
           student: true,
@@ -53,6 +78,10 @@ export const index: RequestHandler = async (
         where: {
           ...(status && { status }),
           class_name: { in: classes_names },
+          student: {
+            branch_uuid,
+            ...(studentSearchFilter && studentSearchFilter),
+          },
         },
         include: {
           student: true,
