@@ -35,7 +35,7 @@ export const index: RequestHandler = async (
           student: true,
           assessments: true,
         },
-        // take: 20
+        take: 10
       });
     } else {
       const classes = await prisma.class.findMany({
@@ -56,7 +56,7 @@ export const index: RequestHandler = async (
           student: true,
           assessments: true,
         },
-        take: 20
+        take: 10
       });
     }
 
