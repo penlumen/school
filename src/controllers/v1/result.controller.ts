@@ -1,6 +1,6 @@
 import prisma from '../../config/prisma.config';
 import { useMiddleware } from '../../config/middleware';
-import { RequestHandler, Request, Response } from 'express';
+import { Request, RequestHandler, Response } from 'express';
 
 const { verifyToken } = useMiddleware();
 
@@ -11,7 +11,8 @@ export const index: RequestHandler = async (
   const branch_uuid = req.headers['x-branch-session'] as string;
   const status = req.query.status as 'PENDING' | 'APPROVED' | 'REJECTED';
   const token = req.headers.authorization || null;
-  verifyToken(token, res);
+  const decoded = verifyToken(token, res);
+
   if (!branch_uuid) {
     res.status(400).json({
       status: 400,
@@ -20,21 +21,45 @@ export const index: RequestHandler = async (
     });
     return;
   }
-
+  let results;
   try {
-    const results = await prisma.result.findMany({
-      where: {
-        status,
-        student: {
-          branch_uuid,
+    if (decoded.position !== 'ADMINISTRATIVE') {
+      results = await prisma.result.findMany({
+        where: {
+          status,
+          student: {
+            branch_uuid,
+          },
         },
-      },
-      include: {
-        student: true,
-        assessments: true,
-      },
-      // take: 20,
-    });
+        include: {
+          student: true,
+          assessments: true,
+        },
+        // take: 20
+      });
+    } else {
+      const classes = await prisma.class.findMany({
+        where: { teacher_uuid: decoded.uuid },
+        select: { name: true },
+      });
+
+      const classes_names = classes.map(c => c.name);
+
+      results = await prisma.result.findMany({
+        where: {
+          class_name: {
+            in: classes_names,
+          },
+          status,
+        },
+        include: {
+          student: true,
+          assessments: true,
+        },
+        // take: 20
+      });
+    }
+
     return res.status(200).json({
       status: 200,
       success: true,
@@ -131,7 +156,7 @@ export const create: RequestHandler = async (
 ): Promise<any> => {
   const { student_uuid } = req.params;
   const token = req.headers.authorization || null;
-  verifyToken(token, res);
+  const decoded = verifyToken(token, res);
 
   const student = await prisma.student.findUnique({
     where: { uuid: student_uuid },
@@ -149,6 +174,14 @@ export const create: RequestHandler = async (
       status: 404,
       success: false,
       message: 'Student not found',
+    });
+  }
+
+  if (decoded.position !== 'ADMINISTRATIVE' || student.class.teacher_uuid !== decoded.uuid) {
+    return res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
     });
   }
 
@@ -198,7 +231,34 @@ export const update: RequestHandler = async (
   const { result_uuid } = req.params;
   const { result, assessments } = req.body;
   const token = req.headers.authorization || null;
-  verifyToken(token, res);
+  const decoded = verifyToken(token, res);
+
+  const existing = await prisma.result.findUnique({
+    where: { uuid: result_uuid },
+    include: {
+      student: {
+        include: {
+          class: true,
+        },
+      },
+    },
+  });
+
+  if (!existing) {
+    return res.status(404).json({
+      status: 404,
+      success: false,
+      message: 'Result not found',
+    });
+  }
+
+  if (decoded.position !== 'ADMINISTRATIVE' || existing.student && existing.student.class.teacher_uuid !== decoded.uuid) {
+    return res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
+    });
+  }
 
   if (!Array.isArray(assessments)) {
     return res.status(400).json({
@@ -280,7 +340,15 @@ export const remove: RequestHandler = async (
 ): Promise<any> => {
   const { result_uuid } = req.params;
   const token = req.headers.authorization || null;
-  verifyToken(token, res);
+  const decoded = verifyToken(token, res);
+  if (decoded.position != 'ADMINISTRATIVE') {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
 
   try {
     await prisma.assessments.deleteMany({
