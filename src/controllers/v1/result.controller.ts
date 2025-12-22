@@ -56,7 +56,7 @@ export const index: RequestHandler = async (
           student: true,
           assessments: true,
         },
-        // take: 20
+        take: 20
       });
     }
 
