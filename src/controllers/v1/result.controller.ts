@@ -9,33 +9,37 @@ export const index: RequestHandler = async (
   res: Response,
 ): Promise<any> => {
   const branch_uuid = req.headers['x-branch-session'] as string;
-  const status = req.query.status as 'PENDING' | 'APPROVED' | 'REJECTED';
+  const status = req.query.status as 'PENDING' | 'APPROVED' | 'REJECTED' | undefined;
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
 
   if (!branch_uuid) {
-    res.status(400).json({
-      status: 400,
+    return res.status(400).json({
       success: false,
       message: 'Branch session header is required',
     });
-    return;
   }
-  let results;
+
   try {
-    if (decoded.position == 'ADMINISTRATIVE') {
+    let results;
+
+    if (decoded.position === 'ADMINISTRATIVE') {
       results = await prisma.result.findMany({
         where: {
-          status,
-          student: {
-            branch_uuid,
-          },
+          ...(status && { status }),
+          student: { branch_uuid },
         },
         include: {
           student: true,
           assessments: true,
         },
-        take: 10
+        orderBy: { created_at: 'desc' },
+        take: limit,
+        skip,
       });
     } else {
       const classes = await prisma.class.findMany({
@@ -47,28 +51,29 @@ export const index: RequestHandler = async (
 
       results = await prisma.result.findMany({
         where: {
-          class_name: {
-            in: classes_names,
-          },
-          status,
+          ...(status && { status }),
+          class_name: { in: classes_names },
         },
         include: {
           student: true,
           assessments: true,
         },
-        take: 10
+        orderBy: { created_at: 'desc' },
+        take: limit,
+        skip,
       });
     }
 
     return res.status(200).json({
-      status: 200,
       success: true,
-      message: 'Successfully fetched results',
-      data: { results },
+      data: {
+        results,
+        page,
+        hasMore: results.length === limit,
+      },
     });
   } catch (error) {
     return res.status(500).json({
-      status: 500,
       success: false,
       message: 'Failed to fetch results',
     });
