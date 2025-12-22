@@ -23,7 +23,7 @@ export const index: RequestHandler = async (
   }
   let results;
   try {
-    if (decoded.position !== 'ADMINISTRATIVE') {
+    if (decoded.position == 'ADMINISTRATIVE') {
       results = await prisma.result.findMany({
         where: {
           status,
@@ -309,7 +309,7 @@ export const update: RequestHandler = async (
   );
 
   const total = computedAssessments.reduce((sum, a) => sum + a.overall, 0);
-  const average = total / computedAssessments.length;
+  // const average = total / computedAssessments.length;
 
   await prisma.$transaction(updates);
 
