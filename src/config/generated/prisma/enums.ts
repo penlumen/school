@@ -21,7 +21,7 @@ export type Role = (typeof Role)[keyof typeof Role]
 
 export const Position = {
   ADMINISTRATIVE: 'ADMINISTRATIVE',
-  ACARDEMIC: 'ACARDEMIC',
+  ACADEMIC: 'ACADEMIC',
   GUARDIAN: 'GUARDIAN',
   PARENT: 'PARENT'
 } as const
