@@ -294,7 +294,7 @@ export const update: RequestHandler = async (
     });
   }
 
-  if (decoded.position !== 'ADMINISTRATIVE' || existing.student && existing.student.class.teacher_uuid !== decoded.uuid) {
+  if (decoded.position !== 'ADMINISTRATIVE' || (existing.student && existing.student.class.teacher_uuid !== decoded.uuid)) {
     return res.status(400).json({
       status: 400,
       success: false,
