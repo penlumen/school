@@ -294,13 +294,17 @@ export const update: RequestHandler = async (
     });
   }
 
-  if (decoded.position !== 'ADMINISTRATIVE' || (existing.student && existing.student.class.teacher_uuid !== decoded.uuid)) {
-    return res.status(400).json({
-      status: 400,
+  const isAdmin = decoded.position === 'ADMINISTRATIVE';
+  const isClassTeacher = existing.student && existing.student.class.teacher_uuid === decoded.uuid;
+
+  if (!isAdmin && !isClassTeacher) {
+    return res.status(403).json({
+      status: 403,
       success: false,
       message: 'Unauthorized',
     });
   }
+
 
   if (!Array.isArray(assessments)) {
     return res.status(400).json({
