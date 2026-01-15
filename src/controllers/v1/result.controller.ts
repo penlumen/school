@@ -249,20 +249,12 @@ export const view: RequestHandler = async (
     success: true,
     message: 'Successfully fetched result',
     data: {
-      uuid: result.uuid,
-      student: result.student,
-      reports: {
-        class: result.class_name,
-        session: result.calendar?.session,
-        term: result.calendar?.term,
-        position: position,
-        total_students: totalStudents,
-        closing_date: result.calendar?.close_date,
-        resumption_date: result.calendar?.open_date,
-      },
+      result: result,
       assessments: enrichedAssessments,
       summary: {
+        position: position,
         total_scores: result.overall,
+        total_students: totalStudents,
         average: average.toFixed(1),
       },
       grading_system: grading.map(g => ({
@@ -270,8 +262,6 @@ export const view: RequestHandler = async (
         score: g.score,
         remark: g.remark
       })),
-      teacher_remark: result.teacher_remark,
-      principal_remark: result.principal_remark,
     },
   });
 };
