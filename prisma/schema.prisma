@@ -151,6 +151,8 @@ model Calendar {
   term        String?
   open_date   DateTime
   close_date  DateTime
+  created_at  DateTime @default(now())
+  updated_at  DateTime @default(now()) @updatedAt
 
   results Result[]
   branch  Branch   @relation(fields: [branch_uuid], references: [uuid])
@@ -244,6 +246,8 @@ model Result {
 
   calendar Calendar? @relation(fields: [calendar_uuid], references: [uuid])
   student  Student?  @relation(fields: [student_uuid], references: [uuid])
+
+  @@unique([class_name, student_uuid])
 }
 
 // ========== ASSESSMENTS ==========

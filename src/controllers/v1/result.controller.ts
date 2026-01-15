@@ -4,6 +4,11 @@ import { Request, RequestHandler, Response } from 'express';
 
 const { verifyToken } = useMiddleware();
 
+/**
+ * List all results
+ * @param req
+ * @param res
+ */
 export const index: RequestHandler = async (
   req: Request,
   res: Response,
@@ -117,46 +122,11 @@ export const index: RequestHandler = async (
   }
 };
 
-export const view: RequestHandler = async (
-  req: Request,
-  res: Response,
-): Promise<any> => {
-  const token = req.headers.authorization || null;
-  verifyToken(token, res);
-
-  const { result_uuid } = req.params;
-  if (!result_uuid) {
-    return res.status(400).json({
-      status: 400,
-      success: false,
-      message: 'Result result_uuid is required',
-    });
-  }
-
-  const result = await prisma.result.findUnique({
-    where: {
-      uuid: result_uuid,
-    },
-    include: {
-      student: true,
-      assessments: true,
-    },
-  });
-  if (!result) {
-    return res.status(404).json({
-      status: 404,
-      success: false,
-      message: 'Result not found',
-    });
-  }
-  return res.status(200).json({
-    status: 200,
-    success: true,
-    message: 'Successfully fetched result',
-    data: { result },
-  });
-};
-
+/**
+ * A student results
+ * @param req
+ * @param res
+ */
 export const show: RequestHandler = async (
   req: Request,
   res: Response,
@@ -192,82 +162,228 @@ export const show: RequestHandler = async (
   }
 };
 
+
+/**
+ * Result details
+ * @param req
+ * @param res
+ */
+export const view: RequestHandler = async (
+  req: Request,
+  res: Response,
+): Promise<any> => {
+  const token = req.headers.authorization || null;
+  verifyToken(token, res);
+
+  const branch_uuid = req.headers['x-branch-session'] as string;
+  const { result_uuid } = req.params;
+
+  if (!result_uuid) {
+    return res.status(400).json({ status: 400, success: false, message: 'Result uuid is required' });
+  }
+
+  // 1. Fetch the specific result and the grading system
+  const [grading, result] = await Promise.all([
+    prisma.grade.findMany({ where: { branch_uuid }, orderBy: { score: 'desc' } }),
+    prisma.result.findUnique({
+      where: { uuid: result_uuid },
+      include: {
+        student: true,
+        assessments: true,
+        calendar: true,
+      },
+    }),
+  ]);
+
+  if (!result) {
+    return res.status(404).json({ status: 404, success: false, message: 'Result not found' });
+  }
+
+  // 2. Fetch all results in the same class and session to calculate Position
+  const classResults = await prisma.result.findMany({
+    where: {
+      class_name: result.class_name,
+      calendar_uuid: result.calendar_uuid,
+    },
+    select: {
+      uuid: true,
+      overall: true,
+    },
+    orderBy: {
+      overall: 'desc',
+    },
+  });
+
+  // 3. Calculate Position and Total Students
+  const totalStudents = classResults.length;
+  // Position is the index in the sorted list + 1
+  const positionIndex = classResults.findIndex((r) => r.uuid === result.uuid);
+  const position = positionIndex !== -1 ? positionIndex + 1 : 'N/A';
+
+  // 4. Helper for Grade logic
+  const getGradeInfo = (score: number) => {
+    const match = grading.find((g) => score >= g.score);
+    return {
+      grade: match?.grade || 'F',
+      remark: match?.remark || 'Failed',
+    };
+  };
+
+  // 5. Compute assessments with Grades
+  const enrichedAssessments = result.assessments.map((asm) => {
+    const total = Number(asm.assignment) + Number(asm.assessment) + Number(asm.examination);
+    const { grade, remark } = getGradeInfo(total);
+    return {
+      ...asm,
+      total,
+      grade,
+      remark,
+    };
+  });
+
+  const average = enrichedAssessments.length > 0 ? result.overall / enrichedAssessments.length : 0;
+
+  // 6. Return payload matching report card requirements
+  return res.status(200).json({
+    status: 200,
+    success: true,
+    message: 'Successfully fetched result',
+    data: {
+      student_info: {
+        name: result.student?.name,
+        class: result.class_name,
+        session: result.calendar?.session,
+        term: result.calendar?.term,
+        position: position,
+        total_students: totalStudents,
+        closing_date: result.calendar?.close_date,
+        resumption_date: result.calendar?.open_date,
+      },
+      assessments: enrichedAssessments,
+      summary: {
+        total_scores: result.overall,
+        average: average.toFixed(1),
+      },
+      grading_system: grading.map(g => ({
+        grade: g.grade,
+        score: g.score,
+        remark: g.remark
+      })),
+      teacher_remark: result.teacher_remark,
+      principal_remark: result.principal_remark,
+    },
+  });
+};
+
+
+/**
+ * Generate/Refresh result
+ * @param req
+ * @param res
+ */
 export const create: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<any> => {
-  const { student_uuid } = req.params;
-  const token = req.headers.authorization || null;
-  const decoded = verifyToken(token, res);
+  try {
+    const { student_uuid } = req.params;
+    const token = req.headers.authorization || null;
+    const decoded = verifyToken(token, res);
 
-  const student = await prisma.student.findUnique({
-    where: { uuid: student_uuid },
-    include: {
-      class: {
-        include: {
-          subjects: true,
+    const student = await prisma.student.findUnique({
+      where: { uuid: student_uuid },
+      include: {
+        class: { include: { subjects: true } },
+      },
+    });
+
+    if (!student) {
+      return res.status(404).json({ status: 404, success: false, message: 'Student not found' });
+    }
+
+    // Authorization Check
+    const isAdmin = decoded.position === 'ADMINISTRATIVE';
+    const isClassTeacher = student.class.teacher_uuid === decoded.uuid;
+
+    if (!isAdmin && !isClassTeacher) {
+      return res.status(403).json({ status: 403, success: false, message: 'Unauthorized' });
+    }
+
+    const existingResult = await prisma.result.findFirst({
+      where: {
+        student_uuid: student.uuid,
+        class_name: student.class.name,
+      },
+    });
+
+    const calendar = await prisma.calendar.findFirst({
+      orderBy: { created_at: 'desc' },
+    });
+
+    const result = await prisma.result.upsert({
+      where: {
+        class_name_student_uuid: {
+          student_uuid: student.uuid,
+          class_name: student.class.name,
         },
       },
-    },
-  });
-
-  if (!student) {
-    return res.status(404).json({
-      status: 404,
-      success: false,
-      message: 'Student not found',
+      update: {
+        calendar_uuid: calendar?.uuid,
+        class_uuid: student.class.uuid,
+      },
+      create: {
+        student_uuid: student.uuid,
+        calendar_uuid: calendar?.uuid,
+        class_uuid: student.class.uuid,
+        class_name: student.class.name,
+      },
     });
-  }
 
-  const isAdmin = decoded.position === 'ADMINISTRATIVE';
-  const isClassTeacher = student && student.class.teacher_uuid === decoded.uuid;
+    await prisma.$transaction(
+      student.class.subjects.map((subject) =>
+        prisma.assessments.upsert({
+          where: {
+            result_uuid_subject: {
+              result_uuid: result.uuid,
+              subject: subject.name,
+            },
+          },
+          update: {},
+          create: {
+            result_uuid: result.uuid,
+            subject: subject.name,
+          },
+        }),
+      ),
+    );
 
-  if (!isAdmin && !isClassTeacher) {
-    return res.status(403).json({
-      status: 403,
-      success: false,
-      message: 'Unauthorized',
+    if (existingResult) {
+      return res.status(200).json({
+        status: 200,
+        success: true,
+        message: 'Result refreshed successfully',
+        data: { result },
+      });
+    }
+
+    return res.status(201).json({
+      status: 201,
+      success: true,
+      message: 'Result created successfully',
+      data: { result },
     });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 500, success: false, message: 'Internal Server Error' });
   }
-  const existingResult = await prisma.result.findFirst({
-    where: {
-      student_uuid: student!.uuid,
-      class_name: student!.class.name,
-    },
-  });
-
-  if (existingResult) {
-    return res.status(400).json({
-      status: 400,
-      success: false,
-      message: `Result already exists for this student in ${
-        student!.class.name
-      }`,
-    });
-  }
-
-  const result = await prisma.result.create({
-    data: {
-      student_uuid: student!.uuid,
-      class_name: student!.class.name,
-    },
-  });
-
-  await prisma.assessments.createMany({
-    data: student.class.subjects.map((subject) => ({
-      result_uuid: result.uuid,
-      subject: subject.name,
-    })),
-  });
-
-  return res.status(201).json({
-    status: 201,
-    success: true,
-    message: 'Result created successfully',
-    data: { result },
-  });
 };
 
+
+/**
+ * Update result data
+ * @param req
+ * @param res
+ */
 export const update: RequestHandler = async (
   req: Request,
   res: Response,
@@ -365,8 +481,8 @@ export const update: RequestHandler = async (
     where: { uuid: result_uuid },
     data: {
       overall: total,
-      teacher_remark: result?.teacher_remark ?? '',
-      principal_remark: result?.principal_remark ?? '',
+      teacher_remark: result?.teacher_remark,
+      principal_remark: result?.principal_remark,
     },
     include: {
       student: true,
@@ -382,6 +498,11 @@ export const update: RequestHandler = async (
   });
 };
 
+/**
+ * Delete result data
+ * @param req
+ * @param res
+ */
 export const remove: RequestHandler = async (
   req: Request,
   res: Response,

@@ -11,6 +11,7 @@ import subjectRoutes from './routes/v1/subject.routes';
 import StudentRoutes from './routes/v1/student.routes';
 import resultRoutes from './routes/v1/result.routes';
 import dashboardRoutes from './routes/v1/dashboard.routes';
+import CalendarRoute from './routes/v1/calendar.route';
 
 dotenv.config();
 const app = express();
@@ -23,6 +24,7 @@ app.use('/api/v1', authRoutes);
 app.use('/api/v1', userRoutes);
 app.use('/api/v1', schoolRoutes);
 app.use('/api/v1', GradeRoutes);
+app.use('/api/v1', CalendarRoute);
 app.use('/api/v1', classRoutes);
 app.use('/api/v1', subjectRoutes);
 app.use('/api/v1', StudentRoutes);
