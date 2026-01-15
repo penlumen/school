@@ -196,7 +196,7 @@ export type CalendarGroupByOutputType = {
   uuid: string
   branch_uuid: string
   session: string
-  term: string
+  term: string | null
   open_date: Date
   close_date: Date
   _count: CalendarCountAggregateOutputType | null
@@ -229,11 +229,11 @@ export type CalendarWhereInput = {
   uuid?: Prisma.StringFilter<"Calendar"> | string
   branch_uuid?: Prisma.StringFilter<"Calendar"> | string
   session?: Prisma.StringFilter<"Calendar"> | string
-  term?: Prisma.StringFilter<"Calendar"> | string
+  term?: Prisma.StringNullableFilter<"Calendar"> | string | null
   open_date?: Prisma.DateTimeFilter<"Calendar"> | Date | string
   close_date?: Prisma.DateTimeFilter<"Calendar"> | Date | string
-  branch?: Prisma.XOR<Prisma.BranchNullableScalarRelationFilter, Prisma.BranchWhereInput> | null
-  result?: Prisma.ResultListRelationFilter
+  results?: Prisma.ResultListRelationFilter
+  branch?: Prisma.XOR<Prisma.BranchScalarRelationFilter, Prisma.BranchWhereInput>
 }
 
 export type CalendarOrderByWithRelationInput = {
@@ -241,11 +241,11 @@ export type CalendarOrderByWithRelationInput = {
   uuid?: Prisma.SortOrder
   branch_uuid?: Prisma.SortOrder
   session?: Prisma.SortOrder
-  term?: Prisma.SortOrder
+  term?: Prisma.SortOrderInput | Prisma.SortOrder
   open_date?: Prisma.SortOrder
   close_date?: Prisma.SortOrder
+  results?: Prisma.ResultOrderByRelationAggregateInput
   branch?: Prisma.BranchOrderByWithRelationInput
-  result?: Prisma.ResultOrderByRelationAggregateInput
 }
 
 export type CalendarWhereUniqueInput = Prisma.AtLeast<{
@@ -256,11 +256,11 @@ export type CalendarWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.CalendarWhereInput | Prisma.CalendarWhereInput[]
   branch_uuid?: Prisma.StringFilter<"Calendar"> | string
   session?: Prisma.StringFilter<"Calendar"> | string
-  term?: Prisma.StringFilter<"Calendar"> | string
+  term?: Prisma.StringNullableFilter<"Calendar"> | string | null
   open_date?: Prisma.DateTimeFilter<"Calendar"> | Date | string
   close_date?: Prisma.DateTimeFilter<"Calendar"> | Date | string
-  branch?: Prisma.XOR<Prisma.BranchNullableScalarRelationFilter, Prisma.BranchWhereInput> | null
-  result?: Prisma.ResultListRelationFilter
+  results?: Prisma.ResultListRelationFilter
+  branch?: Prisma.XOR<Prisma.BranchScalarRelationFilter, Prisma.BranchWhereInput>
 }, "id" | "uuid">
 
 export type CalendarOrderByWithAggregationInput = {
@@ -268,7 +268,7 @@ export type CalendarOrderByWithAggregationInput = {
   uuid?: Prisma.SortOrder
   branch_uuid?: Prisma.SortOrder
   session?: Prisma.SortOrder
-  term?: Prisma.SortOrder
+  term?: Prisma.SortOrderInput | Prisma.SortOrder
   open_date?: Prisma.SortOrder
   close_date?: Prisma.SortOrder
   _count?: Prisma.CalendarCountOrderByAggregateInput
@@ -286,7 +286,7 @@ export type CalendarScalarWhereWithAggregatesInput = {
   uuid?: Prisma.StringWithAggregatesFilter<"Calendar"> | string
   branch_uuid?: Prisma.StringWithAggregatesFilter<"Calendar"> | string
   session?: Prisma.StringWithAggregatesFilter<"Calendar"> | string
-  term?: Prisma.StringWithAggregatesFilter<"Calendar"> | string
+  term?: Prisma.StringNullableWithAggregatesFilter<"Calendar"> | string | null
   open_date?: Prisma.DateTimeWithAggregatesFilter<"Calendar"> | Date | string
   close_date?: Prisma.DateTimeWithAggregatesFilter<"Calendar"> | Date | string
 }
@@ -294,11 +294,11 @@ export type CalendarScalarWhereWithAggregatesInput = {
 export type CalendarCreateInput = {
   uuid?: string
   session: string
-  term: string
+  term?: string | null
   open_date: Date | string
   close_date: Date | string
-  branch?: Prisma.BranchCreateNestedOneWithoutCalendarInput
-  result?: Prisma.ResultCreateNestedManyWithoutCalendarInput
+  results?: Prisma.ResultCreateNestedManyWithoutCalendarInput
+  branch: Prisma.BranchCreateNestedOneWithoutCalendarInput
 }
 
 export type CalendarUncheckedCreateInput = {
@@ -306,20 +306,20 @@ export type CalendarUncheckedCreateInput = {
   uuid?: string
   branch_uuid: string
   session: string
-  term: string
+  term?: string | null
   open_date: Date | string
   close_date: Date | string
-  result?: Prisma.ResultUncheckedCreateNestedManyWithoutCalendarInput
+  results?: Prisma.ResultUncheckedCreateNestedManyWithoutCalendarInput
 }
 
 export type CalendarUpdateInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   session?: Prisma.StringFieldUpdateOperationsInput | string
-  term?: Prisma.StringFieldUpdateOperationsInput | string
+  term?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   open_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   close_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  branch?: Prisma.BranchUpdateOneWithoutCalendarNestedInput
-  result?: Prisma.ResultUpdateManyWithoutCalendarNestedInput
+  results?: Prisma.ResultUpdateManyWithoutCalendarNestedInput
+  branch?: Prisma.BranchUpdateOneRequiredWithoutCalendarNestedInput
 }
 
 export type CalendarUncheckedUpdateInput = {
@@ -327,10 +327,10 @@ export type CalendarUncheckedUpdateInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   branch_uuid?: Prisma.StringFieldUpdateOperationsInput | string
   session?: Prisma.StringFieldUpdateOperationsInput | string
-  term?: Prisma.StringFieldUpdateOperationsInput | string
+  term?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   open_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   close_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  result?: Prisma.ResultUncheckedUpdateManyWithoutCalendarNestedInput
+  results?: Prisma.ResultUncheckedUpdateManyWithoutCalendarNestedInput
 }
 
 export type CalendarCreateManyInput = {
@@ -338,7 +338,7 @@ export type CalendarCreateManyInput = {
   uuid?: string
   branch_uuid: string
   session: string
-  term: string
+  term?: string | null
   open_date: Date | string
   close_date: Date | string
 }
@@ -346,7 +346,7 @@ export type CalendarCreateManyInput = {
 export type CalendarUpdateManyMutationInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   session?: Prisma.StringFieldUpdateOperationsInput | string
-  term?: Prisma.StringFieldUpdateOperationsInput | string
+  term?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   open_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   close_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -356,7 +356,7 @@ export type CalendarUncheckedUpdateManyInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   branch_uuid?: Prisma.StringFieldUpdateOperationsInput | string
   session?: Prisma.StringFieldUpdateOperationsInput | string
-  term?: Prisma.StringFieldUpdateOperationsInput | string
+  term?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   open_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   close_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -456,39 +456,39 @@ export type CalendarUncheckedUpdateManyWithoutBranchNestedInput = {
   deleteMany?: Prisma.CalendarScalarWhereInput | Prisma.CalendarScalarWhereInput[]
 }
 
-export type CalendarCreateNestedOneWithoutResultInput = {
-  create?: Prisma.XOR<Prisma.CalendarCreateWithoutResultInput, Prisma.CalendarUncheckedCreateWithoutResultInput>
-  connectOrCreate?: Prisma.CalendarCreateOrConnectWithoutResultInput
+export type CalendarCreateNestedOneWithoutResultsInput = {
+  create?: Prisma.XOR<Prisma.CalendarCreateWithoutResultsInput, Prisma.CalendarUncheckedCreateWithoutResultsInput>
+  connectOrCreate?: Prisma.CalendarCreateOrConnectWithoutResultsInput
   connect?: Prisma.CalendarWhereUniqueInput
 }
 
-export type CalendarUpdateOneWithoutResultNestedInput = {
-  create?: Prisma.XOR<Prisma.CalendarCreateWithoutResultInput, Prisma.CalendarUncheckedCreateWithoutResultInput>
-  connectOrCreate?: Prisma.CalendarCreateOrConnectWithoutResultInput
-  upsert?: Prisma.CalendarUpsertWithoutResultInput
+export type CalendarUpdateOneWithoutResultsNestedInput = {
+  create?: Prisma.XOR<Prisma.CalendarCreateWithoutResultsInput, Prisma.CalendarUncheckedCreateWithoutResultsInput>
+  connectOrCreate?: Prisma.CalendarCreateOrConnectWithoutResultsInput
+  upsert?: Prisma.CalendarUpsertWithoutResultsInput
   disconnect?: Prisma.CalendarWhereInput | boolean
   delete?: Prisma.CalendarWhereInput | boolean
   connect?: Prisma.CalendarWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.CalendarUpdateToOneWithWhereWithoutResultInput, Prisma.CalendarUpdateWithoutResultInput>, Prisma.CalendarUncheckedUpdateWithoutResultInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CalendarUpdateToOneWithWhereWithoutResultsInput, Prisma.CalendarUpdateWithoutResultsInput>, Prisma.CalendarUncheckedUpdateWithoutResultsInput>
 }
 
 export type CalendarCreateWithoutBranchInput = {
   uuid?: string
   session: string
-  term: string
+  term?: string | null
   open_date: Date | string
   close_date: Date | string
-  result?: Prisma.ResultCreateNestedManyWithoutCalendarInput
+  results?: Prisma.ResultCreateNestedManyWithoutCalendarInput
 }
 
 export type CalendarUncheckedCreateWithoutBranchInput = {
   id?: number
   uuid?: string
   session: string
-  term: string
+  term?: string | null
   open_date: Date | string
   close_date: Date | string
-  result?: Prisma.ResultUncheckedCreateNestedManyWithoutCalendarInput
+  results?: Prisma.ResultUncheckedCreateNestedManyWithoutCalendarInput
 }
 
 export type CalendarCreateOrConnectWithoutBranchInput = {
@@ -525,61 +525,61 @@ export type CalendarScalarWhereInput = {
   uuid?: Prisma.StringFilter<"Calendar"> | string
   branch_uuid?: Prisma.StringFilter<"Calendar"> | string
   session?: Prisma.StringFilter<"Calendar"> | string
-  term?: Prisma.StringFilter<"Calendar"> | string
+  term?: Prisma.StringNullableFilter<"Calendar"> | string | null
   open_date?: Prisma.DateTimeFilter<"Calendar"> | Date | string
   close_date?: Prisma.DateTimeFilter<"Calendar"> | Date | string
 }
 
-export type CalendarCreateWithoutResultInput = {
+export type CalendarCreateWithoutResultsInput = {
   uuid?: string
   session: string
-  term: string
+  term?: string | null
   open_date: Date | string
   close_date: Date | string
-  branch?: Prisma.BranchCreateNestedOneWithoutCalendarInput
+  branch: Prisma.BranchCreateNestedOneWithoutCalendarInput
 }
 
-export type CalendarUncheckedCreateWithoutResultInput = {
+export type CalendarUncheckedCreateWithoutResultsInput = {
   id?: number
   uuid?: string
   branch_uuid: string
   session: string
-  term: string
+  term?: string | null
   open_date: Date | string
   close_date: Date | string
 }
 
-export type CalendarCreateOrConnectWithoutResultInput = {
+export type CalendarCreateOrConnectWithoutResultsInput = {
   where: Prisma.CalendarWhereUniqueInput
-  create: Prisma.XOR<Prisma.CalendarCreateWithoutResultInput, Prisma.CalendarUncheckedCreateWithoutResultInput>
+  create: Prisma.XOR<Prisma.CalendarCreateWithoutResultsInput, Prisma.CalendarUncheckedCreateWithoutResultsInput>
 }
 
-export type CalendarUpsertWithoutResultInput = {
-  update: Prisma.XOR<Prisma.CalendarUpdateWithoutResultInput, Prisma.CalendarUncheckedUpdateWithoutResultInput>
-  create: Prisma.XOR<Prisma.CalendarCreateWithoutResultInput, Prisma.CalendarUncheckedCreateWithoutResultInput>
+export type CalendarUpsertWithoutResultsInput = {
+  update: Prisma.XOR<Prisma.CalendarUpdateWithoutResultsInput, Prisma.CalendarUncheckedUpdateWithoutResultsInput>
+  create: Prisma.XOR<Prisma.CalendarCreateWithoutResultsInput, Prisma.CalendarUncheckedCreateWithoutResultsInput>
   where?: Prisma.CalendarWhereInput
 }
 
-export type CalendarUpdateToOneWithWhereWithoutResultInput = {
+export type CalendarUpdateToOneWithWhereWithoutResultsInput = {
   where?: Prisma.CalendarWhereInput
-  data: Prisma.XOR<Prisma.CalendarUpdateWithoutResultInput, Prisma.CalendarUncheckedUpdateWithoutResultInput>
+  data: Prisma.XOR<Prisma.CalendarUpdateWithoutResultsInput, Prisma.CalendarUncheckedUpdateWithoutResultsInput>
 }
 
-export type CalendarUpdateWithoutResultInput = {
+export type CalendarUpdateWithoutResultsInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   session?: Prisma.StringFieldUpdateOperationsInput | string
-  term?: Prisma.StringFieldUpdateOperationsInput | string
+  term?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   open_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   close_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  branch?: Prisma.BranchUpdateOneWithoutCalendarNestedInput
+  branch?: Prisma.BranchUpdateOneRequiredWithoutCalendarNestedInput
 }
 
-export type CalendarUncheckedUpdateWithoutResultInput = {
+export type CalendarUncheckedUpdateWithoutResultsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   branch_uuid?: Prisma.StringFieldUpdateOperationsInput | string
   session?: Prisma.StringFieldUpdateOperationsInput | string
-  term?: Prisma.StringFieldUpdateOperationsInput | string
+  term?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   open_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   close_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -588,7 +588,7 @@ export type CalendarCreateManyBranchInput = {
   id?: number
   uuid?: string
   session: string
-  term: string
+  term?: string | null
   open_date: Date | string
   close_date: Date | string
 }
@@ -596,27 +596,27 @@ export type CalendarCreateManyBranchInput = {
 export type CalendarUpdateWithoutBranchInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   session?: Prisma.StringFieldUpdateOperationsInput | string
-  term?: Prisma.StringFieldUpdateOperationsInput | string
+  term?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   open_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   close_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  result?: Prisma.ResultUpdateManyWithoutCalendarNestedInput
+  results?: Prisma.ResultUpdateManyWithoutCalendarNestedInput
 }
 
 export type CalendarUncheckedUpdateWithoutBranchInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   session?: Prisma.StringFieldUpdateOperationsInput | string
-  term?: Prisma.StringFieldUpdateOperationsInput | string
+  term?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   open_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   close_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  result?: Prisma.ResultUncheckedUpdateManyWithoutCalendarNestedInput
+  results?: Prisma.ResultUncheckedUpdateManyWithoutCalendarNestedInput
 }
 
 export type CalendarUncheckedUpdateManyWithoutBranchInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   session?: Prisma.StringFieldUpdateOperationsInput | string
-  term?: Prisma.StringFieldUpdateOperationsInput | string
+  term?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   open_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   close_date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -627,11 +627,11 @@ export type CalendarUncheckedUpdateManyWithoutBranchInput = {
  */
 
 export type CalendarCountOutputType = {
-  result: number
+  results: number
 }
 
 export type CalendarCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  result?: boolean | CalendarCountOutputTypeCountResultArgs
+  results?: boolean | CalendarCountOutputTypeCountResultsArgs
 }
 
 /**
@@ -647,7 +647,7 @@ export type CalendarCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Ext
 /**
  * CalendarCountOutputType without action
  */
-export type CalendarCountOutputTypeCountResultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type CalendarCountOutputTypeCountResultsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.ResultWhereInput
 }
 
@@ -660,8 +660,8 @@ export type CalendarSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   term?: boolean
   open_date?: boolean
   close_date?: boolean
-  branch?: boolean | Prisma.Calendar$branchArgs<ExtArgs>
-  result?: boolean | Prisma.Calendar$resultArgs<ExtArgs>
+  results?: boolean | Prisma.Calendar$resultsArgs<ExtArgs>
+  branch?: boolean | Prisma.BranchDefaultArgs<ExtArgs>
   _count?: boolean | Prisma.CalendarCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["calendar"]>
 
@@ -673,7 +673,7 @@ export type CalendarSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   term?: boolean
   open_date?: boolean
   close_date?: boolean
-  branch?: boolean | Prisma.Calendar$branchArgs<ExtArgs>
+  branch?: boolean | Prisma.BranchDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["calendar"]>
 
 export type CalendarSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -684,7 +684,7 @@ export type CalendarSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   term?: boolean
   open_date?: boolean
   close_date?: boolean
-  branch?: boolean | Prisma.Calendar$branchArgs<ExtArgs>
+  branch?: boolean | Prisma.BranchDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["calendar"]>
 
 export type CalendarSelectScalar = {
@@ -699,29 +699,29 @@ export type CalendarSelectScalar = {
 
 export type CalendarOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "uuid" | "branch_uuid" | "session" | "term" | "open_date" | "close_date", ExtArgs["result"]["calendar"]>
 export type CalendarInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  branch?: boolean | Prisma.Calendar$branchArgs<ExtArgs>
-  result?: boolean | Prisma.Calendar$resultArgs<ExtArgs>
+  results?: boolean | Prisma.Calendar$resultsArgs<ExtArgs>
+  branch?: boolean | Prisma.BranchDefaultArgs<ExtArgs>
   _count?: boolean | Prisma.CalendarCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type CalendarIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  branch?: boolean | Prisma.Calendar$branchArgs<ExtArgs>
+  branch?: boolean | Prisma.BranchDefaultArgs<ExtArgs>
 }
 export type CalendarIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  branch?: boolean | Prisma.Calendar$branchArgs<ExtArgs>
+  branch?: boolean | Prisma.BranchDefaultArgs<ExtArgs>
 }
 
 export type $CalendarPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Calendar"
   objects: {
-    branch: Prisma.$BranchPayload<ExtArgs> | null
-    result: Prisma.$ResultPayload<ExtArgs>[]
+    results: Prisma.$ResultPayload<ExtArgs>[]
+    branch: Prisma.$BranchPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
     uuid: string
     branch_uuid: string
     session: string
-    term: string
+    term: string | null
     open_date: Date
     close_date: Date
   }, ExtArgs["result"]["calendar"]>
@@ -1118,8 +1118,8 @@ readonly fields: CalendarFieldRefs;
  */
 export interface Prisma__CalendarClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  branch<T extends Prisma.Calendar$branchArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Calendar$branchArgs<ExtArgs>>): Prisma.Prisma__BranchClient<runtime.Types.Result.GetResult<Prisma.$BranchPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  result<T extends Prisma.Calendar$resultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Calendar$resultArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ResultPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  results<T extends Prisma.Calendar$resultsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Calendar$resultsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ResultPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  branch<T extends Prisma.BranchDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.BranchDefaultArgs<ExtArgs>>): Prisma.Prisma__BranchClient<runtime.Types.Result.GetResult<Prisma.$BranchPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1552,28 +1552,9 @@ export type CalendarDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Inte
 }
 
 /**
- * Calendar.branch
+ * Calendar.results
  */
-export type Calendar$branchArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Branch
-   */
-  select?: Prisma.BranchSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Branch
-   */
-  omit?: Prisma.BranchOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.BranchInclude<ExtArgs> | null
-  where?: Prisma.BranchWhereInput
-}
-
-/**
- * Calendar.result
- */
-export type Calendar$resultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Calendar$resultsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
    * Select specific fields to fetch from the Result
    */

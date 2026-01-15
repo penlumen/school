@@ -123,6 +123,7 @@ model Branch {
   students Student[]
   control  AccessControl[]
   access   BranchAccess[]
+  calendar Calendar[]
   school   School          @relation(fields: [school_uuid], references: [uuid])
 }
 
@@ -140,6 +141,19 @@ model BranchAccess {
   branch Branch? @relation(fields: [branch_uuid], references: [uuid])
 
   @@unique([user_uuid, branch_uuid, role])
+}
+
+model Calendar {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(uuid())
+  branch_uuid String
+  session     String
+  term        String?
+  open_date   DateTime
+  close_date  DateTime
+
+  results Result[]
+  branch  Branch   @relation(fields: [branch_uuid], references: [uuid])
 }
 
 // ========== STUDENT ==========
@@ -196,7 +210,7 @@ model Subject {
   @@unique([class_uuid, name])
 }
 
-// ========== GRADE ==========
+// ========== GRADE SETTING ==========
 model Grade {
   id          Int      @id @default(autoincrement())
   uuid        String   @unique @default(uuid())
@@ -216,6 +230,8 @@ model Result {
   id               Int          @id @default(autoincrement())
   uuid             String       @unique @default(uuid())
   student_uuid     String
+  calendar_uuid    String?
+  class_uuid       String?
   class_name       String
   overall          Float        @default(0)
   status           ResultStatus @default(PENDING)
@@ -224,8 +240,10 @@ model Result {
   created_at       DateTime     @default(now())
   updated_at       DateTime     @updatedAt
 
-  student     Student?      @relation(fields: [student_uuid], references: [uuid])
   assessments Assessments[]
+
+  calendar Calendar? @relation(fields: [calendar_uuid], references: [uuid])
+  student  Student?  @relation(fields: [student_uuid], references: [uuid])
 }
 
 // ========== ASSESSMENTS ==========

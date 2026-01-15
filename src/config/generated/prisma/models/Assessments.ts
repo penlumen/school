@@ -46,7 +46,6 @@ export type AssessmentsMinAggregateOutputType = {
   id: number | null
   uuid: string | null
   result_uuid: string | null
-  subject_uuid: string | null
   subject: string | null
   assignment: number | null
   assessment: number | null
@@ -61,7 +60,6 @@ export type AssessmentsMaxAggregateOutputType = {
   id: number | null
   uuid: string | null
   result_uuid: string | null
-  subject_uuid: string | null
   subject: string | null
   assignment: number | null
   assessment: number | null
@@ -76,7 +74,6 @@ export type AssessmentsCountAggregateOutputType = {
   id: number
   uuid: number
   result_uuid: number
-  subject_uuid: number
   subject: number
   assignment: number
   assessment: number
@@ -109,7 +106,6 @@ export type AssessmentsMinAggregateInputType = {
   id?: true
   uuid?: true
   result_uuid?: true
-  subject_uuid?: true
   subject?: true
   assignment?: true
   assessment?: true
@@ -124,7 +120,6 @@ export type AssessmentsMaxAggregateInputType = {
   id?: true
   uuid?: true
   result_uuid?: true
-  subject_uuid?: true
   subject?: true
   assignment?: true
   assessment?: true
@@ -139,7 +134,6 @@ export type AssessmentsCountAggregateInputType = {
   id?: true
   uuid?: true
   result_uuid?: true
-  subject_uuid?: true
   subject?: true
   assignment?: true
   assessment?: true
@@ -241,7 +235,6 @@ export type AssessmentsGroupByOutputType = {
   id: number
   uuid: string
   result_uuid: string
-  subject_uuid: string | null
   subject: string
   assignment: number
   assessment: number
@@ -279,7 +272,6 @@ export type AssessmentsWhereInput = {
   id?: Prisma.IntFilter<"Assessments"> | number
   uuid?: Prisma.StringFilter<"Assessments"> | string
   result_uuid?: Prisma.StringFilter<"Assessments"> | string
-  subject_uuid?: Prisma.StringNullableFilter<"Assessments"> | string | null
   subject?: Prisma.StringFilter<"Assessments"> | string
   assignment?: Prisma.FloatFilter<"Assessments"> | number
   assessment?: Prisma.FloatFilter<"Assessments"> | number
@@ -295,7 +287,6 @@ export type AssessmentsOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   uuid?: Prisma.SortOrder
   result_uuid?: Prisma.SortOrder
-  subject_uuid?: Prisma.SortOrderInput | Prisma.SortOrder
   subject?: Prisma.SortOrder
   assignment?: Prisma.SortOrder
   assessment?: Prisma.SortOrder
@@ -315,7 +306,6 @@ export type AssessmentsWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.AssessmentsWhereInput[]
   NOT?: Prisma.AssessmentsWhereInput | Prisma.AssessmentsWhereInput[]
   result_uuid?: Prisma.StringFilter<"Assessments"> | string
-  subject_uuid?: Prisma.StringNullableFilter<"Assessments"> | string | null
   subject?: Prisma.StringFilter<"Assessments"> | string
   assignment?: Prisma.FloatFilter<"Assessments"> | number
   assessment?: Prisma.FloatFilter<"Assessments"> | number
@@ -331,7 +321,6 @@ export type AssessmentsOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   uuid?: Prisma.SortOrder
   result_uuid?: Prisma.SortOrder
-  subject_uuid?: Prisma.SortOrderInput | Prisma.SortOrder
   subject?: Prisma.SortOrder
   assignment?: Prisma.SortOrder
   assessment?: Prisma.SortOrder
@@ -354,7 +343,6 @@ export type AssessmentsScalarWhereWithAggregatesInput = {
   id?: Prisma.IntWithAggregatesFilter<"Assessments"> | number
   uuid?: Prisma.StringWithAggregatesFilter<"Assessments"> | string
   result_uuid?: Prisma.StringWithAggregatesFilter<"Assessments"> | string
-  subject_uuid?: Prisma.StringNullableWithAggregatesFilter<"Assessments"> | string | null
   subject?: Prisma.StringWithAggregatesFilter<"Assessments"> | string
   assignment?: Prisma.FloatWithAggregatesFilter<"Assessments"> | number
   assessment?: Prisma.FloatWithAggregatesFilter<"Assessments"> | number
@@ -367,7 +355,6 @@ export type AssessmentsScalarWhereWithAggregatesInput = {
 
 export type AssessmentsCreateInput = {
   uuid?: string
-  subject_uuid?: string | null
   subject: string
   assignment?: number
   assessment?: number
@@ -383,7 +370,6 @@ export type AssessmentsUncheckedCreateInput = {
   id?: number
   uuid?: string
   result_uuid: string
-  subject_uuid?: string | null
   subject: string
   assignment?: number
   assessment?: number
@@ -396,7 +382,6 @@ export type AssessmentsUncheckedCreateInput = {
 
 export type AssessmentsUpdateInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
-  subject_uuid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subject?: Prisma.StringFieldUpdateOperationsInput | string
   assignment?: Prisma.FloatFieldUpdateOperationsInput | number
   assessment?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -412,7 +397,6 @@ export type AssessmentsUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   result_uuid?: Prisma.StringFieldUpdateOperationsInput | string
-  subject_uuid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subject?: Prisma.StringFieldUpdateOperationsInput | string
   assignment?: Prisma.FloatFieldUpdateOperationsInput | number
   assessment?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -427,7 +411,6 @@ export type AssessmentsCreateManyInput = {
   id?: number
   uuid?: string
   result_uuid: string
-  subject_uuid?: string | null
   subject: string
   assignment?: number
   assessment?: number
@@ -440,7 +423,6 @@ export type AssessmentsCreateManyInput = {
 
 export type AssessmentsUpdateManyMutationInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
-  subject_uuid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subject?: Prisma.StringFieldUpdateOperationsInput | string
   assignment?: Prisma.FloatFieldUpdateOperationsInput | number
   assessment?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -455,7 +437,6 @@ export type AssessmentsUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
   result_uuid?: Prisma.StringFieldUpdateOperationsInput | string
-  subject_uuid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subject?: Prisma.StringFieldUpdateOperationsInput | string
   assignment?: Prisma.FloatFieldUpdateOperationsInput | number
   assessment?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -485,7 +466,6 @@ export type AssessmentsCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   uuid?: Prisma.SortOrder
   result_uuid?: Prisma.SortOrder
-  subject_uuid?: Prisma.SortOrder
   subject?: Prisma.SortOrder
   assignment?: Prisma.SortOrder
   assessment?: Prisma.SortOrder
@@ -508,7 +488,6 @@ export type AssessmentsMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   uuid?: Prisma.SortOrder
   result_uuid?: Prisma.SortOrder
-  subject_uuid?: Prisma.SortOrder
   subject?: Prisma.SortOrder
   assignment?: Prisma.SortOrder
   assessment?: Prisma.SortOrder
@@ -523,7 +502,6 @@ export type AssessmentsMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   uuid?: Prisma.SortOrder
   result_uuid?: Prisma.SortOrder
-  subject_uuid?: Prisma.SortOrder
   subject?: Prisma.SortOrder
   assignment?: Prisma.SortOrder
   assessment?: Prisma.SortOrder
@@ -586,7 +564,6 @@ export type AssessmentsUncheckedUpdateManyWithoutResultNestedInput = {
 
 export type AssessmentsCreateWithoutResultInput = {
   uuid?: string
-  subject_uuid?: string | null
   subject: string
   assignment?: number
   assessment?: number
@@ -600,7 +577,6 @@ export type AssessmentsCreateWithoutResultInput = {
 export type AssessmentsUncheckedCreateWithoutResultInput = {
   id?: number
   uuid?: string
-  subject_uuid?: string | null
   subject: string
   assignment?: number
   assessment?: number
@@ -644,7 +620,6 @@ export type AssessmentsScalarWhereInput = {
   id?: Prisma.IntFilter<"Assessments"> | number
   uuid?: Prisma.StringFilter<"Assessments"> | string
   result_uuid?: Prisma.StringFilter<"Assessments"> | string
-  subject_uuid?: Prisma.StringNullableFilter<"Assessments"> | string | null
   subject?: Prisma.StringFilter<"Assessments"> | string
   assignment?: Prisma.FloatFilter<"Assessments"> | number
   assessment?: Prisma.FloatFilter<"Assessments"> | number
@@ -658,7 +633,6 @@ export type AssessmentsScalarWhereInput = {
 export type AssessmentsCreateManyResultInput = {
   id?: number
   uuid?: string
-  subject_uuid?: string | null
   subject: string
   assignment?: number
   assessment?: number
@@ -671,7 +645,6 @@ export type AssessmentsCreateManyResultInput = {
 
 export type AssessmentsUpdateWithoutResultInput = {
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
-  subject_uuid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subject?: Prisma.StringFieldUpdateOperationsInput | string
   assignment?: Prisma.FloatFieldUpdateOperationsInput | number
   assessment?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -685,7 +658,6 @@ export type AssessmentsUpdateWithoutResultInput = {
 export type AssessmentsUncheckedUpdateWithoutResultInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
-  subject_uuid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subject?: Prisma.StringFieldUpdateOperationsInput | string
   assignment?: Prisma.FloatFieldUpdateOperationsInput | number
   assessment?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -699,7 +671,6 @@ export type AssessmentsUncheckedUpdateWithoutResultInput = {
 export type AssessmentsUncheckedUpdateManyWithoutResultInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   uuid?: Prisma.StringFieldUpdateOperationsInput | string
-  subject_uuid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   subject?: Prisma.StringFieldUpdateOperationsInput | string
   assignment?: Prisma.FloatFieldUpdateOperationsInput | number
   assessment?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -716,7 +687,6 @@ export type AssessmentsSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   id?: boolean
   uuid?: boolean
   result_uuid?: boolean
-  subject_uuid?: boolean
   subject?: boolean
   assignment?: boolean
   assessment?: boolean
@@ -732,7 +702,6 @@ export type AssessmentsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   id?: boolean
   uuid?: boolean
   result_uuid?: boolean
-  subject_uuid?: boolean
   subject?: boolean
   assignment?: boolean
   assessment?: boolean
@@ -748,7 +717,6 @@ export type AssessmentsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   id?: boolean
   uuid?: boolean
   result_uuid?: boolean
-  subject_uuid?: boolean
   subject?: boolean
   assignment?: boolean
   assessment?: boolean
@@ -764,7 +732,6 @@ export type AssessmentsSelectScalar = {
   id?: boolean
   uuid?: boolean
   result_uuid?: boolean
-  subject_uuid?: boolean
   subject?: boolean
   assignment?: boolean
   assessment?: boolean
@@ -775,7 +742,7 @@ export type AssessmentsSelectScalar = {
   updated_at?: boolean
 }
 
-export type AssessmentsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "uuid" | "result_uuid" | "subject_uuid" | "subject" | "assignment" | "assessment" | "examination" | "overall" | "grade" | "created_at" | "updated_at", ExtArgs["result"]["assessments"]>
+export type AssessmentsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "uuid" | "result_uuid" | "subject" | "assignment" | "assessment" | "examination" | "overall" | "grade" | "created_at" | "updated_at", ExtArgs["result"]["assessments"]>
 export type AssessmentsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   result?: boolean | Prisma.Assessments$resultArgs<ExtArgs>
 }
@@ -795,7 +762,6 @@ export type $AssessmentsPayload<ExtArgs extends runtime.Types.Extensions.Interna
     id: number
     uuid: string
     result_uuid: string
-    subject_uuid: string | null
     subject: string
     assignment: number
     assessment: number
@@ -1231,7 +1197,6 @@ export interface AssessmentsFieldRefs {
   readonly id: Prisma.FieldRef<"Assessments", 'Int'>
   readonly uuid: Prisma.FieldRef<"Assessments", 'String'>
   readonly result_uuid: Prisma.FieldRef<"Assessments", 'String'>
-  readonly subject_uuid: Prisma.FieldRef<"Assessments", 'String'>
   readonly subject: Prisma.FieldRef<"Assessments", 'String'>
   readonly assignment: Prisma.FieldRef<"Assessments", 'Float'>
   readonly assessment: Prisma.FieldRef<"Assessments", 'Float'>

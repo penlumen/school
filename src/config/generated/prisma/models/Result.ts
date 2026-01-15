@@ -276,9 +276,9 @@ export type ResultWhereInput = {
   principal_remark?: Prisma.StringNullableFilter<"Result"> | string | null
   created_at?: Prisma.DateTimeFilter<"Result"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"Result"> | Date | string
+  assessments?: Prisma.AssessmentsListRelationFilter
   calendar?: Prisma.XOR<Prisma.CalendarNullableScalarRelationFilter, Prisma.CalendarWhereInput> | null
   student?: Prisma.XOR<Prisma.StudentNullableScalarRelationFilter, Prisma.StudentWhereInput> | null
-  assessments?: Prisma.AssessmentsListRelationFilter
 }
 
 export type ResultOrderByWithRelationInput = {
@@ -294,9 +294,9 @@ export type ResultOrderByWithRelationInput = {
   principal_remark?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
+  assessments?: Prisma.AssessmentsOrderByRelationAggregateInput
   calendar?: Prisma.CalendarOrderByWithRelationInput
   student?: Prisma.StudentOrderByWithRelationInput
-  assessments?: Prisma.AssessmentsOrderByRelationAggregateInput
 }
 
 export type ResultWhereUniqueInput = Prisma.AtLeast<{
@@ -315,9 +315,9 @@ export type ResultWhereUniqueInput = Prisma.AtLeast<{
   principal_remark?: Prisma.StringNullableFilter<"Result"> | string | null
   created_at?: Prisma.DateTimeFilter<"Result"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"Result"> | Date | string
+  assessments?: Prisma.AssessmentsListRelationFilter
   calendar?: Prisma.XOR<Prisma.CalendarNullableScalarRelationFilter, Prisma.CalendarWhereInput> | null
   student?: Prisma.XOR<Prisma.StudentNullableScalarRelationFilter, Prisma.StudentWhereInput> | null
-  assessments?: Prisma.AssessmentsListRelationFilter
 }, "id" | "uuid">
 
 export type ResultOrderByWithAggregationInput = {
@@ -368,9 +368,9 @@ export type ResultCreateInput = {
   principal_remark?: string | null
   created_at?: Date | string
   updated_at?: Date | string
-  calendar?: Prisma.CalendarCreateNestedOneWithoutResultInput
-  student?: Prisma.StudentCreateNestedOneWithoutResultsInput
   assessments?: Prisma.AssessmentsCreateNestedManyWithoutResultInput
+  calendar?: Prisma.CalendarCreateNestedOneWithoutResultsInput
+  student?: Prisma.StudentCreateNestedOneWithoutResultsInput
 }
 
 export type ResultUncheckedCreateInput = {
@@ -399,9 +399,9 @@ export type ResultUpdateInput = {
   principal_remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  calendar?: Prisma.CalendarUpdateOneWithoutResultNestedInput
-  student?: Prisma.StudentUpdateOneWithoutResultsNestedInput
   assessments?: Prisma.AssessmentsUpdateManyWithoutResultNestedInput
+  calendar?: Prisma.CalendarUpdateOneWithoutResultsNestedInput
+  student?: Prisma.StudentUpdateOneWithoutResultsNestedInput
 }
 
 export type ResultUncheckedUpdateInput = {
@@ -646,8 +646,8 @@ export type ResultCreateWithoutCalendarInput = {
   principal_remark?: string | null
   created_at?: Date | string
   updated_at?: Date | string
-  student?: Prisma.StudentCreateNestedOneWithoutResultsInput
   assessments?: Prisma.AssessmentsCreateNestedManyWithoutResultInput
+  student?: Prisma.StudentCreateNestedOneWithoutResultsInput
 }
 
 export type ResultUncheckedCreateWithoutCalendarInput = {
@@ -719,8 +719,8 @@ export type ResultCreateWithoutStudentInput = {
   principal_remark?: string | null
   created_at?: Date | string
   updated_at?: Date | string
-  calendar?: Prisma.CalendarCreateNestedOneWithoutResultInput
   assessments?: Prisma.AssessmentsCreateNestedManyWithoutResultInput
+  calendar?: Prisma.CalendarCreateNestedOneWithoutResultsInput
 }
 
 export type ResultUncheckedCreateWithoutStudentInput = {
@@ -774,7 +774,7 @@ export type ResultCreateWithoutAssessmentsInput = {
   principal_remark?: string | null
   created_at?: Date | string
   updated_at?: Date | string
-  calendar?: Prisma.CalendarCreateNestedOneWithoutResultInput
+  calendar?: Prisma.CalendarCreateNestedOneWithoutResultsInput
   student?: Prisma.StudentCreateNestedOneWithoutResultsInput
 }
 
@@ -819,7 +819,7 @@ export type ResultUpdateWithoutAssessmentsInput = {
   principal_remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  calendar?: Prisma.CalendarUpdateOneWithoutResultNestedInput
+  calendar?: Prisma.CalendarUpdateOneWithoutResultsNestedInput
   student?: Prisma.StudentUpdateOneWithoutResultsNestedInput
 }
 
@@ -862,8 +862,8 @@ export type ResultUpdateWithoutCalendarInput = {
   principal_remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  student?: Prisma.StudentUpdateOneWithoutResultsNestedInput
   assessments?: Prisma.AssessmentsUpdateManyWithoutResultNestedInput
+  student?: Prisma.StudentUpdateOneWithoutResultsNestedInput
 }
 
 export type ResultUncheckedUpdateWithoutCalendarInput = {
@@ -919,8 +919,8 @@ export type ResultUpdateWithoutStudentInput = {
   principal_remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  calendar?: Prisma.CalendarUpdateOneWithoutResultNestedInput
   assessments?: Prisma.AssessmentsUpdateManyWithoutResultNestedInput
+  calendar?: Prisma.CalendarUpdateOneWithoutResultsNestedInput
 }
 
 export type ResultUncheckedUpdateWithoutStudentInput = {
@@ -996,9 +996,9 @@ export type ResultSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   principal_remark?: boolean
   created_at?: boolean
   updated_at?: boolean
+  assessments?: boolean | Prisma.Result$assessmentsArgs<ExtArgs>
   calendar?: boolean | Prisma.Result$calendarArgs<ExtArgs>
   student?: boolean | Prisma.Result$studentArgs<ExtArgs>
-  assessments?: boolean | Prisma.Result$assessmentsArgs<ExtArgs>
   _count?: boolean | Prisma.ResultCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["result"]>
 
@@ -1053,9 +1053,9 @@ export type ResultSelectScalar = {
 
 export type ResultOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "uuid" | "student_uuid" | "calendar_uuid" | "class_uuid" | "class_name" | "overall" | "status" | "teacher_remark" | "principal_remark" | "created_at" | "updated_at", ExtArgs["result"]["result"]>
 export type ResultInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  assessments?: boolean | Prisma.Result$assessmentsArgs<ExtArgs>
   calendar?: boolean | Prisma.Result$calendarArgs<ExtArgs>
   student?: boolean | Prisma.Result$studentArgs<ExtArgs>
-  assessments?: boolean | Prisma.Result$assessmentsArgs<ExtArgs>
   _count?: boolean | Prisma.ResultCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ResultIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1070,9 +1070,9 @@ export type ResultIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
 export type $ResultPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Result"
   objects: {
+    assessments: Prisma.$AssessmentsPayload<ExtArgs>[]
     calendar: Prisma.$CalendarPayload<ExtArgs> | null
     student: Prisma.$StudentPayload<ExtArgs> | null
-    assessments: Prisma.$AssessmentsPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
@@ -1481,9 +1481,9 @@ readonly fields: ResultFieldRefs;
  */
 export interface Prisma__ResultClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  assessments<T extends Prisma.Result$assessmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Result$assessmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AssessmentsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   calendar<T extends Prisma.Result$calendarArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Result$calendarArgs<ExtArgs>>): Prisma.Prisma__CalendarClient<runtime.Types.Result.GetResult<Prisma.$CalendarPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   student<T extends Prisma.Result$studentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Result$studentArgs<ExtArgs>>): Prisma.Prisma__StudentClient<runtime.Types.Result.GetResult<Prisma.$StudentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  assessments<T extends Prisma.Result$assessmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Result$assessmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AssessmentsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1921,6 +1921,30 @@ export type ResultDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Intern
 }
 
 /**
+ * Result.assessments
+ */
+export type Result$assessmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Assessments
+   */
+  select?: Prisma.AssessmentsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Assessments
+   */
+  omit?: Prisma.AssessmentsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AssessmentsInclude<ExtArgs> | null
+  where?: Prisma.AssessmentsWhereInput
+  orderBy?: Prisma.AssessmentsOrderByWithRelationInput | Prisma.AssessmentsOrderByWithRelationInput[]
+  cursor?: Prisma.AssessmentsWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AssessmentsScalarFieldEnum | Prisma.AssessmentsScalarFieldEnum[]
+}
+
+/**
  * Result.calendar
  */
 export type Result$calendarArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1956,30 +1980,6 @@ export type Result$studentArgs<ExtArgs extends runtime.Types.Extensions.Internal
    */
   include?: Prisma.StudentInclude<ExtArgs> | null
   where?: Prisma.StudentWhereInput
-}
-
-/**
- * Result.assessments
- */
-export type Result$assessmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Assessments
-   */
-  select?: Prisma.AssessmentsSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Assessments
-   */
-  omit?: Prisma.AssessmentsOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.AssessmentsInclude<ExtArgs> | null
-  where?: Prisma.AssessmentsWhereInput
-  orderBy?: Prisma.AssessmentsOrderByWithRelationInput | Prisma.AssessmentsOrderByWithRelationInput[]
-  cursor?: Prisma.AssessmentsWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.AssessmentsScalarFieldEnum | Prisma.AssessmentsScalarFieldEnum[]
 }
 
 /**

@@ -259,7 +259,6 @@ export const AssessmentsScalarFieldEnum = {
   id: 'id',
   uuid: 'uuid',
   result_uuid: 'result_uuid',
-  subject_uuid: 'subject_uuid',
   subject: 'subject',
   assignment: 'assignment',
   assessment: 'assessment',

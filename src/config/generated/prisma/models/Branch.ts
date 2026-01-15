@@ -600,12 +600,10 @@ export type BranchCreateNestedOneWithoutCalendarInput = {
   connect?: Prisma.BranchWhereUniqueInput
 }
 
-export type BranchUpdateOneWithoutCalendarNestedInput = {
+export type BranchUpdateOneRequiredWithoutCalendarNestedInput = {
   create?: Prisma.XOR<Prisma.BranchCreateWithoutCalendarInput, Prisma.BranchUncheckedCreateWithoutCalendarInput>
   connectOrCreate?: Prisma.BranchCreateOrConnectWithoutCalendarInput
   upsert?: Prisma.BranchUpsertWithoutCalendarInput
-  disconnect?: Prisma.BranchWhereInput | boolean
-  delete?: Prisma.BranchWhereInput | boolean
   connect?: Prisma.BranchWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.BranchUpdateToOneWithWhereWithoutCalendarInput, Prisma.BranchUpdateWithoutCalendarInput>, Prisma.BranchUncheckedUpdateWithoutCalendarInput>
 }
