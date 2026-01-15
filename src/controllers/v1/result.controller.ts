@@ -249,6 +249,7 @@ export const view: RequestHandler = async (
     success: true,
     message: 'Successfully fetched result',
     data: {
+      uuid: result.uuid,
       student: result.student,
       reports: {
         class: result.class_name,
