@@ -219,14 +219,16 @@ export const create: RequestHandler = async (
     });
   }
 
-  if (decoded.position !== 'ADMINISTRATIVE' || student.class.teacher_uuid !== decoded.uuid) {
-    return res.status(400).json({
-      status: 400,
+  const isAdmin = decoded.position === 'ADMINISTRATIVE';
+  const isClassTeacher = student && student.class.teacher_uuid === decoded.uuid;
+
+  if (!isAdmin && !isClassTeacher) {
+    return res.status(403).json({
+      status: 403,
       success: false,
       message: 'Unauthorized',
     });
   }
-
   const existingResult = await prisma.result.findFirst({
     where: {
       student_uuid: student!.uuid,
