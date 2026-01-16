@@ -14,7 +14,6 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
   const token = req.headers.authorization || null;
 
   const decoded = verifyToken(token, res);
-  if (!decoded) return;
 
   if (!branch_uuid) {
     return res.status(400).json({
@@ -27,22 +26,22 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
   try {
     let classes: any = [];
 
-    // if (decoded.position === 'ADMINISTRATIVE') {
+    if (decoded.position === 'ADMINISTRATIVE') {
       classes = await prisma.class.findMany({
         where: { branch_uuid },
         include: { students: true },
         orderBy: { created_at: 'asc' },
       });
-    // } else if (decoded.position === 'ACADEMIC') {
-    //   classes = await prisma.class.findMany({
-    //     where: {
-    //       branch_uuid,
-    //       teacher_uuid: decoded.uuid,
-    //     },
-    //     include: { students: true },
-    //     orderBy: { created_at: 'asc' },
-    //   });
-    // }
+    } else if (decoded.position === 'ACADEMIC') {
+      classes = await prisma.class.findMany({
+        where: {
+          branch_uuid,
+          teacher_uuid: decoded.uuid,
+        },
+        include: { students: true },
+        orderBy: { created_at: 'asc' },
+      });
+    }
 
     const classesWithStudentCount = classes.map((cls: any) => ({
       ...cls,
@@ -75,6 +74,7 @@ export const create: RequestHandler = async (req: Request, res: Response) => {
   const { name, capacity, teacher_uuid } = req.body;
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
+
   if (decoded.postion != 'ADMINISTRATIVE') {
     res.status(400).json({
       status: 400,
