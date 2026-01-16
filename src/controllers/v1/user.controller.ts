@@ -28,7 +28,7 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
     return;
   }
 
-  if (decoded.position != 'ADMINISTRATIVE') {
+  if (decoded.position !== 'ADMINISTRATIVE' && decoded.position !== 'ACADEMIC') {
     res.status(400).json({
       status: 400,
       success: false,
@@ -43,7 +43,7 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
       user = await prisma.branchAccess.findMany({
         where: {
           branch_uuid,
-          OR: [{ role: 'ROOT' }, { role: 'ADMIN' }, { role: 'STAFF' }],
+          OR: [{ role: 'ADMIN' }, { role: 'STAFF' }],
         },
         include: {
           user: true,
