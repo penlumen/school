@@ -30,27 +30,27 @@ export const index: RequestHandler = async (req: Request, res: Response): Promis
   try {
     let students: any = [];
 
-    if (decoded.position === 'ADMINISTRATIVE') {
+    // if (decoded.position === 'ADMINISTRATIVE') {
       students = await prisma.student.findMany({
         where: { branch_uuid },
         include: { parent: true, class: true },
         orderBy: { name: 'asc' },
       });
-    } else if (decoded.position === 'ACADEMIC') {
-      students = await prisma.student.findMany({
-        where: {
-          branch_uuid,
-          class: {
-            teacher_uuid: decoded.uuid,
-          },
-        },
-        include: {
-          parent: true,
-          class: true,
-        },
-        orderBy: { name: 'asc' },
-      });
-    }
+    // } else if (decoded.position === 'ACADEMIC') {
+    //   students = await prisma.student.findMany({
+    //     where: {
+    //       branch_uuid,
+    //       class: {
+    //         teacher_uuid: decoded.uuid,
+    //       },
+    //     },
+    //     include: {
+    //       parent: true,
+    //       class: true,
+    //     },
+    //     orderBy: { name: 'asc' },
+    //   });
+    // }
 
     return res.status(200).json({
       status: 200,

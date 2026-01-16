@@ -13,11 +13,9 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
   const branch_uuid = req.headers['x-branch-session'] as string;
   const token = req.headers.authorization || null;
 
-  // 1. Critical Fix: Stop execution if verifyToken fails
   const decoded = verifyToken(token, res);
   if (!decoded) return;
 
-  // 2. Clearer error message (Branch header is usually a requirement, not an auth check)
   if (!branch_uuid) {
     return res.status(400).json({
       status: 400,
@@ -29,23 +27,22 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
   try {
     let classes: any = [];
 
-    if (decoded.position === 'ADMINISTRATIVE') {
+    // if (decoded.position === 'ADMINISTRATIVE') {
       classes = await prisma.class.findMany({
         where: { branch_uuid },
         include: { students: true },
         orderBy: { created_at: 'asc' },
       });
-    } else if (decoded.position === 'ACADEMIC') {
-      // 3. This filters specifically for Aisha's classes
-      classes = await prisma.class.findMany({
-        where: {
-          branch_uuid,
-          teacher_uuid: decoded.uuid,
-        },
-        include: { students: true },
-        orderBy: { created_at: 'asc' },
-      });
-    }
+    // } else if (decoded.position === 'ACADEMIC') {
+    //   classes = await prisma.class.findMany({
+    //     where: {
+    //       branch_uuid,
+    //       teacher_uuid: decoded.uuid,
+    //     },
+    //     include: { students: true },
+    //     orderBy: { created_at: 'asc' },
+    //   });
+    // }
 
     const classesWithStudentCount = classes.map((cls: any) => ({
       ...cls,
@@ -60,7 +57,7 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
     });
 
   } catch (error: any) {
-    return res.status(500).json({ // Use 500 for server/db errors
+    return res.status(500).json({
       status: 500,
       success: false,
       message: error.message,
