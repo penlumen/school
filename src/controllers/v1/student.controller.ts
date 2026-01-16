@@ -11,63 +11,61 @@ const { verifyToken } = useMiddleware();
  * @param res
  * @returns
  */
-export const index: RequestHandler = async (
-  req: Request,
-  res: Response,
-): Promise<any> => {
+export const index: RequestHandler = async (req: Request, res: Response): Promise<any> => {
   const branch_uuid = req.headers['x-branch-session'] as string;
   const token = req.headers.authorization || null;
-  const decoded = verifyToken(token, res);
 
-  console.log(decoded);
+  const decoded = verifyToken(token, res);
+  // If verifyToken sends a response on failure, we must stop execution here
+  if (!decoded) return;
+
   if (!branch_uuid) {
-    res.status(400).json({
+    return res.status(400).json({
       status: 400,
       success: false,
-      message: 'Unauthorized',
+      message: 'Branch ID is required',
     });
-    return;
   }
 
-  let students = [];
+  try {
+    let students: any = [];
 
-  if (decoded.position == 'ADMINISTRATIVE') {
-    students = await prisma.student.findMany({
-      where: {
-        branch_uuid,
-      },
-      include: {
-        parent: true,
-        class: true,
-      },
-      orderBy: {
-        name: 'asc',
-      },
-    });
-  } else {
-    students = await prisma.student.findMany({
-      where: {
-        branch_uuid,
-        class: {
-          teacher_uuid: decoded.uuid,
+    if (decoded.position === 'ADMINISTRATIVE') {
+      students = await prisma.student.findMany({
+        where: { branch_uuid },
+        include: { parent: true, class: true },
+        orderBy: { name: 'asc' },
+      });
+    } else if (decoded.position === 'ACADEMIC') {
+      students = await prisma.student.findMany({
+        where: {
+          branch_uuid,
+          class: {
+            teacher_uuid: decoded.uuid,
+          },
         },
-      },
-      include: {
-        parent: true,
-        class: true,
-      },
-      orderBy: {
-        name: 'asc',
-      },
+        include: {
+          parent: true,
+          class: true,
+        },
+        orderBy: { name: 'asc' },
+      });
+    }
+
+    return res.status(200).json({
+      status: 200,
+      success: true,
+      message: 'Students retrieved successfully',
+      data: { students },
+    });
+
+  } catch (error: any) {
+    return res.status(500).json({
+      status: 500,
+      success: false,
+      message: error.message,
     });
   }
-
-  res.status(200).json({
-    status: 200,
-    success: true,
-    message: 'Students',
-    data: { students },
-  });
 };
 
 export const show: RequestHandler = async (

@@ -12,44 +12,38 @@ const { verifyToken } = useMiddleware();
 export const index: RequestHandler = async (req: Request, res: Response) => {
   const branch_uuid = req.headers['x-branch-session'] as string;
   const token = req.headers.authorization || null;
-  const decoded = verifyToken(token, res);
 
-  console.log(decoded);
+  // 1. Critical Fix: Stop execution if verifyToken fails
+  const decoded = verifyToken(token, res);
+  if (!decoded) return;
+
+  // 2. Clearer error message (Branch header is usually a requirement, not an auth check)
   if (!branch_uuid) {
-    res.status(400).json({
+    return res.status(400).json({
       status: 400,
       success: false,
-      message: 'Unauthorized',
+      message: 'Branch session ID (x-branch-session) is required',
     });
-    return;
   }
 
   try {
     let classes: any = [];
-    if (decoded.position == 'ADMINISTRATIVE') {
+
+    if (decoded.position === 'ADMINISTRATIVE') {
       classes = await prisma.class.findMany({
-        where: {
-          branch_uuid,
-        },
-        include: {
-          students: true,
-        },
-        orderBy: {
-          created_at: 'asc',
-        },
+        where: { branch_uuid },
+        include: { students: true },
+        orderBy: { created_at: 'asc' },
       });
-    } else {
+    } else if (decoded.position === 'ACADEMIC') {
+      // 3. This filters specifically for Aisha's classes
       classes = await prisma.class.findMany({
         where: {
           branch_uuid,
           teacher_uuid: decoded.uuid,
         },
-        include: {
-          students: true,
-        },
-        orderBy: {
-          created_at: 'asc',
-        },
+        include: { students: true },
+        orderBy: { created_at: 'asc' },
       });
     }
 
@@ -58,19 +52,19 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
       studentCount: cls.students.length,
     }));
 
-    res.status(200).json({
+    return res.status(200).json({
       status: 200,
       success: true,
       message: 'Classes retrieved successfully',
       data: { classes: classesWithStudentCount },
     });
+
   } catch (error: any) {
-    res.status(400).json({
-      status: 400,
+    return res.status(500).json({ // Use 500 for server/db errors
+      status: 500,
       success: false,
       message: error.message,
     });
-    return;
   }
 };
 
