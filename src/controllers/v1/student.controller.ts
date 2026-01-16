@@ -19,6 +19,7 @@ export const index: RequestHandler = async (
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
 
+  console.log(branch_uuid);
   if (!branch_uuid) {
     res.status(400).json({
       status: 400,
