@@ -30,7 +30,7 @@ export const index: RequestHandler = async (
 
   let students = [];
 
-  if (decoded.position === 'ADMINISTRATIVE') {
+  if (decoded.position == 'ADMINISTRATIVE') {
     students = await prisma.student.findMany({
       where: {
         branch_uuid,
