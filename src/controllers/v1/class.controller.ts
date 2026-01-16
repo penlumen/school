@@ -18,7 +18,7 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
       const branch_uuid = branch as string;
       try {
         let classes: any = [];
-        if (decoded.position == 'ADMINISTRATIVE') {
+        if (decoded.position === 'ADMINISTRATIVE') {
           classes = await prisma.class.findMany({
             where: {
               branch_uuid,
