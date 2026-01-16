@@ -39,6 +39,11 @@ export const index: RequestHandler = async (
         parent: true,
         class: true,
       },
+      orderBy: {
+        class: {
+          name: 'asc',
+        },
+      },
     });
   } else {
     students = await prisma.student.findMany({
@@ -51,6 +56,11 @@ export const index: RequestHandler = async (
       include: {
         parent: true,
         class: true,
+      },
+      orderBy: {
+        class: {
+          name: 'asc',
+        },
       },
     });
   }
