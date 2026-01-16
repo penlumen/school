@@ -17,9 +17,18 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
   const branch_uuid = req.headers['x-branch-session'] as string;
   const role = req.query.role as 'STAFF' | 'PARENT';
   const token = req.headers.authorization || null;
-  verifyToken(token, res);
+  const decoded = verifyToken(token, res);
 
   if (!branch_uuid) {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
+  }
+
+  if (decoded.position != 'ADMINISTRATIVE') {
     res.status(400).json({
       status: 400,
       success: false,

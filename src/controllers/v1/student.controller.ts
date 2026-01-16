@@ -17,7 +17,7 @@ export const index: RequestHandler = async (
 ): Promise<any> => {
   const branch_uuid = req.headers['x-branch-session'] as string;
   const token = req.headers.authorization || null;
-  verifyToken(token, res);
+  const decoded = verifyToken(token, res);
 
   if (!branch_uuid) {
     res.status(400).json({
@@ -28,15 +28,32 @@ export const index: RequestHandler = async (
     return;
   }
 
-  const students = await prisma.student.findMany({
-    where: {
-      branch_uuid,
-    },
-    include: {
-      parent: true,
-      class: true,
-    },
-  });
+  let students = [];
+
+  if (decoded.position === 'ADMINISTRATIVE') {
+    students = await prisma.student.findMany({
+      where: {
+        branch_uuid,
+      },
+      include: {
+        parent: true,
+        class: true,
+      },
+    });
+  } else {
+    students = await prisma.student.findMany({
+      where: {
+        branch_uuid,
+        class: {
+          teacher_uuid: decoded.uuid,
+        },
+      },
+      include: {
+        parent: true,
+        class: true,
+      },
+    });
+  }
 
   res.status(200).json({
     status: 200,

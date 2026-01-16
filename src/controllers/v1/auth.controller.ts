@@ -1,7 +1,7 @@
 import prisma from '../../config/prisma.config';
 import { useHashing } from '../../config/hashing';
 import { useMiddleware } from '../../config/middleware';
-import { RequestHandler, Request, Response } from 'express';
+import { Request, RequestHandler, Response } from 'express';
 
 const { createHash, compareHash } = useHashing();
 const { generateToken, verifyToken, checkSchoolToken } = useMiddleware();
@@ -152,16 +152,32 @@ export const login: RequestHandler = async (
 
   try {
     let user: any = null;
-    console.log(user);
-    user = await prisma.user.findUnique({
-      where: {
-        school_uuid_email_role: {
+    const upperRole = role.toUpperCase();
+
+    const isStaff = ['ADMIN', 'STAFF'].includes(upperRole);
+
+    if (isStaff) {
+      user = await prisma.user.findFirst({
+        where: {
           school_uuid: school.uuid,
-          role: role.toUpperCase(),
-          email,
+          email: email,
+          OR: [
+            { role: 'ADMIN' },
+            { role: 'STAFF' },
+          ],
         },
-      },
-    });
+      });
+    } else {
+      user = await prisma.user.findUnique({
+        where: {
+          school_uuid_email_role: {
+            school_uuid: school.uuid,
+            role: upperRole,
+            email,
+          },
+        },
+      });
+    }
 
     if (!user) {
       res.status(401).json({
