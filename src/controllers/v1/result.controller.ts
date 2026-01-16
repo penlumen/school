@@ -472,6 +472,7 @@ export const update: RequestHandler = async (
     where: { uuid: result_uuid },
     data: {
       overall: total,
+      calendar_uuid: result?.calendar,
       teacher_remark: result?.teacher_remark,
       principal_remark: result?.principal_remark,
     },
