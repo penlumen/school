@@ -40,9 +40,7 @@ export const index: RequestHandler = async (
         class: true,
       },
       orderBy: {
-        class: {
-          name: 'asc',
-        },
+        name: 'asc',
       },
     });
   } else {
@@ -58,9 +56,7 @@ export const index: RequestHandler = async (
         class: true,
       },
       orderBy: {
-        class: {
-          name: 'asc',
-        },
+        name: 'asc',
       },
     });
   }

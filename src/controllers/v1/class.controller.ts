@@ -10,70 +10,68 @@ const { verifyToken } = useMiddleware();
  * @access Public
  */
 export const index: RequestHandler = async (req: Request, res: Response) => {
-    const branch = req.headers['x-branch-session'] as string;
-    const token = req.headers.authorization || null;
-    const decoded = verifyToken(token, res);
+  const branch_uuid = req.headers['x-branch-session'] as string;
+  const token = req.headers.authorization || null;
+  const decoded = verifyToken(token, res);
 
-    if (branch) {
-      const branch_uuid = branch as string;
-      try {
-        let classes: any = [];
-        if (decoded.position == 'ADMINISTRATIVE') {
-          classes = await prisma.class.findMany({
-            where: {
-              branch_uuid,
-            },
-            include: {
-              students: true,
-            },
-            orderBy: {
-              created_at: 'asc',
-            },
-          });
-        } else {
-          classes = await prisma.class.findMany({
-            where: {
-              branch_uuid,
-              teacher_uuid: decoded.uuid,
-            },
-            include: {
-              students: true,
-            },
-            orderBy: {
-              created_at: 'asc',
-            },
-          });
-        }
-
-        const classesWithStudentCount = classes.map((cls: any) => ({
-          ...cls,
-          studentCount: cls.students.length,
-        }));
-
-        res.status(200).json({
-          status: 200,
-          success: true,
-          message: 'Classes retrieved successfully',
-          data: { classes: classesWithStudentCount },
-        });
-      } catch (error: any) {
-        res.status(400).json({
-          status: 400,
-          success: false,
-          message: error.message,
-        });
-        return;
-      }
-    } else {
-      res.status(400).json({
-        status: 400,
-        success: false,
-        message: 'Unauthorized',
-      });
-      return;
-    }
+  if (!branch_uuid) {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Unauthorized',
+    });
+    return;
   }
-;
+
+  try {
+    let classes: any = [];
+    if (decoded.position == 'ADMINISTRATIVE') {
+      classes = await prisma.class.findMany({
+        where: {
+          branch_uuid,
+        },
+        include: {
+          students: true,
+        },
+        orderBy: {
+          created_at: 'asc',
+        },
+      });
+    } else {
+      classes = await prisma.class.findMany({
+        where: {
+          branch_uuid,
+          teacher_uuid: decoded.uuid,
+        },
+        include: {
+          students: true,
+        },
+        orderBy: {
+          created_at: 'asc',
+        },
+      });
+    }
+
+    const classesWithStudentCount = classes.map((cls: any) => ({
+      ...cls,
+      studentCount: cls.students.length,
+    }));
+
+    res.status(200).json({
+      status: 200,
+      success: true,
+      message: 'Classes retrieved successfully',
+      data: { classes: classesWithStudentCount },
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      status: 400,
+      success: false,
+      message: error.message,
+    });
+    return;
+  }
+};
 
 /**
  * @desc Create a new class
