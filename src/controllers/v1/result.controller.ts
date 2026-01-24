@@ -260,7 +260,7 @@ export const view: RequestHandler = async (
       grading_system: grading.map(g => ({
         grade: g.grade,
         score: g.score,
-        remark: g.remark
+        remark: g.remark,
       })),
     },
   });
@@ -330,8 +330,19 @@ export const create: RequestHandler = async (
       },
     });
 
-    await prisma.$transaction(
-      student.class.subjects.map((subject) =>
+    const currentSubjectNames = student.class.subjects.map((s) => s.name);
+
+    await prisma.$transaction([
+      prisma.assessments.deleteMany({
+        where: {
+          result_uuid: result.uuid,
+          subject: {
+            notIn: currentSubjectNames,
+          },
+        },
+      }),
+
+      ...student.class.subjects.map((subject) =>
         prisma.assessments.upsert({
           where: {
             result_uuid_subject: {
@@ -346,7 +357,7 @@ export const create: RequestHandler = async (
           },
         }),
       ),
-    );
+    ]);
 
     if (existingResult) {
       return res.status(200).json({
