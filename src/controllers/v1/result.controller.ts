@@ -14,7 +14,11 @@ export const index: RequestHandler = async (
   res: Response,
 ): Promise<any> => {
   const branch_uuid = req.headers['x-branch-session'] as string;
-  const status = req.query.status as 'PENDING' | 'APPROVED' | 'REJECTED' | undefined;
+  const status = req.query.status as
+    | 'PENDING'
+    | 'APPROVED'
+    | 'REJECTED'
+    | undefined;
   const search = req.query.search as string;
   const page = Number(req.query.page) || 1;
   const limit = Number(req.query.limit) || 30;
@@ -71,7 +75,7 @@ export const index: RequestHandler = async (
         select: { name: true },
       });
 
-      const classes_names = classes.map(c => c.name);
+      const classes_names = classes.map((c) => c.name);
       results = await prisma.result.findMany({
         where: {
           ...(status && { status }),
@@ -162,7 +166,6 @@ export const show: RequestHandler = async (
   }
 };
 
-
 /**
  * Result details
  * @param req
@@ -179,12 +182,19 @@ export const view: RequestHandler = async (
   const { result_uuid } = req.params;
 
   if (!result_uuid) {
-    return res.status(400).json({ status: 400, success: false, message: 'Result uuid is required' });
+    return res.status(400).json({
+      status: 400,
+      success: false,
+      message: 'Result uuid is required',
+    });
   }
 
   // 1. Fetch the specific result and the grading system
   const [grading, result] = await Promise.all([
-    prisma.grade.findMany({ where: { branch_uuid }, orderBy: { score: 'desc' } }),
+    prisma.grade.findMany({
+      where: { branch_uuid },
+      orderBy: { score: 'desc' },
+    }),
     prisma.result.findUnique({
       where: { uuid: result_uuid },
       include: {
@@ -196,7 +206,9 @@ export const view: RequestHandler = async (
   ]);
 
   if (!result) {
-    return res.status(404).json({ status: 404, success: false, message: 'Result not found' });
+    return res
+      .status(404)
+      .json({ status: 404, success: false, message: 'Result not found' });
   }
 
   // 2. Fetch all results in the same class and session to calculate Position
@@ -231,7 +243,8 @@ export const view: RequestHandler = async (
 
   // 5. Compute assessments with Grades
   const enrichedAssessments = result.assessments.map((asm) => {
-    const total = Number(asm.assignment) + Number(asm.assessment) + Number(asm.examination);
+    const total =
+      Number(asm.assignment) + Number(asm.assessment) + Number(asm.examination);
     const { grade, remark } = getGradeInfo(total);
     return {
       ...asm,
@@ -241,7 +254,10 @@ export const view: RequestHandler = async (
     };
   });
 
-  const average = enrichedAssessments.length > 0 ? result.overall / enrichedAssessments.length : 0;
+  const average =
+    enrichedAssessments.length > 0
+      ? result.overall / enrichedAssessments.length
+      : 0;
 
   // 6. Return payload matching report card requirements
   return res.status(200).json({
@@ -257,7 +273,7 @@ export const view: RequestHandler = async (
         total_students: totalStudents,
         average: average.toFixed(1),
       },
-      grading_system: grading.map(g => ({
+      grading_system: grading.map((g) => ({
         grade: g.grade,
         score: g.score,
         remark: g.remark,
@@ -265,7 +281,6 @@ export const view: RequestHandler = async (
     },
   });
 };
-
 
 /**
  * Generate/Refresh result
@@ -289,7 +304,9 @@ export const create: RequestHandler = async (
     });
 
     if (!student) {
-      return res.status(404).json({ status: 404, success: false, message: 'Student not found' });
+      return res
+        .status(404)
+        .json({ status: 404, success: false, message: 'Student not found' });
     }
 
     // Authorization Check
@@ -297,15 +314,10 @@ export const create: RequestHandler = async (
     const isClassTeacher = student.class.teacher_uuid === decoded.uuid;
 
     if (!isAdmin && !isClassTeacher) {
-      return res.status(403).json({ status: 403, success: false, message: 'Unauthorized' });
+      return res
+        .status(403)
+        .json({ status: 403, success: false, message: 'Unauthorized' });
     }
-
-    const existingResult = await prisma.result.findFirst({
-      where: {
-        student_uuid: student.uuid,
-        class_name: student.class.name,
-      },
-    });
 
     const calendar = await prisma.calendar.findFirst({
       orderBy: { created_at: 'desc' },
@@ -316,6 +328,7 @@ export const create: RequestHandler = async (
         class_name_student_uuid: {
           student_uuid: student.uuid,
           class_name: student.class.name,
+          calendar_uuid: calendar?.uuid,
         },
       },
       update: {
@@ -359,6 +372,14 @@ export const create: RequestHandler = async (
       ),
     ]);
 
+    const existingResult = await prisma.result.findFirst({
+      where: {
+        student_uuid: student.uuid,
+        class_name: student.class.name,
+        calendar_uuid: calendar?.uuid,
+      },
+    });
+
     if (existingResult) {
       return res.status(200).json({
         status: 200,
@@ -376,10 +397,11 @@ export const create: RequestHandler = async (
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ status: 500, success: false, message: 'Internal Server Error' });
+    return res
+      .status(500)
+      .json({ status: 500, success: false, message: 'Internal Server Error' });
   }
 };
-
 
 /**
  * Update result data
@@ -415,7 +437,8 @@ export const update: RequestHandler = async (
   }
 
   const isAdmin = decoded.position === 'ADMINISTRATIVE';
-  const isClassTeacher = existing.student && existing.student.class.teacher_uuid === decoded.uuid;
+  const isClassTeacher =
+    existing.student && existing.student.class.teacher_uuid === decoded.uuid;
 
   if (!isAdmin && !isClassTeacher) {
     return res.status(403).json({
@@ -424,7 +447,6 @@ export const update: RequestHandler = async (
       message: 'Unauthorized',
     });
   }
-
 
   if (!Array.isArray(assessments)) {
     return res.status(400).json({

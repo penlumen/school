@@ -55,7 +55,7 @@ model User {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
-  school School? @relation(fields: [school_uuid], references: [uuid])
+  school School? @relation(fields: [school_uuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
 
   heading  Class[]
   students Student[]
@@ -76,8 +76,8 @@ model AccessControl {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
-  user   User?   @relation(fields: [user_uuid], references: [uuid])
-  branch Branch? @relation(fields: [branch_uuid], references: [uuid])
+  user   User?   @relation(fields: [user_uuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
+  branch Branch? @relation(fields: [branch_uuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
 
   @@unique([user_uuid, branch_uuid, access])
 }
@@ -124,7 +124,7 @@ model Branch {
   control  AccessControl[]
   access   BranchAccess[]
   calendar Calendar[]
-  school   School          @relation(fields: [school_uuid], references: [uuid])
+  school   School          @relation(fields: [school_uuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model BranchAccess {
@@ -136,9 +136,9 @@ model BranchAccess {
   created_at  DateTime @default(now())
   updated_at  DateTime @default(now()) @updatedAt
 
-  user   User?   @relation(fields: [user_uuid], references: [uuid])
-  school School? @relation(fields: [school_uuid], references: [uuid])
-  branch Branch? @relation(fields: [branch_uuid], references: [uuid])
+  user   User?   @relation(fields: [user_uuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
+  school School? @relation(fields: [school_uuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
+  branch Branch? @relation(fields: [branch_uuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
 
   @@unique([user_uuid, branch_uuid, role])
 }
@@ -155,7 +155,7 @@ model Calendar {
   updated_at  DateTime @default(now()) @updatedAt
 
   results Result[]
-  branch  Branch   @relation(fields: [branch_uuid], references: [uuid])
+  branch  Branch   @relation(fields: [branch_uuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
 }
 
 // ========== STUDENT ==========
@@ -172,9 +172,9 @@ model Student {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
-  parent  User     @relation(fields: [parent_uuid], references: [uuid])
-  branch  Branch   @relation(fields: [branch_uuid], references: [uuid])
-  class   Class    @relation(fields: [class_uuid], references: [uuid])
+  parent  User     @relation(fields: [parent_uuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
+  branch  Branch   @relation(fields: [branch_uuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
+  class   Class    @relation(fields: [class_uuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
   results Result[]
 
   @@unique([branch_uuid, reg_number])
@@ -192,8 +192,8 @@ model Class {
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
-  branch   Branch?   @relation(fields: [branch_uuid], references: [uuid])
-  teacher  User?     @relation(fields: [teacher_uuid], references: [uuid])
+  branch   Branch?   @relation(fields: [branch_uuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
+  teacher  User?     @relation(fields: [teacher_uuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
   subjects Subject[]
   students Student[]
 }
@@ -207,7 +207,7 @@ model Subject {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  class Class? @relation(fields: [class_uuid], references: [uuid])
+  class Class? @relation(fields: [class_uuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
 
   @@unique([class_uuid, name])
 }
@@ -224,7 +224,7 @@ model Grade {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
-  branch Branch? @relation(fields: [branch_uuid], references: [uuid])
+  branch Branch? @relation(fields: [branch_uuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
 }
 
 // ========== RESULT ==========
@@ -244,8 +244,8 @@ model Result {
 
   assessments Assessments[]
 
-  calendar Calendar? @relation(fields: [calendar_uuid], references: [uuid])
-  student  Student?  @relation(fields: [student_uuid], references: [uuid])
+  calendar Calendar? @relation(fields: [calendar_uuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
+  student  Student?  @relation(fields: [student_uuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
 
   @@unique([class_name, student_uuid])
 }
@@ -264,7 +264,7 @@ model Assessments {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
-  result Result? @relation(fields: [result_uuid], references: [uuid])
+  result Result? @relation(fields: [result_uuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
 
   @@unique([result_uuid, subject])
 }
