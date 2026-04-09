@@ -2,7 +2,6 @@
   "compilerOptions": {
     "esModuleInterop": true,
     "module": "CommonJS",
-    "types": ["node"],
     "target": "ES6",
     "strict": true,
     "rootDir": "src",
