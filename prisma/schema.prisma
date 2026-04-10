@@ -245,7 +245,7 @@ model Result {
   calendar Calendar? @relation(fields: [calendar_uuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
   student  Student?  @relation(fields: [student_uuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
 
-  @@unique([calendar_uuid, class_name, student_uuid])
+  @@unique([calendar_uuid, class_uuid, student_uuid])
 }
 
 // ========== ASSESSMENTS ==========

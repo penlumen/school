@@ -9,11 +9,11 @@ jobs:
       - name: 🚚 Get latest code
         uses: actions/checkout@v2.3.2
 
-      - name: Install pnpm
-        run: npm install -g pnpm
-      - name: Install pnpm packages
-        run: |
-          pnpm install
-      - name: Build application
-        run: |
-          pnpm run build
+      # - name: Install pnpm
+      #   run: npm install -g pnpm
+      # - name: Install pnpm packages
+      #   run: |
+      #     pnpm install
+      # - name: Build application
+      #   run: |
+      #     pnpm run build
