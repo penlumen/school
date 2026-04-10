@@ -1,5 +1,14 @@
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- CreateEnum
 CREATE TYPE "Role" AS ENUM ('ROOT', 'ADMIN', 'STAFF', 'PARENT');
+
+-- CreateEnum
+CREATE TYPE "Position" AS ENUM ('ADMINISTRATIVE', 'ACADEMIC', 'GUARDIAN', 'PARENT');
+
+-- CreateEnum
+CREATE TYPE "ResultStatus" AS ENUM ('APPROVED', 'PENDING', 'REJECTED');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -14,10 +23,10 @@ CREATE TABLE "User" (
     "avatar" TEXT,
     "address" TEXT,
     "role" "Role" NOT NULL DEFAULT 'ADMIN',
-    "position" TEXT NOT NULL DEFAULT 'guardian',
     "status" TEXT NOT NULL DEFAULT 'active',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
+    "position" "Position" NOT NULL DEFAULT 'GUARDIAN',
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -28,6 +37,11 @@ CREATE TABLE "AccessControl" (
     "user_uuid" TEXT NOT NULL,
     "branch_uuid" TEXT NOT NULL,
     "access" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "delete" BOOLEAN NOT NULL DEFAULT false,
+    "read" BOOLEAN NOT NULL DEFAULT false,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+    "write" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "AccessControl_pkey" PRIMARY KEY ("id")
 );
@@ -76,8 +90,25 @@ CREATE TABLE "BranchAccess" (
     "user_uuid" TEXT NOT NULL,
     "school_uuid" TEXT NOT NULL,
     "branch_uuid" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "BranchAccess_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Calendar" (
+    "id" SERIAL NOT NULL,
+    "uuid" TEXT NOT NULL,
+    "branch_uuid" TEXT NOT NULL,
+    "session" TEXT NOT NULL,
+    "term" TEXT,
+    "open_date" TIMESTAMP(3) NOT NULL,
+    "close_date" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Calendar_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -92,6 +123,7 @@ CREATE TABLE "Student" (
     "avatar" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'active',
 
     CONSTRAINT "Student_pkey" PRIMARY KEY ("id")
 );
@@ -133,6 +165,7 @@ CREATE TABLE "Grade" (
     "remark" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
+    "description" TEXT,
 
     CONSTRAINT "Grade_pkey" PRIMARY KEY ("id")
 );
@@ -143,10 +176,14 @@ CREATE TABLE "Result" (
     "uuid" TEXT NOT NULL,
     "student_uuid" TEXT NOT NULL,
     "class_name" TEXT NOT NULL,
-    "grade" TEXT NOT NULL,
-    "remark" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
+    "overall" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "principal_remark" TEXT,
+    "status" "ResultStatus" NOT NULL DEFAULT 'PENDING',
+    "teacher_remark" TEXT,
+    "calendar_uuid" TEXT NOT NULL,
+    "class_uuid" TEXT NOT NULL,
 
     CONSTRAINT "Result_pkey" PRIMARY KEY ("id")
 );
@@ -157,13 +194,13 @@ CREATE TABLE "Assessments" (
     "uuid" TEXT NOT NULL,
     "result_uuid" TEXT NOT NULL,
     "subject" TEXT NOT NULL,
-    "assignment" DOUBLE PRECISION NOT NULL,
-    "assesment" DOUBLE PRECISION NOT NULL,
-    "examination" DOUBLE PRECISION NOT NULL,
-    "overall" DOUBLE PRECISION NOT NULL,
-    "grade" TEXT NOT NULL,
+    "assignment" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "examination" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "overall" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "grade" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
+    "assessment" DOUBLE PRECISION NOT NULL DEFAULT 0,
 
     CONSTRAINT "Assessments_pkey" PRIMARY KEY ("id")
 );
@@ -196,6 +233,9 @@ CREATE UNIQUE INDEX "Branch_uuid_key" ON "Branch"("uuid");
 CREATE UNIQUE INDEX "BranchAccess_user_uuid_branch_uuid_role_key" ON "BranchAccess"("user_uuid", "branch_uuid", "role");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Calendar_uuid_key" ON "Calendar"("uuid");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Student_uuid_key" ON "Student"("uuid");
 
 -- CreateIndex
@@ -206,6 +246,9 @@ CREATE UNIQUE INDEX "Class_uuid_key" ON "Class"("uuid");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Subject_uuid_key" ON "Subject"("uuid");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Subject_class_uuid_name_key" ON "Subject"("class_uuid", "name");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Grade_uuid_key" ON "Grade"("uuid");
@@ -220,49 +263,56 @@ CREATE UNIQUE INDEX "Assessments_uuid_key" ON "Assessments"("uuid");
 CREATE UNIQUE INDEX "Assessments_result_uuid_subject_key" ON "Assessments"("result_uuid", "subject");
 
 -- AddForeignKey
-ALTER TABLE "User" ADD CONSTRAINT "User_school_uuid_fkey" FOREIGN KEY ("school_uuid") REFERENCES "School"("uuid") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "User" ADD CONSTRAINT "User_school_uuid_fkey" FOREIGN KEY ("school_uuid") REFERENCES "School"("uuid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "AccessControl" ADD CONSTRAINT "AccessControl_user_uuid_fkey" FOREIGN KEY ("user_uuid") REFERENCES "User"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "AccessControl" ADD CONSTRAINT "AccessControl_branch_uuid_fkey" FOREIGN KEY ("branch_uuid") REFERENCES "Branch"("uuid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "AccessControl" ADD CONSTRAINT "AccessControl_branch_uuid_fkey" FOREIGN KEY ("branch_uuid") REFERENCES "Branch"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "AccessControl" ADD CONSTRAINT "AccessControl_user_uuid_fkey" FOREIGN KEY ("user_uuid") REFERENCES "User"("uuid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Branch" ADD CONSTRAINT "Branch_school_uuid_fkey" FOREIGN KEY ("school_uuid") REFERENCES "School"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Branch" ADD CONSTRAINT "Branch_school_uuid_fkey" FOREIGN KEY ("school_uuid") REFERENCES "School"("uuid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "BranchAccess" ADD CONSTRAINT "BranchAccess_user_uuid_fkey" FOREIGN KEY ("user_uuid") REFERENCES "User"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "BranchAccess" ADD CONSTRAINT "BranchAccess_branch_uuid_fkey" FOREIGN KEY ("branch_uuid") REFERENCES "Branch"("uuid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "BranchAccess" ADD CONSTRAINT "BranchAccess_school_uuid_fkey" FOREIGN KEY ("school_uuid") REFERENCES "School"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "BranchAccess" ADD CONSTRAINT "BranchAccess_school_uuid_fkey" FOREIGN KEY ("school_uuid") REFERENCES "School"("uuid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "BranchAccess" ADD CONSTRAINT "BranchAccess_branch_uuid_fkey" FOREIGN KEY ("branch_uuid") REFERENCES "Branch"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "BranchAccess" ADD CONSTRAINT "BranchAccess_user_uuid_fkey" FOREIGN KEY ("user_uuid") REFERENCES "User"("uuid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Student" ADD CONSTRAINT "Student_parent_uuid_fkey" FOREIGN KEY ("parent_uuid") REFERENCES "User"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Calendar" ADD CONSTRAINT "Calendar_branch_uuid_fkey" FOREIGN KEY ("branch_uuid") REFERENCES "Branch"("uuid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Student" ADD CONSTRAINT "Student_branch_uuid_fkey" FOREIGN KEY ("branch_uuid") REFERENCES "Branch"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Student" ADD CONSTRAINT "Student_branch_uuid_fkey" FOREIGN KEY ("branch_uuid") REFERENCES "Branch"("uuid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Student" ADD CONSTRAINT "Student_class_uuid_fkey" FOREIGN KEY ("class_uuid") REFERENCES "Class"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Student" ADD CONSTRAINT "Student_class_uuid_fkey" FOREIGN KEY ("class_uuid") REFERENCES "Class"("uuid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Class" ADD CONSTRAINT "Class_branch_uuid_fkey" FOREIGN KEY ("branch_uuid") REFERENCES "Branch"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Student" ADD CONSTRAINT "Student_parent_uuid_fkey" FOREIGN KEY ("parent_uuid") REFERENCES "User"("uuid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Class" ADD CONSTRAINT "Class_teacher_uuid_fkey" FOREIGN KEY ("teacher_uuid") REFERENCES "User"("uuid") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Class" ADD CONSTRAINT "Class_branch_uuid_fkey" FOREIGN KEY ("branch_uuid") REFERENCES "Branch"("uuid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Subject" ADD CONSTRAINT "Subject_class_uuid_fkey" FOREIGN KEY ("class_uuid") REFERENCES "Class"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Class" ADD CONSTRAINT "Class_teacher_uuid_fkey" FOREIGN KEY ("teacher_uuid") REFERENCES "User"("uuid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Grade" ADD CONSTRAINT "Grade_branch_uuid_fkey" FOREIGN KEY ("branch_uuid") REFERENCES "Branch"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Subject" ADD CONSTRAINT "Subject_class_uuid_fkey" FOREIGN KEY ("class_uuid") REFERENCES "Class"("uuid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Result" ADD CONSTRAINT "Result_student_uuid_fkey" FOREIGN KEY ("student_uuid") REFERENCES "Student"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Grade" ADD CONSTRAINT "Grade_branch_uuid_fkey" FOREIGN KEY ("branch_uuid") REFERENCES "Branch"("uuid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Assessments" ADD CONSTRAINT "Assessments_result_uuid_fkey" FOREIGN KEY ("result_uuid") REFERENCES "Result"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Result" ADD CONSTRAINT "Result_calendar_uuid_fkey" FOREIGN KEY ("calendar_uuid") REFERENCES "Calendar"("uuid") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Result" ADD CONSTRAINT "Result_student_uuid_fkey" FOREIGN KEY ("student_uuid") REFERENCES "Student"("uuid") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Assessments" ADD CONSTRAINT "Assessments_result_uuid_fkey" FOREIGN KEY ("result_uuid") REFERENCES "Result"("uuid") ON DELETE CASCADE ON UPDATE CASCADE;
+

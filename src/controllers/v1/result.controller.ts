@@ -342,7 +342,7 @@ export const create: RequestHandler = async (
 
     console.log({
       calendar_uuid: calendar.uuid,
-      class_name: student.class.name,
+      class_uuid: student.class.uuid,
       student_uuid: student.uuid,
     });
 
