@@ -342,10 +342,10 @@ export const create: RequestHandler = async (
 
     const result = await prisma.result.upsert({
       where: {
-        calendar_uuid: calendar.uuid,
-        class_name_student_uuid: {
-          student_uuid: student.uuid,
+        calendar_uuid_class_name_student_uuid: {
+          calendar_uuid: calendar.uuid,
           class_name: student.class.name,
+          student_uuid: student.uuid,
         },
       },
       update: {
@@ -389,11 +389,13 @@ export const create: RequestHandler = async (
       ),
     ]);
 
-    const existingResult = await prisma.result.findFirst({
+    const existingResult = await prisma.result.findUnique({
       where: {
-        student_uuid: student.uuid,
-        class_name: student.class.name,
-        calendar_uuid: calendar?.uuid,
+        calendar_uuid_class_name_student_uuid: {
+          calendar_uuid: calendar.uuid,
+          class_name: student.class.name,
+          student_uuid: student.uuid,
+        },
       },
     });
 
