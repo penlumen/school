@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import prisma from './prisma.config';
+import prisma from './prisma.database';
 import { Response } from 'express';
 
 type User = {

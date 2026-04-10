@@ -1,4 +1,4 @@
-import prisma from '../../config/prisma.config';
+import prisma from '../../config/prisma.database';
 import { useHashing } from '../../config/hashing';
 import { useMiddleware } from '../../config/middleware';
 import { Request, RequestHandler, Response } from 'express';
