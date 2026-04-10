@@ -71,7 +71,7 @@ export const show: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<any> => {
-  const { uuid } = req.params;
+  const uuid = Array.isArray(req.params.uuid) ? req.params.uuid[0] : req.params.uuid;
   const token = req.headers.authorization || null;
   verifyToken(token, res);
 
@@ -189,7 +189,7 @@ export const update: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<any> => {
-  const { uuid } = req.params;
+  const uuid = Array.isArray(req.params.uuid) ? req.params.uuid[0] : req.params.uuid;
   const { name, reg_number, parent_uuid, class_uuid } = req.body;
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
@@ -267,7 +267,7 @@ export const remove: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<any> => {
-  const { uuid } = req.params;
+  const uuid = Array.isArray(req.params.uuid) ? req.params.uuid[0] : req.params.uuid;
   const token = req.headers.authorization || null;
 
   const decoded = verifyToken(token, res);

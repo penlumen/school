@@ -127,7 +127,7 @@ export const show: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { uuid } = req.params;
+  const uuid = Array.isArray(req.params.uuid) ? req.params.uuid[0] : req.params.uuid;
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
   if (decoded.role != 'ADMIN') {
@@ -171,7 +171,7 @@ export const update: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { uuid } = req.params;
+  const uuid = Array.isArray(req.params.uuid) ? req.params.uuid[0] : req.params.uuid;
   const token = req.headers.authorization || null;
   const { name, email, contact, address } = req.body;
   const decoded = verifyToken(token, res);
@@ -305,7 +305,7 @@ export const remove: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { uuid } = req.params;
+  const uuid = Array.isArray(req.params.uuid) ? req.params.uuid[0] : req.params.uuid;
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
   if (decoded.role != 'ADMIN') {

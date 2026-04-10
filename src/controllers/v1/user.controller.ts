@@ -78,7 +78,7 @@ export const index: RequestHandler = async (req: Request, res: Response) => {
 };
 
 export const show: RequestHandler = async (req: Request, res: Response) => {
-  const { uuid } = req.params;
+  const uuid = Array.isArray(req.params.uuid) ? req.params.uuid[0] : req.params.uuid;
   const token = req.headers.authorization || null;
   verifyToken(token, res);
   if (!uuid) {
@@ -286,7 +286,7 @@ export const update: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { uuid } = req.params;
+  const uuid = Array.isArray(req.params.uuid) ? req.params.uuid[0] : req.params.uuid;
   const { name, email, password, position, address, contact, alt_contact } =
     req.body;
   const token = req.headers.authorization || null;
@@ -396,7 +396,7 @@ export const remove: RequestHandler = async (
   res: Response,
 ): Promise<void> => {
   const token = req.headers.authorization || null;
-  const { uuid } = req.params;
+  const uuid = Array.isArray(req.params.uuid) ? req.params.uuid[0] : req.params.uuid;
   const decoded = verifyToken(token, res);
   if (decoded.position != 'ADMINISTRATIVE') {
     res.status(400).json({

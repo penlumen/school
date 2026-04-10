@@ -15,7 +15,7 @@ export const index: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<any> => {
-  const { class_uuid } = req.params;
+  const class_uuid = Array.isArray(req.params.clasuuid) ? req.params.clasuuid[0] : req.params.clasuuid;
   const token = req.headers.authorization || null;
   verifyToken(token, res);
 
@@ -37,7 +37,7 @@ export const show: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<any> => {
-  const { subject_uuid } = req.params;
+  const subject_uuid = Array.isArray(req.params.suuuid) ? req.params.suuuid[0] : req.params.suuuid;
   const token = req.headers.authorization || null;
   verifyToken(token, res);
 
@@ -74,7 +74,7 @@ export const create: RequestHandler = async (
     return;
   }
 
-  const { class_uuid } = req.params;
+  const class_uuid = Array.isArray(req.params.class_uuid) ? req.params.class_uuid[0] : req.params.class_uuid;
   const { name } = req.body;
 
   if (!name) {
@@ -140,7 +140,7 @@ export const update: RequestHandler = async (
     return;
   }
 
-  const { subject_uuid } = req.params;
+  const subject_uuid = Array.isArray(req.params.subject_uuid) ? req.params.subject_uuid[0] : req.params.subject_uuid;
   const { name, class_uuid } = req.body;
 
   if (!name || !class_uuid) {
@@ -207,7 +207,7 @@ export const remove: RequestHandler = async (
     return;
   }
 
-  const { subject_uuid } = req.params;
+  const subject_uuid = Array.isArray(req.params.subject_uuid) ? req.params.subject_uuid[0] : req.params.subject_uuid;
   await prisma.subject.delete({
     where: { uuid: subject_uuid },
   });

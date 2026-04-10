@@ -138,7 +138,9 @@ export const show: RequestHandler = async (
   const token = req.headers.authorization || null;
   verifyToken(token, res);
 
-  const { student_uuid } = req.params;
+  const student_uuid = Array.isArray(req.params.student_uuid)
+    ? req.params.student_uuid[0]
+    : req.params.student_uuid;
   try {
     const results = await prisma.result.findMany({
       where: {
@@ -179,7 +181,9 @@ export const view: RequestHandler = async (
   verifyToken(token, res);
 
   const branch_uuid = req.headers['x-branch-session'] as string;
-  const { result_uuid } = req.params;
+  const result_uuid = Array.isArray(req.params.result_uuid)
+    ? req.params.result_uuid[0]
+    : req.params.result_uuid;
 
   if (!result_uuid) {
     return res.status(400).json({
@@ -292,7 +296,9 @@ export const create: RequestHandler = async (
   res: Response,
 ): Promise<any> => {
   try {
-    const { student_uuid } = req.params;
+    const student_uuid = Array.isArray(req.params.student_uuid)
+      ? req.params.student_uuid[0]
+      : req.params.student_uuid;
     const token = req.headers.authorization || null;
     const decoded = verifyToken(token, res);
 
@@ -328,8 +334,8 @@ export const create: RequestHandler = async (
         class_name_student_uuid: {
           student_uuid: student.uuid,
           class_name: student.class.name,
-          calendar_uuid: calendar?.uuid,
         },
+        calendar_uuid: calendar?.uuid,
       },
       update: {
         calendar_uuid: calendar?.uuid,
@@ -412,7 +418,9 @@ export const update: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<any> => {
-  const { result_uuid } = req.params;
+  const result_uuid = Array.isArray(req.params.result_uuid)
+    ? req.params.result_uuid[0]
+    : req.params.result_uuid;
   const { result, assessments } = req.body;
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
@@ -532,7 +540,9 @@ export const remove: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<any> => {
-  const { result_uuid } = req.params;
+  const result_uuid = Array.isArray(req.params.result_uuid)
+    ? req.params.result_uuid[0]
+    : req.params.result_uuid;
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
   if (decoded.position != 'ADMINISTRATIVE') {

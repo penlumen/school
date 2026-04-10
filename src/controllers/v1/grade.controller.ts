@@ -103,7 +103,7 @@ export const create: RequestHandler = async (req: Request, res: Response) => {
  * @returns
  */
 export const update: RequestHandler = async (req: Request, res: Response) => {
-  const { uuid } = req.params;
+  const uuid = Array.isArray(req.params.uuid) ? req.params.uuid[0] : req.params.uuid;
   const { score, grade, remark, description } = req.body;
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
@@ -174,7 +174,7 @@ export const update: RequestHandler = async (req: Request, res: Response) => {
  * @returns
  */
 export const remove: RequestHandler = async (req: Request, res: Response) => {
-  const { uuid } = req.params;
+  const uuid = Array.isArray(req.params.uuid) ? req.params.uuid[0] : req.params.uuid;
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
   if (decoded.position != 'ADMINISTRATIVE') {

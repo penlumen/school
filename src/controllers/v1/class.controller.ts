@@ -131,7 +131,7 @@ export const show: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<any> => {
-  const { uuid } = req.params;
+  const uuid = Array.isArray(req.params.uuid) ? req.params.uuid[0] : req.params.uuid;
   const token = req.headers.authorization || null;
   verifyToken(token, res);
 
@@ -187,7 +187,7 @@ export const update: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<any> => {
-  const { uuid } = req.params;
+  const uuid = Array.isArray(req.params.uuid) ? req.params.uuid[0] : req.params.uuid;
   const { name, capacity, teacher_uuid } = req.body;
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
@@ -244,7 +244,7 @@ export const remove: RequestHandler = async (
   res: Response,
 ): Promise<any> => {
   const token = req.headers.authorization || null;
-  const { uuid } = req.params;
+  const uuid = Array.isArray(req.params.uuid) ? req.params.uuid[0] : req.params.uuid;
   const decoded = verifyToken(token, res);
   if (decoded.postion != 'ADMINISTRATIVE') {
     res.status(400).json({
