@@ -299,6 +299,7 @@ export const create: RequestHandler = async (
     const student_uuid = Array.isArray(req.params.student_uuid)
       ? req.params.student_uuid[0]
       : req.params.student_uuid;
+
     const token = req.headers.authorization || null;
     const decoded = verifyToken(token, res);
 
@@ -315,7 +316,6 @@ export const create: RequestHandler = async (
         .json({ status: 404, success: false, message: 'Student not found' });
     }
 
-    // Authorization Check
     const isAdmin = decoded.position === 'ADMINISTRATIVE';
     const isClassTeacher = student.class.teacher_uuid === decoded.uuid;
 
@@ -325,14 +325,12 @@ export const create: RequestHandler = async (
         .json({ status: 403, success: false, message: 'Unauthorized' });
     }
 
-    const calendar = await prisma.calendar.findFirst({
-      where: {
-        branch_uuid: student.branch_uuid,
-      },
+    const latestCalendar = await prisma.calendar.findFirst({
+      where: { branch_uuid: student.branch_uuid },
       orderBy: { created_at: 'desc' },
     });
 
-    if (!calendar) {
+    if (!latestCalendar) {
       return res.status(400).json({
         status: 400,
         success: false,
@@ -340,16 +338,21 @@ export const create: RequestHandler = async (
       });
     }
 
-    console.log({
-      calendar_uuid: calendar.uuid,
-      class_uuid: student.class.uuid,
-      student_uuid: student.uuid,
+    // Check if result existed before upsert to determine created vs refreshed
+    const existingResult = await prisma.result.findUnique({
+      where: {
+        calendar_uuid_class_uuid_student_uuid: {
+          calendar_uuid: latestCalendar.uuid,
+          class_uuid: student.class.uuid,
+          student_uuid: student.uuid,
+        },
+      },
     });
 
     const result = await prisma.result.upsert({
       where: {
         calendar_uuid_class_uuid_student_uuid: {
-          calendar_uuid: calendar.uuid,
+          calendar_uuid: latestCalendar.uuid,
           class_uuid: student.class.uuid,
           student_uuid: student.uuid,
         },
@@ -358,7 +361,7 @@ export const create: RequestHandler = async (
         class_name: student.class.name,
       },
       create: {
-        calendar_uuid: calendar.uuid,
+        calendar_uuid: latestCalendar.uuid,
         class_uuid: student.class.uuid,
         class_name: student.class.name,
         student_uuid: student.uuid,
@@ -367,13 +370,12 @@ export const create: RequestHandler = async (
 
     const currentSubjectNames = student.class.subjects.map((s) => s.name);
 
+    // Regenerate assessments — prune removed subjects, add new ones
     await prisma.$transaction([
       prisma.assessments.deleteMany({
         where: {
           result_uuid: result.uuid,
-          subject: {
-            notIn: currentSubjectNames,
-          },
+          subject: { notIn: currentSubjectNames },
         },
       }),
 
@@ -394,7 +396,7 @@ export const create: RequestHandler = async (
       ),
     ]);
 
-    if (result.created_at.getTime() !== result.updated_at.getTime()) {
+    if (existingResult) {
       return res.status(200).json({
         status: 200,
         success: true,
