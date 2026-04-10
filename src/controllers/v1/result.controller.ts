@@ -330,6 +330,8 @@ export const create: RequestHandler = async (
       orderBy: { created_at: 'desc' },
     });
 
+    console.log('Latest Calendar:', latestCalendar);
+
     if (!latestCalendar) {
       return res.status(400).json({
         status: 400,
