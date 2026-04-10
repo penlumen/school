@@ -340,6 +340,8 @@ export const create: RequestHandler = async (
       });
     }
 
+    console.log({ calendar_uuid: calendar.uuid, class_name: student.class.name, student_uuid: student.uuid });
+
     const result = await prisma.result.upsert({
       where: {
         calendar_uuid_class_name_student_uuid: {
@@ -349,14 +351,13 @@ export const create: RequestHandler = async (
         },
       },
       update: {
-        calendar_uuid: calendar.uuid,
-        class_uuid: student.class.uuid,
+        class_name: student.class.name,
       },
       create: {
-        student_uuid: student.uuid,
+        calendar_uuid: calendar.uuid,
         class_uuid: student.class.uuid,
         class_name: student.class.name,
-        calendar_uuid: calendar.uuid,
+        student_uuid: student.uuid,
       },
     });
 

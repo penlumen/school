@@ -8,9 +8,9 @@ jobs:
     steps:
       - name: 🚚 Get latest code
         uses: actions/checkout@v2.3.2
-      - name: Install npm packages
+      - name: Install pnpm packages
         run: |
-          npm install
+          pnpm install
       - name: Build application
         run: |
-          npm run build
+          pnpm run build
