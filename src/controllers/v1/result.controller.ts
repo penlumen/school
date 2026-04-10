@@ -340,7 +340,7 @@ export const create: RequestHandler = async (
       });
     }
 
-    // Check if result existed before upsert to determine created vs refreshed
+    // Check if result exists for the LATEST calendar specifically
     const existingResult = await prisma.result.findUnique({
       where: {
         calendar_uuid_class_uuid_student_uuid: {
@@ -351,24 +351,21 @@ export const create: RequestHandler = async (
       },
     });
 
-    const result = await prisma.result.upsert({
-      where: {
-        calendar_uuid_class_uuid_student_uuid: {
-          calendar_uuid: latestCalendar.uuid,
-          class_uuid: student.class.uuid,
-          student_uuid: student.uuid,
-        },
-      },
-      update: {
-        class_name: student.class.name,
-      },
-      create: {
-        calendar_uuid: latestCalendar.uuid,
-        class_uuid: student.class.uuid,
-        class_name: student.class.name,
-        student_uuid: student.uuid,
-      },
-    });
+    const result = existingResult
+      ? // Refresh existing result for this calendar
+        await prisma.result.update({
+          where: { uuid: existingResult.uuid },
+          data: { class_name: student.class.name },
+        })
+      : // Create a brand new result for the new calendar
+        await prisma.result.create({
+          data: {
+            calendar_uuid: latestCalendar.uuid,
+            class_uuid: student.class.uuid,
+            class_name: student.class.name,
+            student_uuid: student.uuid,
+          },
+        });
 
     const currentSubjectNames = student.class.subjects.map((s) => s.name);
 
