@@ -7,14 +7,11 @@
 // PRISMA SCHEMA FILE
 
 generator client {
-  provider      = "prisma-client"
-  output        = "../src/config/generated/prisma"
-  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum Role {
