@@ -326,26 +326,37 @@ export const create: RequestHandler = async (
     }
 
     const calendar = await prisma.calendar.findFirst({
+      where: {
+        branch_uuid: student.branch_uuid,
+      },
       orderBy: { created_at: 'desc' },
     });
 
+    if (!calendar) {
+      return res.status(400).json({
+        status: 400,
+        success: false,
+        message: "No active calendar found for the student's branch",
+      });
+    }
+
     const result = await prisma.result.upsert({
       where: {
+        calendar_uuid: calendar.uuid,
         class_name_student_uuid: {
           student_uuid: student.uuid,
           class_name: student.class.name,
         },
-        calendar_uuid: calendar?.uuid,
       },
       update: {
-        calendar_uuid: calendar?.uuid,
+        calendar_uuid: calendar.uuid,
         class_uuid: student.class.uuid,
       },
       create: {
         student_uuid: student.uuid,
-        calendar_uuid: calendar?.uuid,
         class_uuid: student.class.uuid,
         class_name: student.class.name,
+        calendar_uuid: calendar.uuid,
       },
     });
 
