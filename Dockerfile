@@ -26,6 +26,6 @@ ENV NODE_ENV=production
 # Copy everything already built (including Prisma engines)
 COPY --from=builder /app ./
 
-EXPOSE 3000
+EXPOSE 5445
 
 CMD ["node", "dist/server"]
