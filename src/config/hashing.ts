@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 export const useHashing = () => {
   const createHash = async (password: string): Promise<string> => {

@@ -1,11 +1,11 @@
 version: '3'
 services:
-  school-api:
+  school-backend:
     build:
       context: .
       dockerfile: Dockerfile
-    image: school-api:1.0.0
-    container_name: school-api
+    image: school-backend:1.0.0
+    container_name: school-backend
     restart: unless-stopped
     ports:
       - '3000:3000'
