@@ -330,8 +330,6 @@ export const create: RequestHandler = async (
       orderBy: { created_at: 'desc' },
     });
 
-    console.log('Latest Calendar:', latestCalendar);
-
     if (!latestCalendar) {
       return res.status(400).json({
         status: 400,
@@ -340,7 +338,6 @@ export const create: RequestHandler = async (
       });
     }
 
-    // Check if result exists for the LATEST calendar specifically
     const existingResult = await prisma.result.findUnique({
       where: {
         calendar_uuid_class_uuid_student_uuid: {
@@ -352,13 +349,11 @@ export const create: RequestHandler = async (
     });
 
     const result = existingResult
-      ? // Refresh existing result for this calendar
-        await prisma.result.update({
+      ? await prisma.result.update({
           where: { uuid: existingResult.uuid },
           data: { class_name: student.class.name },
         })
-      : // Create a brand new result for the new calendar
-        await prisma.result.create({
+      : await prisma.result.create({
           data: {
             calendar_uuid: latestCalendar.uuid,
             class_uuid: student.class.uuid,
@@ -369,45 +364,29 @@ export const create: RequestHandler = async (
 
     const currentSubjectNames = student.class.subjects.map((s) => s.name);
 
-    // Regenerate assessments — prune removed subjects, add new ones
-    await prisma.$transaction([
-      prisma.assessments.deleteMany({
-        where: {
-          result_uuid: result.uuid,
-          subject: { notIn: currentSubjectNames },
-        },
-      }),
+    // Remove assessments for subjects no longer in the class
+    await prisma.assessments.deleteMany({
+      where: {
+        result_uuid: result.uuid,
+        subject: { notIn: currentSubjectNames },
+      },
+    });
 
-      ...student.class.subjects.map((subject) =>
-        prisma.assessments.upsert({
-          where: {
-            result_uuid_subject: {
-              result_uuid: result.uuid,
-              subject: subject.name,
-            },
-          },
-          update: {},
-          create: {
-            result_uuid: result.uuid,
-            subject: subject.name,
-          },
-        }),
-      ),
-    ]);
+    // Bulk insert new subjects, skip ones that already exist
+    await prisma.assessments.createMany({
+      data: currentSubjectNames.map((subject) => ({
+        result_uuid: result.uuid,
+        subject,
+      })),
+      skipDuplicates: true,
+    });
 
-    if (existingResult) {
-      return res.status(200).json({
-        status: 200,
-        success: true,
-        message: 'Result refreshed successfully',
-        data: { result },
-      });
-    }
-
-    return res.status(201).json({
-      status: 201,
+    return res.status(existingResult ? 200 : 201).json({
+      status: existingResult ? 200 : 201,
       success: true,
-      message: 'Result created successfully',
+      message: existingResult
+        ? 'Result refreshed successfully'
+        : 'Result created successfully',
       data: { result },
     });
   } catch (error) {
