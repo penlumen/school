@@ -191,7 +191,7 @@ export const update: RequestHandler = async (
   const { name, capacity, teacher_uuid } = req.body;
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
-  if (decoded.postion != 'ADMINISTRATIVE') {
+  if (decoded.position !== 'ADMINISTRATIVE') {
     res.status(400).json({
       status: 400,
       success: false,
