@@ -191,7 +191,7 @@ model Class {
   updated_at   DateTime @updatedAt
 
   branch   Branch?   @relation(fields: [branch_uuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
-  teacher  User?     @relation(fields: [teacher_uuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
+  teacher  User?     @relation(fields: [teacher_uuid], references: [uuid], onDelete: SetNull, onUpdate: Cascade)
   subjects Subject[]
   students Student[]
 }

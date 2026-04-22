@@ -75,7 +75,7 @@ export const create: RequestHandler = async (req: Request, res: Response) => {
   const token = req.headers.authorization || null;
   const decoded = verifyToken(token, res);
 
-  if (decoded.postion != 'ADMINISTRATIVE') {
+  if (decoded.position !== 'ADMINISTRATIVE') {
     res.status(400).json({
       status: 400,
       success: false,
@@ -246,7 +246,7 @@ export const remove: RequestHandler = async (
   const token = req.headers.authorization || null;
   const uuid = Array.isArray(req.params.uuid) ? req.params.uuid[0] : req.params.uuid;
   const decoded = verifyToken(token, res);
-  if (decoded.postion != 'ADMINISTRATIVE') {
+  if (decoded.position !== 'ADMINISTRATIVE') {
     res.status(400).json({
       status: 400,
       success: false,
