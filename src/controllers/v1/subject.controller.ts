@@ -15,7 +15,7 @@ export const index: RequestHandler = async (
   req: Request,
   res: Response,
 ): Promise<any> => {
-  const class_uuid = Array.isArray(req.params.clasuuid) ? req.params.clasuuid[0] : req.params.clasuuid;
+  const class_uuid = Array.isArray(req.params.class_uuid) ? req.params.class_uuid[0] : req.params.class_uuid;
   const token = req.headers.authorization || null;
   verifyToken(token, res);
 
