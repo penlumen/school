@@ -1,5 +1,10 @@
 node_modules
-src/config/generated
+.turbo
 dist
-.idea
+.next
+out
+*.tsbuildinfo
 .env
+.env.local
+.DS_Store
+apps/api/generated
