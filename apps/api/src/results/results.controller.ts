@@ -27,8 +27,12 @@ export class ResultsController {
   }
 
   @Post('create/:student_uuid')
-  create(@Param('student_uuid') studentUuid: string, @CurrentUser() user: DecodedUser) {
-    return this.resultsService.create(studentUuid, user);
+  create(
+    @Param('student_uuid') studentUuid: string,
+    @CurrentUser() user: DecodedUser,
+    @Body() body: { calendar_uuid?: string },
+  ) {
+    return this.resultsService.create(studentUuid, user, body?.calendar_uuid);
   }
 
   @Patch('update/:result_uuid')

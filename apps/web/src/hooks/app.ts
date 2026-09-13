@@ -18,7 +18,27 @@ export const useApp = () => {
     }
   };
 
+  const attendancePerformance = async (year?: number): Promise<any> => {
+    const response = await axiosInstance.get('/api/v1/dashboard/attendance', {
+      params: year ? { year } : {},
+    });
+    const data = response.data;
+
+    if (!data.success || !data.data) {
+      return {
+        success: false,
+        message: data.message || 'Something went wrong',
+      };
+    } else {
+      return {
+        success: true,
+        data: data.data,
+      };
+    }
+  };
+
   return {
     dashboard,
+    attendancePerformance,
   };
 };

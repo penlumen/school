@@ -12,7 +12,7 @@ export default function DashboardLayout({
   const userString = Cookies.get('user');
   const user = userString ? JSON.parse(userString) : null;
   if (user?.role != 'PARENT') {
-    router.push('/staff/dashboard');
+    // router.push('/staff/dashboard');
   }
   return <div>{children}</div>;
 }

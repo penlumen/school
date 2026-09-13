@@ -12,6 +12,12 @@ export class CalendarController {
     return this.calendarService.index(branchUuid);
   }
 
+  @Get('active')
+  async active(@Headers('x-branch-session') branchUuid: string) {
+    const calendar = await this.calendarService.active(branchUuid);
+    return { status: 200, success: true, message: 'Active term', data: { calendar } };
+  }
+
   @Post('create')
   create(
     @Headers('x-branch-session') branchUuid: string,

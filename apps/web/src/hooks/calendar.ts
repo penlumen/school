@@ -1,5 +1,13 @@
 import {axiosInstance} from '@/lib/axios';
 
+export interface CalendarPayload {
+    session: string;
+    term: string;
+    next_term_resumption_date: string;
+    close_date: string;
+    status?: 'ACTIVE' | 'INACTIVE';
+}
+
 export const useCalendar = () => {
     const index = async () => {
         const response = await axiosInstance.get('/api/v1/calendar/index');
@@ -9,12 +17,15 @@ export const useCalendar = () => {
             : {success: false, message: data.message || 'Something went wrong'};
     };
 
-    const create = async (calendarData: {
-        session: string;
-        term: string;
-        open_date: string;
-        close_date: string;
-    }) => {
+    const active = async () => {
+        const response = await axiosInstance.get('/api/v1/calendar/active');
+        const data = response.data;
+        return data.success
+            ? {success: true, data: data.data}
+            : {success: false, message: data.message || 'Something went wrong'};
+    };
+
+    const create = async (calendarData: CalendarPayload) => {
         const response = await axiosInstance.post('/api/v1/calendar/create', calendarData);
         const data = response.data;
         return data.success
@@ -22,10 +33,7 @@ export const useCalendar = () => {
             : {success: false, message: data.message || 'Something went wrong'};
     };
 
-    const update = async (
-        uuid: string,
-        calendarData: { session: string; term: string; open_date: string; close_date: string }
-    ) => {
+    const update = async (uuid: string, calendarData: CalendarPayload) => {
         const response = await axiosInstance.patch(`/api/v1/calendar/update/${uuid}`, calendarData);
         const data = response.data;
         return data.success
@@ -41,5 +49,5 @@ export const useCalendar = () => {
             : {success: false, message: data.message || 'Something went wrong'};
     };
 
-    return {index, create, update, remove};
+    return {index, active, create, update, remove};
 };

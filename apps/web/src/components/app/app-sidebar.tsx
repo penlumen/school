@@ -38,6 +38,7 @@ import {
   CreditCard,
   FileText,
   GraduationCap,
+  HelpCircle,
   LayoutDashboard,
   LogOut,
   Settings,
@@ -243,6 +244,10 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
             <SidebarTrigger className='text-foreground outline-0' />
 
             <div className='flex items-center gap-2'>
+              <button className='hidden sm:flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground px-2 py-1.5 rounded-md hover:bg-muted'>
+                <HelpCircle className='h-4 w-4' />
+                Help
+              </button>
               {profile?.role !== 'PARENT' && <NotificationBell />}
             </div>
           </header>

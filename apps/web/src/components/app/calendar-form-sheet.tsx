@@ -5,6 +5,7 @@ import {toast} from 'sonner';
 
 import {useCalendar} from '@/hooks/calendar';
 import {Button} from '@/components/ui/button';
+import {Checkbox} from '@/components/ui/checkbox';
 import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
 import {
@@ -25,8 +26,10 @@ export interface CalendarRecord {
     uuid: string;
     session: string;
     term: string | null;
-    open_date: string;
+    next_term_resumption_date: string;
+    open_date: string | null;
     close_date: string;
+    status: 'ACTIVE' | 'INACTIVE';
 }
 
 interface CalendarFormSheetProps {
@@ -38,11 +41,12 @@ interface CalendarFormSheetProps {
 
 const TERM_OPTIONS = ['1st term', '2nd term', '3rd term'];
 
-const emptyForm = {session: '', term: '', open_date: '', close_date: ''};
+const emptyForm = {session: '', term: '', next_term_resumption_date: '', close_date: ''};
 
 export function CalendarFormSheet({open, onOpenChange, calendarItem, onSaved}: CalendarFormSheetProps) {
     const {create, update} = useCalendar();
     const [formData, setFormData] = useState(emptyForm);
+    const [isActive, setIsActive] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
     const isEdit = !!calendarItem;
@@ -54,26 +58,30 @@ export function CalendarFormSheet({open, onOpenChange, calendarItem, onSaved}: C
                     ? {
                         session: calendarItem.session || '',
                         term: calendarItem.term || '',
-                        open_date: calendarItem.open_date ? calendarItem.open_date.slice(0, 10) : '',
+                        next_term_resumption_date: calendarItem.next_term_resumption_date
+                            ? calendarItem.next_term_resumption_date.slice(0, 10)
+                            : '',
                         close_date: calendarItem.close_date ? calendarItem.close_date.slice(0, 10) : '',
                     }
                     : emptyForm
             );
+            setIsActive(calendarItem?.status === 'ACTIVE');
         }
     }, [open, calendarItem]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.session || !formData.term || !formData.open_date || !formData.close_date) {
+        if (!formData.session || !formData.term || !formData.next_term_resumption_date || !formData.close_date) {
             toast.error('All fields are required');
             return;
         }
 
         setSubmitting(true);
         try {
+            const payload = {...formData, status: isActive ? ('ACTIVE' as const) : ('INACTIVE' as const)};
             const response = isEdit
-                ? await update(calendarItem!.uuid, formData)
-                : await create(formData);
+                ? await update(calendarItem!.uuid, payload)
+                : await create(payload);
 
             if (response.success) {
                 toast.success(`Section ${isEdit ? 'updated' : 'added'} successfully`);
@@ -126,14 +134,28 @@ export function CalendarFormSheet({open, onOpenChange, calendarItem, onSaved}: C
                         </Select>
                     </div>
 
+                    {isEdit && calendarItem?.open_date && (
+                        <div className='space-y-1 rounded-md border bg-muted/40 px-3 py-2'>
+                            <Label className='text-xs text-muted-foreground'>Open date</Label>
+                            <p className='text-sm'>
+                                {new Date(calendarItem.open_date).toLocaleDateString('en-US', {
+                                    month: 'long', day: 'numeric', year: 'numeric',
+                                })}
+                            </p>
+                            <p className='text-xs text-muted-foreground'>
+                                Derived automatically from the previous term&apos;s resumption date.
+                            </p>
+                        </div>
+                    )}
+
                     <div className='grid grid-cols-2 gap-4'>
                         <div className='space-y-2'>
-                            <Label htmlFor='open_date'>Open date</Label>
+                            <Label htmlFor='next_term_resumption_date'>Next term resumption date</Label>
                             <Input
-                                id='open_date'
+                                id='next_term_resumption_date'
                                 type='date'
-                                value={formData.open_date}
-                                onChange={(e) => setFormData({...formData, open_date: e.target.value})}
+                                value={formData.next_term_resumption_date}
+                                onChange={(e) => setFormData({...formData, next_term_resumption_date: e.target.value})}
                             />
                         </div>
                         <div className='space-y-2'>
@@ -144,6 +166,22 @@ export function CalendarFormSheet({open, onOpenChange, calendarItem, onSaved}: C
                                 value={formData.close_date}
                                 onChange={(e) => setFormData({...formData, close_date: e.target.value})}
                             />
+                        </div>
+                    </div>
+
+                    <div className='flex items-start gap-2 rounded-md border px-3 py-2.5'>
+                        <Checkbox
+                            id='is-active'
+                            checked={isActive}
+                            onCheckedChange={(checked) => setIsActive(checked === true)}
+                            className='mt-0.5'
+                        />
+                        <div>
+                            <Label htmlFor='is-active' className='cursor-pointer'>Set as active term</Label>
+                            <p className='text-xs text-muted-foreground'>
+                                Only one term can be active at a time - this replaces whichever term is currently
+                                active, and it&apos;s the term reports are generated against by default.
+                            </p>
                         </div>
                     </div>
 

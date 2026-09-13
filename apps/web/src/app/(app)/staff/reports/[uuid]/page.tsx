@@ -1,10 +1,13 @@
 'use client';
 
 import {useCallback, useEffect, useState} from 'react';
+import Cookies from 'js-cookie';
 import {ArrowLeft, Clock, Edit, Printer as Print, Save, Users, X} from 'lucide-react';
 import {Badge} from '@/components/ui/badge';
 import {Button} from '@/components/ui/button';
+import {Checkbox} from '@/components/ui/checkbox';
 import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
 import {Textarea} from '@/components/ui/textarea';
 import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
 import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
@@ -80,6 +83,14 @@ export default function ReportPage() {
     const [isEditing, setIsEditing] = useState(false);
     const [reportData, setReportData] = useState<ResultData | null>(null);
     const [assessments, setAssessments] = useState<AssessmentObject[]>([]);
+    const [approved, setApproved] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
+
+    useEffect(() => {
+        const userString = Cookies.get('user');
+        const user = userString ? JSON.parse(userString) : null;
+        setIsAdmin(user?.position === 'ADMINISTRATIVE');
+    }, []);
 
     const fetchData = async () => {
         try {
@@ -87,6 +98,7 @@ export default function ReportPage() {
             if (response.success) {
                 setReportData(response.data);
                 setAssessments(response.data.assessments || []);
+                setApproved(response.data.result.status === 'APPROVED');
             }
         } catch (error) {
             console.error('Error fetching report', error);
@@ -187,7 +199,7 @@ export default function ReportPage() {
                 {
                     teacher_remark: reportData.result.teacher_remark,
                     principal_remark: reportData.result.principal_remark,
-                    status: 'PENDING',
+                    status: approved ? 'APPROVED' : 'PENDING',
                 },
                 assessments
             );
@@ -376,31 +388,69 @@ export default function ReportPage() {
                 </Table>
             </Card>
 
-            {/* REMARKS SECTION */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {(['teacher_remark', 'principal_remark'] as const).map((field) => (
-                    <Card key={field} className="shadow-sm border-slate-200">
+            {/* APPROVAL (admin only) */}
+            {isEditing && isAdmin && (
+                <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50/50 px-4 py-3">
+                    <Checkbox
+                        id="approve-result"
+                        checked={approved}
+                        onCheckedChange={(checked) => setApproved(checked === true)}
+                    />
+                    <Label htmlFor="approve-result" className="text-sm font-medium cursor-pointer">
+                        Approve this result
+                    </Label>
+                </div>
+            )}
+
+            {/* REMARKS SECTION - stacked top (teacher) then bottom (principal) */}
+            <div className="flex flex-col gap-6">
+                <Card className="shadow-sm border-slate-200">
+                    <CardHeader className="pb-2 bg-slate-50/50 border-b mb-4">
+                        <CardTitle className="text-xs font-black uppercase text-slate-500 tracking-widest">
+                            Teacher remark
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {isEditing ? (
+                            <Textarea
+                                value={result.teacher_remark || ''}
+                                onChange={(e) => updateRemark('teacher_remark', e.target.value)}
+                                placeholder="Enter official teacher comment..."
+                                className="min-h-[100px] border-slate-200 focus:border-emerald-500"
+                            />
+                        ) : (
+                            <p className="text-sm italic text-slate-600 leading-relaxed">
+                                {result.teacher_remark || 'No official remark recorded for this period.'}
+                            </p>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Principal remark: always visible when reading, but while editing it's
+                    only shown to an admin who has ticked the approval checkbox above. */}
+                {(!isEditing || (isAdmin && approved)) && (
+                    <Card className="shadow-sm border-slate-200">
                         <CardHeader className="pb-2 bg-slate-50/50 border-b mb-4">
                             <CardTitle className="text-xs font-black uppercase text-slate-500 tracking-widest">
-                                {field.replace('_', ' ')}
+                                Principal remark
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             {isEditing ? (
                                 <Textarea
-                                    value={result[field] || ''}
-                                    onChange={(e) => updateRemark(field, e.target.value)}
-                                    placeholder={`Enter official ${field.split('_')[0]} comment...`}
+                                    value={result.principal_remark || ''}
+                                    onChange={(e) => updateRemark('principal_remark', e.target.value)}
+                                    placeholder="Enter official principal comment..."
                                     className="min-h-[100px] border-slate-200 focus:border-emerald-500"
                                 />
                             ) : (
                                 <p className="text-sm italic text-slate-600 leading-relaxed">
-                                    {result[field] || 'No official remark recorded for this period.'}
+                                    {result.principal_remark || 'No official remark recorded for this period.'}
                                 </p>
                             )}
                         </CardContent>
                     </Card>
-                ))}
+                )}
             </div>
 
             {/* UNSAVED CHANGES FLOATER */}

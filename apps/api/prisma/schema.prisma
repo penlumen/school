@@ -155,14 +155,27 @@ model BranchAccess {
   @@unique([user_uuid, branch_uuid, role])
 }
 
+enum CalendarStatus {
+  ACTIVE
+  INACTIVE
+}
+
 model Calendar {
   id          Int      @id @default(autoincrement())
   uuid        String   @unique @default(uuid())
   branch_uuid String
   session     String
   term        String?
-  open_date   DateTime
+  // Resumption date the school itself sets for this term.
+  next_term_resumption_date DateTime
+  // Derived: the previous term's next_term_resumption_date, i.e. when this
+  // term actually opened. Computed at creation time, nullable since the
+  // very first term for a branch has no predecessor to derive it from.
+  open_date   DateTime?
   close_date  DateTime
+  // Exactly one Calendar per branch can be ACTIVE at a time - that's the
+  // term report generation targets by default (see ResultsService.create).
+  status      CalendarStatus @default(INACTIVE)
   created_at  DateTime @default(now())
   updated_at  DateTime @default(now()) @updatedAt
 

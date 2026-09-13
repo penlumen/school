@@ -6,6 +6,7 @@ import {toast} from 'sonner';
 import {Eye, Pencil, Plus, Trash2} from 'lucide-react';
 
 import {useCalendar} from '@/hooks/calendar';
+import {Badge} from '@/components/ui/badge';
 import {Button} from '@/components/ui/button';
 import {
     Table,
@@ -99,15 +100,16 @@ export default function SchedulePage() {
                         <TableRow>
                             <TableHead>Session</TableHead>
                             <TableHead>Term</TableHead>
-                            <TableHead>Open date</TableHead>
+                            <TableHead>Next term resumption</TableHead>
                             <TableHead>Close date</TableHead>
+                            <TableHead>Status</TableHead>
                             <TableHead className='text-right'>Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {sections.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={5} className='h-24 text-center text-muted-foreground'>
+                                <TableCell colSpan={6} className='h-24 text-center text-muted-foreground'>
                                     No sections yet.
                                 </TableCell>
                             </TableRow>
@@ -117,7 +119,7 @@ export default function SchedulePage() {
                                     <TableCell className='font-medium'>{section.session}</TableCell>
                                     <TableCell className='capitalize'>{section.term}</TableCell>
                                     <TableCell>
-                                        {new Date(section.open_date).toLocaleDateString('en-US', {
+                                        {new Date(section.next_term_resumption_date).toLocaleDateString('en-US', {
                                             month: 'short', day: 'numeric', year: 'numeric',
                                         })}
                                     </TableCell>
@@ -125,6 +127,11 @@ export default function SchedulePage() {
                                         {new Date(section.close_date).toLocaleDateString('en-US', {
                                             month: 'short', day: 'numeric', year: 'numeric',
                                         })}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant={section.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                                            {section.status === 'ACTIVE' ? 'Active' : 'Inactive'}
+                                        </Badge>
                                     </TableCell>
                                     <TableCell className='text-right'>
                                         <div className='flex justify-end gap-1'>

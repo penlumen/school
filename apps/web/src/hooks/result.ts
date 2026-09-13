@@ -80,9 +80,10 @@ export const useResult = () => {
         }
     };
 
-    const create = async (student_uuid: string) => {
+    const create = async (student_uuid: string, calendar_uuid?: string) => {
         const response = await axiosInstance.post(
-            `/api/v1/result/create/${student_uuid}`
+            `/api/v1/result/create/${student_uuid}`,
+            calendar_uuid ? {calendar_uuid} : {}
         );
         const data = response.data;
 

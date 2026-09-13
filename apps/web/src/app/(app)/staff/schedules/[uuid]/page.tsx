@@ -71,6 +71,7 @@ export default function CalendarDetailPage() {
                 const found = (calRes.data.calendars || []).find((c: any) => c.uuid === uuid);
                 setSection(found || null);
                 if (found?.open_date) setRefDate(new Date(found.open_date));
+                else if (found?.next_term_resumption_date) setRefDate(new Date(found.next_term_resumption_date));
             }
             if (evRes.success) {
                 setEvents(evRes.data.events || []);

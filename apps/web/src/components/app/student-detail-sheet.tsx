@@ -7,10 +7,19 @@ import {Copy, Eye, Plus, Trash2} from 'lucide-react';
 
 import {useResult} from '@/hooks/result';
 import {useStudentAttendance} from '@/hooks/student-attendance';
+import {useCalendar} from '@/hooks/calendar';
 import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
 import {Badge} from '@/components/ui/badge';
 import {Button} from '@/components/ui/button';
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
+import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
     Sheet,
     SheetContent,
@@ -46,8 +55,12 @@ export function StudentDetailSheet({open, onOpenChange, student}: StudentDetailS
     const router = useRouter();
     const {show, create, remove} = useResult();
     const {history} = useStudentAttendance();
+    const {index: indexCalendars} = useCalendar();
     const [results, setResults] = useState<any[]>([]);
     const [attendance, setAttendance] = useState<any[]>([]);
+    const [calendars, setCalendars] = useState<any[]>([]);
+    const [selectedCalendar, setSelectedCalendar] = useState<string>('');
+    const [termPickerOpen, setTermPickerOpen] = useState(false);
     const [creating, setCreating] = useState(false);
     const [pendingDelete, setPendingDelete] = useState<any | null>(null);
 
@@ -67,10 +80,21 @@ export function StudentDetailSheet({open, onOpenChange, student}: StudentDetailS
         }
     };
 
+    const fetchCalendars = async () => {
+        const response = await indexCalendars();
+        if (response.success) {
+            const list = response.data.calendars || [];
+            setCalendars(list);
+            const active = list.find((c: any) => c.status === 'ACTIVE');
+            setSelectedCalendar(active?.uuid || list[0]?.uuid || '');
+        }
+    };
+
     useEffect(() => {
         if (open && student) {
             fetchResults();
             fetchAttendance();
+            fetchCalendars();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, student]);
@@ -80,10 +104,9 @@ export function StudentDetailSheet({open, onOpenChange, student}: StudentDetailS
     const handleNewResult = async () => {
         setCreating(true);
         try {
-            // The backend always targets the branch's most recent session/term,
-            // so there's no session/term to pick here.
-            const response = await create(student.uuid);
+            const response = await create(student.uuid, selectedCalendar || undefined);
             if (response.success) {
+                setTermPickerOpen(false);
                 router.push(`/staff/reports/${response.data.result.uuid}`);
             } else {
                 toast.error(response.message || 'Could not create result');
@@ -186,10 +209,42 @@ export function StudentDetailSheet({open, onOpenChange, student}: StudentDetailS
 
                         <TabsContent value='results' className='pt-2 space-y-3'>
                             <div className='flex justify-end'>
-                                <Button size='sm' disabled={creating} onClick={handleNewResult}>
-                                    <Plus className='h-4 w-4'/>
-                                    {creating ? 'Creating...' : 'New result'}
-                                </Button>
+                                <Popover open={termPickerOpen} onOpenChange={setTermPickerOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button size='sm'>
+                                            <Plus className='h-4 w-4'/>
+                                            New result
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent align='end' className='w-64 space-y-3'>
+                                        <div className='space-y-1.5'>
+                                            <p className='text-xs font-medium text-muted-foreground'>
+                                                Generate report for
+                                            </p>
+                                            <Select value={selectedCalendar} onValueChange={setSelectedCalendar}>
+                                                <SelectTrigger className='w-full'>
+                                                    <SelectValue placeholder='Select term'/>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {calendars.map((cal) => (
+                                                        <SelectItem key={cal.uuid} value={cal.uuid}>
+                                                            {cal.session} - {cal.term}
+                                                            {cal.status === 'ACTIVE' ? ' (Active)' : ''}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <Button
+                                            size='sm'
+                                            className='w-full'
+                                            disabled={creating || !selectedCalendar}
+                                            onClick={handleNewResult}
+                                        >
+                                            {creating ? 'Creating...' : 'Generate report'}
+                                        </Button>
+                                    </PopoverContent>
+                                </Popover>
                             </div>
 
                             {results.length === 0 ? (

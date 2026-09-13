@@ -4,6 +4,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { CalendarStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 
@@ -24,14 +25,20 @@ export class CalendarService {
     return { status: 200, success: true, message: 'Calendars', data: { calendars } };
   }
 
+  /** The one ACTIVE term for a branch, if any - what report generation targets by default. */
+  async active(branchUuid: string) {
+    return this.prisma.calendar.findFirst({ where: { branch_uuid: branchUuid, status: 'ACTIVE' } });
+  }
+
   async create(branchUuid: string | undefined, decoded: DecodedUser, body: any) {
-    const { session, term, open_date, close_date } = body;
+    const { session, term, next_term_resumption_date, close_date } = body;
+    const status: CalendarStatus = body.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE';
 
     if (decoded.position !== 'ADMINISTRATIVE') {
       throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
     }
 
-    if (!session || !term || !open_date || !close_date) {
+    if (!session || !term || !next_term_resumption_date || !close_date) {
       throw new BadRequestException({
         status: 422,
         success: false,
@@ -43,21 +50,45 @@ export class CalendarService {
       throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
     }
 
-    const result = await this.prisma.calendar.create({
-      data: { branch_uuid: branchUuid, session, term, open_date, close_date },
+    // Derive this term's open_date from the previous term's
+    // next_term_resumption_date - null if this is the branch's first term.
+    const previousTerm = await this.prisma.calendar.findFirst({
+      where: { branch_uuid: branchUuid },
+      orderBy: { created_at: 'desc' },
+    });
+
+    const result = await this.prisma.$transaction(async (tx: any) => {
+      if (status === 'ACTIVE') {
+        await tx.calendar.updateMany({
+          where: { branch_uuid: branchUuid, status: 'ACTIVE' },
+          data: { status: 'INACTIVE' },
+        });
+      }
+
+      return tx.calendar.create({
+        data: {
+          branch_uuid: branchUuid,
+          session,
+          term,
+          next_term_resumption_date,
+          close_date,
+          open_date: previousTerm?.next_term_resumption_date ?? null,
+          status,
+        },
+      });
     });
 
     return { status: 201, success: true, message: 'Calendar created', data: { calendar: result } };
   }
 
   async update(uuid: string, branchUuid: string | undefined, decoded: DecodedUser, body: any) {
-    const { session, term, open_date, close_date } = body;
+    const { session, term, next_term_resumption_date, close_date } = body;
 
     if (decoded.position !== 'ADMINISTRATIVE') {
       throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
     }
 
-    if (!session || !term || !open_date || !close_date) {
+    if (!session || !term || !next_term_resumption_date || !close_date) {
       throw new BadRequestException({
         status: 422,
         success: false,
@@ -74,9 +105,26 @@ export class CalendarService {
       throw new NotFoundException({ status: 404, success: false, message: 'Calendar not found' });
     }
 
-    const result = await this.prisma.calendar.update({
-      where: { uuid },
-      data: { session, term, open_date, close_date },
+    const makeActive = body.status === 'ACTIVE';
+
+    const result = await this.prisma.$transaction(async (tx: any) => {
+      if (makeActive) {
+        await tx.calendar.updateMany({
+          where: { branch_uuid: branchUuid, status: 'ACTIVE', NOT: { uuid } },
+          data: { status: 'INACTIVE' },
+        });
+      }
+
+      return tx.calendar.update({
+        where: { uuid },
+        data: {
+          session,
+          term,
+          next_term_resumption_date,
+          close_date,
+          status: body.status === 'ACTIVE' || body.status === 'INACTIVE' ? body.status : undefined,
+        },
+      });
     });
 
     return { status: 200, success: true, message: 'Calendar updated', data: { calendar: result } };

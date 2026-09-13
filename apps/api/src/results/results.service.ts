@@ -194,7 +194,7 @@ export class ResultsService {
     };
   }
 
-  async create(studentUuid: string, decoded: DecodedUser) {
+  async create(studentUuid: string, decoded: DecodedUser, calendarUuid?: string) {
     try {
       const student = await this.prisma.student.findUnique({
         where: { uuid: studentUuid },
@@ -212,23 +212,30 @@ export class ResultsService {
         throw new ForbiddenException({ status: 403, success: false, message: 'Unauthorized' });
       }
 
-      const latestCalendar = await this.prisma.calendar.findFirst({
-        where: { branch_uuid: student.branch_uuid },
-        orderBy: { created_at: 'desc' },
-      });
+      // Default to the branch's active term; an explicit calendar_uuid lets
+      // the caller generate a report for a different (non-active) term instead.
+      const targetCalendar = calendarUuid
+        ? await this.prisma.calendar.findFirst({
+            where: { uuid: calendarUuid, branch_uuid: student.branch_uuid },
+          })
+        : await this.prisma.calendar.findFirst({
+            where: { branch_uuid: student.branch_uuid, status: 'ACTIVE' },
+          });
 
-      if (!latestCalendar) {
+      if (!targetCalendar) {
         throw new BadRequestException({
           status: 400,
           success: false,
-          message: "No active calendar found for the student's branch",
+          message: calendarUuid
+            ? 'Selected term was not found for this branch'
+            : "No active term set for this branch - set one as active, or pass a specific calendar_uuid",
         });
       }
 
       const existingResult = await this.prisma.result.findUnique({
         where: {
           calendar_uuid_class_uuid_student_uuid: {
-            calendar_uuid: latestCalendar.uuid,
+            calendar_uuid: targetCalendar.uuid,
             class_uuid: student.class.uuid,
             student_uuid: student.uuid,
           },
@@ -242,7 +249,7 @@ export class ResultsService {
           })
         : await this.prisma.result.create({
             data: {
-              calendar_uuid: latestCalendar.uuid,
+              calendar_uuid: targetCalendar.uuid,
               class_uuid: student.class.uuid,
               class_name: student.class.name,
               student_uuid: student.uuid,
@@ -357,7 +364,15 @@ export class ResultsService {
         overall: total,
         calendar_uuid: result?.calendar,
         teacher_remark: result?.teacher_remark,
-        principal_remark: result?.principal_remark,
+        // Only an administrator can approve a result or write the
+        // principal's remark - a class teacher's update() call simply
+        // can't move either of these fields, regardless of what's posted.
+        ...(isAdmin
+          ? {
+              status: result?.status,
+              principal_remark: result?.principal_remark,
+            }
+          : {}),
       },
       include: { student: true, assessments: true },
     });
