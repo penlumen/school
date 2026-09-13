@@ -34,6 +34,13 @@ enum ResultStatus {
   REJECTED
 }
 
+enum AttendanceStatus {
+  PENDING
+  PRESENT
+  ABSENT
+}
+
+
 // ========== USER ==========
 model User {
   id              Int      @id @default(autoincrement())
@@ -166,15 +173,11 @@ model Calendar {
   branch_uuid String
   session     String
   term        String?
-  // Resumption date the school itself sets for this term.
-  next_term_resumption_date DateTime
-  // Derived: the previous term's next_term_resumption_date, i.e. when this
-  // term actually opened. Computed at creation time, nullable since the
-  // very first term for a branch has no predecessor to derive it from.
+  
   open_date   DateTime?
   close_date  DateTime
-  // Exactly one Calendar per branch can be ACTIVE at a time - that's the
-  // term report generation targets by default (see ResultsService.create).
+  next_term_resumption_date DateTime
+
   status      CalendarStatus @default(INACTIVE)
   created_at  DateTime @default(now())
   updated_at  DateTime @default(now()) @updatedAt
@@ -301,14 +304,6 @@ model Assessments {
 }
 
 // ========== ATTENDANCE ==========
-// Facial-recognition matching happens client-side in the browser (face-api.js);
-// the backend only ever receives the already-matched student/staff uuid to mark.
-enum AttendanceStatus {
-  PENDING
-  PRESENT
-  ABSENT
-}
-
 model StudentAttendance {
   id              Int              @id @default(autoincrement())
   uuid            String           @unique @default(uuid())
@@ -348,9 +343,6 @@ model StaffAttendance {
 }
 
 // ========== SCHEDULE / EVENTS ==========
-// One school event, scoped to a session/term (Calendar). Tags identify who the
-// event is relevant to: either "all staff"/"all parents", or a specific
-// hand-picked list of staff/parents (both are supported at once).
 model Event {
   id              Int      @id @default(autoincrement())
   uuid            String   @unique @default(uuid())
@@ -388,8 +380,6 @@ model EventTag {
 }
 
 // ========== NOTIFICATIONS ==========
-// One row per recipient (simple & easy to query "my inbox"/"mark as read"),
-// rather than a single shared row with a separate read-state join table.
 model Notification {
   id         Int      @id @default(autoincrement())
   uuid       String   @unique @default(uuid())
