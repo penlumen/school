@@ -12,17 +12,8 @@ services:
       NODE_ENV: production
       PORT: 5445
       JWT_SECRET: ${JWT_SECRET:-JWT_SECRET}
-      DATABASE_URL: postgresql://admin:password@postgres-db:5432/school?schema=public
-      REDIS_URL: redis://redis:6379
-      AWS_REGION: ${AWS_REGION:-}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
-      AWS_S3_BUCKET: ${AWS_S3_BUCKET:-}
-      AWS_S3_PUBLIC_URL: ${AWS_S3_PUBLIC_URL:-}
-      AWS_S3_ENDPOINT: ${AWS_S3_ENDPOINT:-}
-      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
-      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL:-}
-      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY:-}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://admin:password@postgres-db:5432/school?schema=public}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -34,9 +25,7 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        # NEXT_PUBLIC_* vars are baked into the client bundle at build time,
-        # so they have to be passed as build args, not just runtime env.
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5445}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
         NEXT_PUBLIC_SCHOOL_TOKEN: ${NEXT_PUBLIC_SCHOOL_TOKEN:-}
     image: school-frontend:1.0.0
     container_name: school-frontend

@@ -1,50 +1,71 @@
-# Build context is the monorepo root (see docker-compose.yaml), since Bun
-# workspaces need the root package.json/bun.lock to resolve apps/api's deps.
+# syntax=docker/dockerfile:1
 
-FROM oven/bun:1.4-alpine AS base
+############################
+# 1. Base Image
+############################
+FROM oven/bun:1-alpine AS base
 WORKDIR /app
-# Prisma's query engine needs OpenSSL present on the system, both to detect
-# the right engine at `prisma generate` time and to actually run it later.
-RUN apk add --no-cache openssl
 
-# --- deps: install once, cached as long as lockfiles don't change ---
+############################
+# 2. Dependencies Stage
+############################
 FROM base AS deps
-COPY package.json bun.lock ./
-COPY apps/api/package.json apps/api/package.json
-COPY apps/web/package.json apps/web/package.json
+COPY package.json bun.lock* ./
 RUN bun install --frozen-lockfile
 
-# --- builder: generate the Prisma client and compile ---
-FROM deps AS builder
-COPY apps/api apps/api
-COPY turbo.json turbo.json
-# IMPORTANT: generate inside the builder - the engine binary matches this
-# image's platform (linux/musl), which won't match your host machine's.
-RUN cd apps/api && bunx prisma generate
-RUN cd apps/api && bun run build
-
-# --- runner: only what's needed to actually run the compiled API ---
-FROM oven/bun:1.4-alpine AS runner
+############################
+# 3. Development Stage
+############################
+FROM base AS development
 WORKDIR /app
-RUN apk add --no-cache openssl
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Generate Prisma Client
+RUN bunx prisma generate
+
+EXPOSE 3000
+
+CMD ["sh", "-c", "bun run start:dev"]
+
+############################
+# 4. Builder Stage
+############################
+FROM base AS builder
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Generate Prisma Client
+RUN bunx prisma generate
+
+# Build NestJS application (outputs to dist/main.js)
 ENV NODE_ENV=production
+RUN bun run build
 
-# Bun workspaces don't fully hoist dependencies to the root node_modules -
-# apps/api/node_modules holds relative symlinks (e.g.
-# ../../../../node_modules/.bun/@nestjs+core@.../...) into the root
-# node_modules/.bun content store. Both directories have to be copied
-# together, preserving this same relative layout, or those symlinks break.
+# Install production dependencies only to reduce image size
+RUN rm -rf node_modules && bun install --production --frozen-lockfile
+
+############################
+# 5. Production Runner Stage
+############################
+FROM base AS production
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Copy production node_modules and built NestJS code
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
-COPY --from=builder /app/apps/api/dist ./apps/api/dist
-COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
-COPY --from=builder /app/apps/api/prisma.config.ts ./apps/api/prisma.config.ts
-COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+COPY package.json ./
 
-WORKDIR /app/apps/api
-EXPOSE 5445
-# Applies any pending migrations against DATABASE_URL before starting -
-# fine for this project's scale; for multi-replica production deploys,
-# run `docker compose run --rm school-backend bunx prisma migrate deploy`
-# as a separate one-off step instead and drop the migrate part here.
-CMD ["sh", "-c", "bunx prisma migrate deploy && bun dist/main.js"]
+# Run container as non-root user for security
+USER bun
+
+EXPOSE 3000
+
+CMD ["bun", "run", "dist/main.js"]
