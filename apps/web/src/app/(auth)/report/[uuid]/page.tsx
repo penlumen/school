@@ -34,9 +34,8 @@ interface AssessmentObject {
 interface CalendarData {
     session: string;
     term: string;
-    open_date: string;
     close_date: string;
-    next_term_resumption_date: string;
+    open_date: string;
 }
 
 interface ResultSummary {
@@ -281,7 +280,7 @@ export default function TraditionalResultSheet() {
                                     <span className="font-bold">Note:</span> Vacation commences on <span
                                     className="font-bold">{formatDate(resultData.result.calendar?.close_date)}</span> and
                                     academic activities resume on <span
-                                    className="font-bold">{formatDate(resultData.result.calendar?.next_term_resumption_date)}.</span>
+                                    className="font-bold">{formatDate(resultData.result.calendar?.open_date)}.</span>
                                 </p>
                             </div>
                         </div>

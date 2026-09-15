@@ -105,7 +105,10 @@ export function BranchSwitcher() {
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <button className='flex w-full items-center gap-2 rounded-md p-2 text-left outline-0 hover:bg-sidebar-accent'>
+                    <button
+                        data-tour='sidebar-branch'
+                        className='flex w-full items-center gap-2 rounded-md p-2 text-left outline-0 hover:bg-sidebar-accent'
+                    >
                         <Avatar className='h-8 w-8 flex-shrink-0'>
                             <AvatarImage src={activeBranch?.avatar || ''} alt={activeBranch?.name || 'Branch'}/>
                             <AvatarFallback className='bg-muted text-xs font-semibold'>
@@ -124,24 +127,31 @@ export function BranchSwitcher() {
                             No branches yet
                         </div>
                     ) : (
-                        branches.map((access) => (
-                            <DropdownMenuItem
-                                key={access.branch_uuid}
-                                onClick={() => handleSwitch(access.branch_uuid)}
-                                className='cursor-pointer gap-2'
-                            >
-                                <Avatar className='h-6 w-6 flex-shrink-0'>
-                                    <AvatarImage src={access.branch.avatar || ''} alt={access.branch.name}/>
-                                    <AvatarFallback className='bg-muted text-[10px] font-semibold'>
-                                        {access.branch.name.charAt(0).toUpperCase()}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <span className='flex-1 truncate'>{access.branch.name}</span>
-                                {access.branch_uuid === activeBranchUuid && (
-                                    <Check className='h-4 w-4 text-primary'/>
-                                )}
-                            </DropdownMenuItem>
-                        ))
+                        branches.map((access) => {
+                            const isActive = access.branch_uuid === activeBranchUuid;
+                            return (
+                                <DropdownMenuItem
+                                    key={access.branch_uuid}
+                                    onClick={() => handleSwitch(access.branch_uuid)}
+                                    className='cursor-pointer gap-2'
+                                >
+                                    <Avatar className='h-6 w-6 flex-shrink-0'>
+                                        <AvatarImage src={access.branch.avatar || ''} alt={access.branch.name}/>
+                                        <AvatarFallback className='bg-muted text-[10px] font-semibold'>
+                                            {access.branch.name.charAt(0).toUpperCase()}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <span className='flex-1 truncate'>{access.branch.name}</span>
+                                    <span
+                                        className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border-2 ${
+                                            isActive ? 'border-primary bg-primary' : 'border-muted-foreground/30'
+                                        }`}
+                                    >
+                                        {isActive && <Check className='h-2.5 w-2.5 text-primary-foreground' strokeWidth={3}/>}
+                                    </span>
+                                </DropdownMenuItem>
+                            );
+                        })
                     )}
                     <DropdownMenuSeparator/>
                     <DropdownMenuItem

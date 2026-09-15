@@ -66,6 +66,39 @@ This runs both apps in parallel via Turborepo:
 bun run build
 ```
 
+## Docker
+
+Runs the whole stack - API, web, Postgres, and Redis - in containers.
+
+```bash
+cp .env.example .env   # fill in real values (JWT_SECRET at minimum)
+docker compose up --build
+```
+
+- API: `http://localhost:5445`
+- Web: `http://localhost:3000`
+- Postgres: `localhost:5432` (user `admin`, password `password`, db `school`)
+- Redis: `localhost:6379`
+
+Migrations run automatically on API container startup (`prisma migrate deploy`). Prisma's client is generated *inside* the build - each Dockerfile's builder stage runs `prisma generate` itself, since the engine binary has to match the container's platform (linux/musl), not your host machine's.
+
+Both `apps/api/Dockerfile` and `apps/web/Dockerfile` build from the **repo root** as their context (`context: .` in `docker-compose.yaml`), since Bun workspaces need the root `package.json`/`bun.lock` to resolve either app's dependencies.
+
+`apps/web` uses Next.js's `standalone` output (`apps/web/next.config.ts`) to keep the image lean — only the traced files actually needed at runtime get shipped, not the full `node_modules` tree. `NEXT_PUBLIC_*` vars are baked into the client bundle at build time, so they're passed as Docker build args (see the `school-frontend` service in `docker-compose.yaml`), not just runtime environment variables.
+
+For a single service:
+
+```bash
+docker compose up --build school-backend
+docker compose logs -f school-backend
+```
+
+To run migrations as a one-off (e.g. before a multi-replica production deploy, instead of on every container start):
+
+```bash
+docker compose run --rm school-backend bunx prisma migrate deploy
+```
+
 ## Project layout
 
 ```

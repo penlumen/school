@@ -70,9 +70,9 @@ export class CalendarService {
           branch_uuid: branchUuid,
           session,
           term,
+          next_term_resumption_date,
+          close_date,
           open_date: previousTerm?.next_term_resumption_date ?? null,
-          close_date: close_date ? new Date(close_date).toISOString() : null,
-          next_term_resumption_date: next_term_resumption_date ? new Date(next_term_resumption_date).toISOString() : null,
           status,
         },
       });
@@ -120,8 +120,8 @@ export class CalendarService {
         data: {
           session,
           term,
-          close_date: close_date ? new Date(close_date).toISOString() : null,
-          next_term_resumption_date: next_term_resumption_date ? new Date(next_term_resumption_date).toISOString() : null,
+          next_term_resumption_date,
+          close_date,
           status: body.status === 'ACTIVE' || body.status === 'INACTIVE' ? body.status : undefined,
         },
       });

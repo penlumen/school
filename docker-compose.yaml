@@ -1,0 +1,83 @@
+services:
+  school-backend:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: school-backend:1.0.0
+    container_name: school-backend
+    restart: unless-stopped
+    ports:
+      - '5445:5445'
+    environment:
+      NODE_ENV: production
+      PORT: 5445
+      JWT_SECRET: ${JWT_SECRET:-JWT_SECRET}
+      DATABASE_URL: postgresql://admin:password@postgres-db:5432/school?schema=public
+      REDIS_URL: redis://redis:6379
+      AWS_REGION: ${AWS_REGION:-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET:-}
+      AWS_S3_PUBLIC_URL: ${AWS_S3_PUBLIC_URL:-}
+      AWS_S3_ENDPOINT: ${AWS_S3_ENDPOINT:-}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
+      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL:-}
+      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY:-}
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  school-frontend:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        # NEXT_PUBLIC_* vars are baked into the client bundle at build time,
+        # so they have to be passed as build args, not just runtime env.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5445}
+        NEXT_PUBLIC_SCHOOL_TOKEN: ${NEXT_PUBLIC_SCHOOL_TOKEN:-}
+    image: school-frontend:1.0.0
+    container_name: school-frontend
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    depends_on:
+      - school-backend
+
+  postgres-db:
+    container_name: postgres
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: school
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U admin']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    container_name: redis
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
+  redis-data:

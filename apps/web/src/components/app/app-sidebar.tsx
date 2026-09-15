@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 import Link from 'next/link';
+import { driver } from 'driver.js';
+import 'driver.js/dist/driver.css';
 
 import { usePathname, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -29,6 +31,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
+  useSidebar,
 } from '@/components/ui/sidebar';
 
 import {
@@ -57,11 +60,71 @@ interface NavItem {
   title: string;
   icon: any;
   href: string;
+  description: string;
 }
 
 interface NavGroup {
   label: string;
   items: NavItem[];
+}
+
+// Pulled out of AppSidebar so it can use useSidebar() (only valid inside
+// SidebarProvider, which wraps this component further down).
+function HelpTourButton({ navGroups }: { navGroups: NavGroup[] }) {
+  const { isMobile, openMobile, setOpenMobile } = useSidebar();
+
+  const startTour = () => {
+    const steps = [
+      {
+        element: '[data-tour="sidebar-branch"]',
+        popover: {
+          title: 'Switch branch',
+          description: "Jump between your school's branches, or add a new one, without leaving the page you're on.",
+        },
+      },
+      ...navGroups.flatMap((group) =>
+        group.items.map((item) => ({
+          element: `[data-tour="sidebar-nav-${item.href}"]`,
+          popover: { title: item.title, description: item.description },
+        })),
+      ),
+      {
+        element: '[data-tour="sidebar-account"]',
+        popover: {
+          title: 'Your account',
+          description: 'Log out from here.',
+        },
+      },
+    ];
+
+    driver({
+      showProgress: true,
+      allowClose: true,
+      overlayColor: 'black',
+      steps,
+    }).drive();
+  };
+
+  const handleClick = () => {
+    // The mobile sidebar is off-canvas by default - open it first so
+    // driver.js has real, visible elements to attach each step to.
+    if (isMobile && !openMobile) {
+      setOpenMobile(true);
+      setTimeout(startTour, 300);
+    } else {
+      startTour();
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className='hidden sm:flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground px-2 py-1.5 rounded-md hover:bg-muted'
+    >
+      <HelpCircle className='h-4 w-4' />
+      Help
+    </button>
+  );
 }
 
 export function AppSidebar({ children }: { children: React.ReactNode }) {
@@ -82,24 +145,64 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
     {
       label: 'Overview',
       items: [
-        { title: 'Dashboard', icon: LayoutDashboard, href: '/staff/dashboard' },
-        { title: 'Schedule', icon: Calendar, href: '/staff/schedules' },
+        {
+          title: 'Dashboard',
+          icon: LayoutDashboard,
+          href: '/staff/dashboard',
+          description: 'A quick summary of how your school is performing - parents, staff, students, classes, and attendance trends.',
+        },
+        {
+          title: 'Schedule',
+          icon: Calendar,
+          href: '/staff/schedules',
+          description: 'Manage school terms/sessions and the events calendar for each one.',
+        },
       ],
     },
     {
       label: 'School',
       items: [
-        { title: 'Staff', icon: GraduationCap, href: '/staff/staffs' },
-        { title: 'Parents', icon: Users, href: '/staff/parents' },
-        { title: 'Students', icon: Users, href: '/staff/students' },
-        { title: 'Classes', icon: BookOpen, href: '/staff/classes' },
+        {
+          title: 'Staff',
+          icon: GraduationCap,
+          href: '/staff/staffs',
+          description: 'Manage staff accounts, and mark staff attendance if you\'re an administrator.',
+        },
+        {
+          title: 'Parents',
+          icon: Users,
+          href: '/staff/parents',
+          description: 'Manage parent/guardian accounts and their contact information.',
+        },
+        {
+          title: 'Students',
+          icon: Users,
+          href: '/staff/students',
+          description: 'Manage student records, attendance, and results.',
+        },
+        {
+          title: 'Classes',
+          icon: BookOpen,
+          href: '/staff/classes',
+          description: 'Manage classes, their students, subjects, and attendance.',
+        },
       ],
     },
     {
       label: 'Billings',
       items: [
-        { title: 'Templates', icon: FileText, href: '/staff/templates' },
-        { title: 'Invoices', icon: CreditCard, href: '/staff/invoices' },
+        {
+          title: 'Templates',
+          icon: FileText,
+          href: '/staff/templates',
+          description: 'Billing templates for invoices - coming soon.',
+        },
+        {
+          title: 'Invoices',
+          icon: CreditCard,
+          href: '/staff/invoices',
+          description: 'Manage invoices sent to parents - coming soon.',
+        },
       ],
     },
     {
@@ -109,11 +212,13 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
           title: 'Branch Settings',
           icon: SlidersHorizontal,
           href: '/staff/account-settings',
+          description: 'Settings for the branch you currently have selected - coming soon.',
         },
         {
           title: 'School Settings',
           icon: Settings,
           href: '/staff/school-settings',
+          description: 'School-wide settings across all branches - coming soon.',
         },
       ],
     },
@@ -122,7 +227,14 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
   const parentsNavGroups: NavGroup[] = [
     {
       label: 'Overview',
-      items: [{ title: 'Wards', icon: LayoutDashboard, href: '/parent/wards' }],
+      items: [
+        {
+          title: 'Wards',
+          icon: LayoutDashboard,
+          href: '/parent/wards',
+          description: 'View your children/wards, their attendance, and their results.',
+        },
+      ],
     },
   ];
 
@@ -189,7 +301,11 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
                                 : 'border-l-transparent hover:bg-sidebar-accent'
                             }`}
                           >
-                            <Link href={item.href} className='px-6 py-3'>
+                            <Link
+                              href={item.href}
+                              data-tour={`sidebar-nav-${item.href}`}
+                              className='px-6 py-3'
+                            >
                               <item.icon className='h-5 w-5 flex-shrink-0' />
                               <span className='font-light text-sm'>
                                 {item.title}
@@ -218,7 +334,7 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
               </span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className='outline-0 flex-shrink-0'>
+                  <button data-tour='sidebar-account' className='outline-0 flex-shrink-0'>
                     <ChevronDown className='h-4 w-4 opacity-50' />
                   </button>
                 </DropdownMenuTrigger>
@@ -244,10 +360,7 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
             <SidebarTrigger className='text-foreground outline-0' />
 
             <div className='flex items-center gap-2'>
-              <button className='hidden sm:flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground px-2 py-1.5 rounded-md hover:bg-muted'>
-                <HelpCircle className='h-4 w-4' />
-                Help
-              </button>
+              <HelpTourButton navGroups={navGroups} />
               {profile?.role !== 'PARENT' && <NotificationBell />}
             </div>
           </header>

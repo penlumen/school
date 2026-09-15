@@ -36,12 +36,12 @@
       "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
-    "dev": {
+    "start": {
+      "dependsOn": ["build"],
       "cache": false,
       "persistent": true
     },
-    "start": {
-      "dependsOn": ["build"],
+    "dev": {
       "cache": false,
       "persistent": true
     },

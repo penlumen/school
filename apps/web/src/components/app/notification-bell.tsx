@@ -1,7 +1,7 @@
 'use client';
 
 import {useEffect, useState} from 'react';
-import {Bell, Check, GraduationCap, Users} from 'lucide-react';
+import {Bell, Check, GraduationCap, Users, X} from 'lucide-react';
 import {toast} from 'sonner';
 
 import {useNotification} from '@/hooks/notification';
@@ -117,10 +117,18 @@ export function NotificationBell() {
             <PopoverContent align='end' className='w-96 p-0'>
                 <div className='flex items-center justify-between px-4 py-3 border-b'>
                     <h3 className='font-semibold'>Notifications</h3>
-                    <Button variant='ghost' size='sm' onClick={handleMarkAllRead} className='text-xs h-7'>
-                        <Check className='h-3.5 w-3.5'/>
-                        Mark all as read
-                    </Button>
+                    <div className='flex items-center gap-1'>
+                        <Button variant='ghost' size='sm' onClick={handleMarkAllRead} className='text-xs h-7'>
+                            <Check className='h-3.5 w-3.5'/>
+                            Mark all as read
+                        </Button>
+                        <button
+                            onClick={() => setOpen(false)}
+                            className='rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground'
+                        >
+                            <X className='h-4 w-4'/>
+                        </button>
+                    </div>
                 </div>
                 <Tabs defaultValue='all'>
                     <TabsList className='w-full rounded-none border-b bg-transparent px-4 h-10'>

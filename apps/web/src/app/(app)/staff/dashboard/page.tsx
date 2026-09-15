@@ -1,10 +1,11 @@
 'use client';
 
 import {useEffect, useState} from 'react';
+import Link from 'next/link';
 import Cookies from 'js-cookie';
 import {toast} from 'sonner';
 import {motion} from 'framer-motion';
-import {BookOpen, GraduationCap, IdCard, Users} from 'lucide-react';
+import {ArrowRight, BookOpen, GraduationCap, IdCard, Users} from 'lucide-react';
 import {
     CartesianGrid,
     Line,
@@ -160,6 +161,7 @@ export default function DashboardPage() {
             value: card.total_classes,
             trend: card.total_classes_trend,
             icon: BookOpen,
+            viewAllHref: '/staff/classes',
         },
     ];
 
@@ -182,20 +184,32 @@ export default function DashboardPage() {
                 initial='hidden'
                 animate='show'
             >
-                {cards.map(({label, value, trend, icon: Icon}) => (
+                {cards.map(({label, value, trend, icon: Icon, viewAllHref}) => (
                     <motion.div key={label} variants={item}>
                         <Card>
                             <CardContent className='pt-6'>
                                 <div className='flex items-center justify-between mb-3'>
-                                    <span className='flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary'>
+                                    <span className='flex h-9 w-9 items-center justify-center rounded-md bg-muted text-foreground'>
                                         <Icon className='h-4 w-4'/>
                                     </span>
                                 </div>
                                 <p className='text-sm text-muted-foreground'>{label}</p>
                                 <p className='text-2xl font-bold mt-1'>{value}</p>
                                 <div className='mt-2'>
-                                    <TrendBadge value={trend}/>
-                                    <span className='text-xs text-muted-foreground ml-1.5'>from last month</span>
+                                    {viewAllHref ? (
+                                        <Link
+                                            href={viewAllHref}
+                                            className='inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline'
+                                        >
+                                            View all
+                                            <ArrowRight className='h-3 w-3'/>
+                                        </Link>
+                                    ) : (
+                                        <>
+                                            <TrendBadge value={trend}/>
+                                            <span className='text-xs text-muted-foreground ml-1.5'>from last month</span>
+                                        </>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>

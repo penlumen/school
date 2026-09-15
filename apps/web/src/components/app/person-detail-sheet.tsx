@@ -1,6 +1,6 @@
 'use client';
 
-import {Copy} from 'lucide-react';
+import {Copy, ShieldCheck} from 'lucide-react';
 import {toast} from 'sonner';
 
 import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
@@ -73,7 +73,8 @@ export function PersonDetailSheet({role, open, onOpenChange, person}: PersonDeta
                     <Field
                         label='Position'
                         value={
-                            <Badge variant='secondary'>
+                            <Badge className='gap-1 bg-primary/10 text-primary hover:bg-primary/10'>
+                                <ShieldCheck className='h-3 w-3'/>
                                 {POSITION_LABEL[person.position] || person.position}
                             </Badge>
                         }

@@ -34,13 +34,6 @@ enum ResultStatus {
   REJECTED
 }
 
-enum AttendanceStatus {
-  PENDING
-  PRESENT
-  ABSENT
-}
-
-
 // ========== USER ==========
 model User {
   id              Int      @id @default(autoincrement())
@@ -173,11 +166,11 @@ model Calendar {
   branch_uuid String
   session     String
   term        String?
-  
-  open_date   DateTime?
+
+  open_date   DateTime
   close_date  DateTime
   next_term_resumption_date DateTime
-
+  
   status      CalendarStatus @default(INACTIVE)
   created_at  DateTime @default(now())
   updated_at  DateTime @default(now()) @updatedAt
@@ -304,6 +297,14 @@ model Assessments {
 }
 
 // ========== ATTENDANCE ==========
+// Facial-recognition matching happens client-side in the browser (face-api.js);
+// the backend only ever receives the already-matched student/staff uuid to mark.
+enum AttendanceStatus {
+  PENDING
+  PRESENT
+  ABSENT
+}
+
 model StudentAttendance {
   id              Int              @id @default(autoincrement())
   uuid            String           @unique @default(uuid())

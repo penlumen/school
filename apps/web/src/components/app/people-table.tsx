@@ -10,6 +10,7 @@ import {
     Filter,
     Pencil,
     Search,
+    ShieldCheck,
     Trash2,
 } from 'lucide-react';
 
@@ -266,7 +267,8 @@ export function PeopleTable({role, people, onView, onEdit, fetchData}: PeopleTab
                                         </button>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant='secondary'>
+                                        <Badge className='gap-1 bg-primary/10 text-primary hover:bg-primary/10'>
+                                            <ShieldCheck className='h-3 w-3'/>
                                             {POSITION_LABEL[person.position] || person.position}
                                         </Badge>
                                     </TableCell>
