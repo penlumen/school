@@ -28,4 +28,4 @@ COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 9323
 
-CMD ["sh", "-c", "bunx prisma migrate deploy && node dist/src/main.js"]
+CMD ["sh", "-c", "bunx prisma migrate deploy && node dist/main.js"]
