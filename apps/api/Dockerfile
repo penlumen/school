@@ -15,8 +15,6 @@ FROM oven/bun:1-alpine AS runtime
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
 ENV NODE_ENV=production
 
 COPY --from=builder /app/package.json ./
