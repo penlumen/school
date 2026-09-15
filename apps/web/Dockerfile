@@ -13,7 +13,6 @@ FROM base AS deps
 COPY package.json bun.lock* ./
 RUN bun install --frozen-lockfile
 
-
 ############################
 # 3. Builder Stage
 ############################
@@ -28,7 +27,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN bun run build
 
 ############################
-# 5. Runner Stage
+# 4. Runner Stage
 ############################
 FROM base AS runner
 WORKDIR /app
@@ -36,16 +35,18 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-
-# Use non-root user
 USER bun
 
-# Copy built standalone assets from builder
+# Copy public folder
 COPY --from=builder /app/public ./public
+
+# Automatically leverage output traces to reduce image size
+# Note: If server.js is nested inside a subfolder in standalone, update the path below accordingly (e.g., ./apps/my-app/)
 COPY --from=builder --chown=bun:bun /app/.next/standalone ./
 COPY --from=builder --chown=bun:bun /app/.next/static ./.next/static
 
 EXPOSE 3000
-ENV PORT 3000
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["bun", "run", "server.js"]
