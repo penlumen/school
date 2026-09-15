@@ -37,13 +37,13 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 USER bun
 
-# Copy public folder
-COPY --from=builder /app/public ./public
+# Copy static assets and public directory
+COPY --from=builder /app/apps/web/public ./public
+COPY --from=builder --chown=bun:bun /app/apps/web/.next/static ./.next/static
 
-# Automatically leverage output traces to reduce image size
-# Note: If server.js is nested inside a subfolder in standalone, update the path below accordingly (e.g., ./apps/my-app/)
-COPY --from=builder --chown=bun:bun /app/.next/standalone ./
-COPY --from=builder --chown=bun:bun /app/.next/static ./.next/static
+# Option A: Copy directly from the nested standalone app directory to root
+COPY --from=builder --chown=bun:bun /app/apps/web/.next/standalone/apps/web ./
+COPY --from=builder --chown=bun:bun /app/apps/web/.next/standalone/node_modules ./node_modules
 
 EXPOSE 3000
 ENV PORT=3000
