@@ -13,23 +13,9 @@ FROM base AS deps
 COPY package.json bun.lock* ./
 RUN bun install --frozen-lockfile
 
-############################
-# 3. Development Stage
-############################
-FROM base AS development
-WORKDIR /app
-
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-
-EXPOSE 3000
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-
-CMD ["bun", "run", "dev"]
 
 ############################
-# 4. Builder Stage
+# 3. Builder Stage
 ############################
 FROM base AS builder
 WORKDIR /app
@@ -42,15 +28,14 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN bun run build
 
 ############################
-# 5. Production Runner Stage
+# 5. Runner Stage
 ############################
-FROM base AS production
+FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
+
 
 # Use non-root user
 USER bun
@@ -61,5 +46,6 @@ COPY --from=builder --chown=bun:bun /app/.next/standalone ./
 COPY --from=builder --chown=bun:bun /app/.next/static ./.next/static
 
 EXPOSE 3000
+ENV PORT 3000
 
-CMD ["bun", "run", "server.js"]
+CMD ["node", "server.js"]

@@ -9,7 +9,7 @@ export default function AboutPage() {
                 <div className="max-w-4xl mx-auto">
                     <h1 className="text-5xl font-bold text-primary mb-6">About Us</h1>
                     <p className="text-xl text-muted-foreground">
-                        Discover the mission, vision, and values that guide Optimum Achievers Academy
+                        Discover the mission, vision, and values that guide Demo School
                     </p>
                 </div>
             </section>
@@ -19,7 +19,7 @@ export default function AboutPage() {
                     <div>
                         <h2 className="text-3xl font-bold text-foreground mb-4">Our Mission</h2>
                         <p className="text-lg text-muted-foreground leading-relaxed">
-                            At Optimum Achievers Academy, our mission is to provide a world-class education that
+                            At Demo School, our mission is to provide a world-class education that
                             empowers students
                             to become confident, capable, and compassionate leaders. We believe in nurturing academic
                             excellence,

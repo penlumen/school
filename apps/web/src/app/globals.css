@@ -4,7 +4,6 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-    /* <CHANGE> Updated color theme for Optimum Achievers Academy - Blue and Gold */
     --background: oklch(0.99 0 0);
     --foreground: oklch(0.15 0 0);
     --card: oklch(1 0 0);
