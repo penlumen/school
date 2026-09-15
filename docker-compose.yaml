@@ -1,9 +1,8 @@
-version: '3'
 services:
   school-backend:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: apps/api/Dockerfile
     image: school-backend:1.0.0
     container_name: school-backend
     restart: unless-stopped
@@ -11,10 +10,30 @@ services:
       - '5445:5445'
     environment:
       NODE_ENV: production
-      DATABASE_URL: "postgresql://admin:password@postgres-db:5432/school?schema=public"
+      PORT: 5445
+      JWT_SECRET: ${JWT_SECRET:-JWT_SECRET}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://admin:password@postgres-db:5432/school?schema=public}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
     depends_on:
       postgres-db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  school-frontend:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+        NEXT_PUBLIC_SCHOOL_TOKEN: ${NEXT_PUBLIC_SCHOOL_TOKEN:-}
+    image: school-frontend:1.0.0
+    container_name: school-frontend
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    depends_on:
+      - school-backend
 
   postgres-db:
     container_name: postgres
@@ -34,5 +53,20 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    container_name: redis
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres-data:
+  redis-data:

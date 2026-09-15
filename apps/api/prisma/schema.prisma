@@ -1,0 +1,411 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// PRISMA SCHEMA FILE
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ROOT
+  ADMIN
+  STAFF
+  PARENT
+}
+
+enum Position {
+  ADMINISTRATIVE
+  ACADEMIC
+  GUARDIAN
+  PARENT
+}
+
+enum ResultStatus {
+  APPROVED
+  PENDING
+  REJECTED
+}
+
+// ========== USER ==========
+model User {
+  id              Int      @id @default(autoincrement())
+  uuid            String   @unique @default(uuid())
+  school_uuid     String?
+  name            String?
+  email           String
+  password        String
+  contact         String?
+  alt_contact     String?
+  avatar          String?
+  address         String?
+  role            Role     @default(ADMIN)
+  position        Position @default(GUARDIAN)
+  status          String   @default("active")
+  last_branch_uuid String?
+  face_descriptor Float[]
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  school      School?  @relation(fields: [school_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  last_branch Branch?  @relation("UserLastBranch", fields: [last_branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: SetNull)
+
+  heading  Class[]
+  students Student[]
+  access   BranchAccess[]
+  control  AccessControl[]
+  staff_attendance         StaffAttendance[]   @relation("StaffAttendanceStaff")
+  staff_attendance_marked  StaffAttendance[]   @relation("StaffAttendanceMarkedBy")
+  student_attendance_marked StudentAttendance[] @relation("StudentAttendanceMarkedBy")
+  events_created  Event[]    @relation("EventCreatedBy")
+  event_tags      EventTag[]
+  notifications   Notification[]
+  device_tokens   DeviceToken[]
+
+  @@unique([school_uuid, email, role])
+}
+
+model AccessControl {
+  id          Int      @id @default(autoincrement())
+  user_uuid   String
+  branch_uuid String
+  access      String
+  read        Boolean  @default(false)
+  write       Boolean  @default(false)
+  delete      Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  user   User?   @relation(fields: [user_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  branch Branch? @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+
+  @@unique([user_uuid, branch_uuid, access])
+}
+
+// ========== SCHOOL ==========
+model School {
+  id         Int      @id @default(autoincrement())
+  uuid       String   @unique @default(uuid())
+  token      String   @unique @default(uuid())
+  email      String   @unique
+  slug       String   @unique
+  name       String
+  contact    String?
+  avatar     String?
+  address    String?
+  city       String?
+  state      String?
+  country    String?
+  zip        String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  users    User[]
+  branches Branch[]
+  access   BranchAccess[]
+}
+
+// ========== BRANCH ==========
+model Branch {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(uuid())
+  school_uuid String
+  name        String
+  email       String?
+  contact     String?
+  avatar      String?
+  address     String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  grades   Grade[]
+  classes  Class[]
+  students Student[]
+  control  AccessControl[]
+  access   BranchAccess[]
+  calendar Calendar[]
+  last_used_by User[] @relation("UserLastBranch")
+  student_attendance StudentAttendance[]
+  staff_attendance   StaffAttendance[]
+  events   Event[]
+  notifications Notification[]
+  school   School          @relation(fields: [school_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+}
+
+model BranchAccess {
+  id          Int      @id @default(autoincrement())
+  role        Role
+  user_uuid   String
+  school_uuid String
+  branch_uuid String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @default(now()) @updatedAt
+
+  user   User?   @relation(fields: [user_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  school School? @relation(fields: [school_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  branch Branch? @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+
+  @@unique([user_uuid, branch_uuid, role])
+}
+
+enum CalendarStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Calendar {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(uuid())
+  branch_uuid String
+  session     String
+  term        String?
+
+  open_date   DateTime?
+  close_date  DateTime?
+  next_term_resumption_date DateTime?
+  
+  status      CalendarStatus @default(INACTIVE)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @default(now()) @updatedAt
+
+  results Result[]
+  events  Event[]
+  branch  Branch   @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+}
+
+// ========== STUDENT ==========
+model Student {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(uuid())
+  parent_uuid String
+  branch_uuid String
+  class_uuid  String
+  reg_number  String
+  name        String
+  gender      String?
+  avatar      String?
+  face_descriptor Float[]
+  status      String   @default("active")
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  parent  User     @relation(fields: [parent_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  branch  Branch   @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  class   Class    @relation(fields: [class_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  results Result[]
+  attendance StudentAttendance[]
+
+  @@unique([branch_uuid, reg_number])
+}
+
+// ========== CLASS ==========
+model Class {
+  id           Int      @id @default(autoincrement())
+  uuid         String   @unique @default(uuid())
+  branch_uuid  String
+  teacher_uuid String?
+  teachers_uuid String[] @default([])
+  name         String
+  capacity     Int?     @default(0)
+  status       String   @default("active")
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  branch   Branch?   @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  teacher  User?     @relation(fields: [teacher_uuid], references: [uuid], onDelete: SetNull, onUpdate: Cascade)
+  subjects Subject[]
+  students Student[]
+  attendance StudentAttendance[]
+}
+
+// ========== SUBJECT ==========
+model Subject {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(uuid())
+  class_uuid  String
+  name        String
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  class Class? @relation(fields: [class_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+
+  @@unique([class_uuid, name])
+}
+
+// ========== GRADE SETTING ==========
+model Grade {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(uuid())
+  branch_uuid String
+  score       Float
+  grade       String
+  remark      String
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  branch Branch? @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+}
+
+// ========== RESULT ==========
+model Result {
+  id               Int          @id @default(autoincrement())
+  uuid             String       @unique @default(uuid())
+  student_uuid     String
+  calendar_uuid    String
+  class_uuid       String
+  class_name       String
+  overall          Float        @default(0)
+  status           ResultStatus @default(PENDING)
+  approval_requested Boolean      @default(false)
+  teacher_remark   String?
+  principal_remark String?
+  created_at       DateTime     @default(now())
+  updated_at       DateTime     @updatedAt
+
+  assessments Assessments[]
+
+  calendar Calendar? @relation(fields: [calendar_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  student  Student?  @relation(fields: [student_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+
+  @@unique([calendar_uuid, class_uuid, student_uuid])
+}
+
+// ========== ASSESSMENTS ==========
+model Assessments {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(uuid())
+  result_uuid String
+  subject     String
+  ca_one      Decimal  @default(0) @db.Decimal(5, 2)
+  ca_two      Decimal  @default(0) @db.Decimal(5, 2)
+  examination Decimal  @default(0) @db.Decimal(5, 2)
+  overall     Decimal  @default(0) @db.Decimal(5, 2)
+  grade       String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  result Result? @relation(fields: [result_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+
+  @@unique([result_uuid, subject])
+}
+
+// ========== ATTENDANCE ==========
+// Facial-recognition matching happens client-side in the browser (face-api.js);
+// the backend only ever receives the already-matched student/staff uuid to mark.
+enum AttendanceStatus {
+  PENDING
+  PRESENT
+  ABSENT
+}
+
+model StudentAttendance {
+  id              Int              @id @default(autoincrement())
+  uuid            String           @unique @default(uuid())
+  student_uuid    String
+  branch_uuid     String
+  class_uuid      String
+  date            DateTime         @db.Date
+  status          AttendanceStatus @default(PRESENT)
+  marked_by_uuid  String?
+  created_at      DateTime         @default(now())
+  updated_at      DateTime         @updatedAt
+
+  student   Student  @relation(fields: [student_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  branch    Branch   @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  class     Class    @relation(fields: [class_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  marked_by User?    @relation("StudentAttendanceMarkedBy", fields: [marked_by_uuid], references: [uuid], onUpdate: Cascade, onDelete: SetNull)
+
+  @@unique([student_uuid, date])
+}
+
+model StaffAttendance {
+  id             Int              @id @default(autoincrement())
+  uuid           String           @unique @default(uuid())
+  staff_uuid     String
+  branch_uuid    String
+  date           DateTime         @db.Date
+  status         AttendanceStatus @default(PRESENT)
+  marked_by_uuid String?
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @updatedAt
+
+  staff     User   @relation("StaffAttendanceStaff", fields: [staff_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  branch    Branch @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  marked_by User?  @relation("StaffAttendanceMarkedBy", fields: [marked_by_uuid], references: [uuid], onUpdate: Cascade, onDelete: SetNull)
+
+  @@unique([staff_uuid, date])
+}
+
+// ========== SCHEDULE / EVENTS ==========
+model Event {
+  id              Int      @id @default(autoincrement())
+  uuid            String   @unique @default(uuid())
+  calendar_uuid   String
+  branch_uuid     String
+  title           String
+  description     String?
+  date            DateTime @db.Date
+  start_time      String?
+  end_time        String?
+  location        String?
+  tag_all_staff   Boolean  @default(false)
+  tag_all_parents Boolean  @default(false)
+  created_by_uuid String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  calendar   Calendar   @relation(fields: [calendar_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  branch     Branch     @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  created_by User?      @relation("EventCreatedBy", fields: [created_by_uuid], references: [uuid], onUpdate: Cascade, onDelete: SetNull)
+  tags       EventTag[]
+}
+
+model EventTag {
+  id         Int    @id @default(autoincrement())
+  uuid       String @unique @default(uuid())
+  event_uuid String
+  user_uuid  String
+  tag_type   String // 'STAFF' | 'PARENT'
+
+  event Event @relation(fields: [event_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  user  User  @relation(fields: [user_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+
+  @@unique([event_uuid, user_uuid, tag_type])
+}
+
+// ========== NOTIFICATIONS ==========
+model Notification {
+  id         Int      @id @default(autoincrement())
+  uuid       String   @unique @default(uuid())
+  user_uuid  String
+  branch_uuid String
+  type       String
+  title      String
+  message    String
+  is_read    Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  user   User   @relation(fields: [user_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  branch Branch @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+}
+
+// Firebase Cloud Messaging tokens, one per device/browser a user has registered.
+model DeviceToken {
+  id         Int      @id @default(autoincrement())
+  uuid       String   @unique @default(uuid())
+  user_uuid  String
+  token      String   @unique
+  platform   String?
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+}
