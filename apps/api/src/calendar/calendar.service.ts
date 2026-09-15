@@ -14,7 +14,11 @@ export class CalendarService {
 
   async index(branchUuid: string | undefined) {
     if (!branchUuid) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     const calendars = await this.prisma.calendar.findMany({
@@ -22,20 +26,36 @@ export class CalendarService {
       orderBy: { created_at: 'desc' },
     });
 
-    return { status: 200, success: true, message: 'Calendars', data: { calendars } };
+    return {
+      status: 200,
+      success: true,
+      message: 'Calendars',
+      data: { calendars },
+    };
   }
 
   /** The one ACTIVE term for a branch, if any - what report generation targets by default. */
   async active(branchUuid: string) {
-    return this.prisma.calendar.findFirst({ where: { branch_uuid: branchUuid, status: 'ACTIVE' } });
+    return this.prisma.calendar.findFirst({
+      where: { branch_uuid: branchUuid, status: 'ACTIVE' },
+    });
   }
 
-  async create(branchUuid: string | undefined, decoded: DecodedUser, body: any) {
+  async create(
+    branchUuid: string | undefined,
+    decoded: DecodedUser,
+    body: any,
+  ) {
     const { session, term, next_term_resumption_date, close_date } = body;
-    const status: CalendarStatus = body.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE';
+    const status: CalendarStatus =
+      body.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE';
 
     if (decoded.position !== 'ADMINISTRATIVE') {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     if (!session || !term || !next_term_resumption_date || !close_date) {
@@ -47,11 +67,13 @@ export class CalendarService {
     }
 
     if (!branchUuid) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
-    // Derive this term's open_date from the previous term's
-    // next_term_resumption_date - null if this is the branch's first term.
     const previousTerm = await this.prisma.calendar.findFirst({
       where: { branch_uuid: branchUuid },
       orderBy: { created_at: 'desc' },
@@ -70,22 +92,38 @@ export class CalendarService {
           branch_uuid: branchUuid,
           session,
           term,
-          next_term_resumption_date,
-          close_date,
           open_date: previousTerm?.next_term_resumption_date ?? null,
+          close_date: close_date ? new Date(close_date).toISOString() : null,
+          next_term_resumption_date: next_term_resumption_date
+            ? new Date(next_term_resumption_date).toISOString()
+            : null,
           status,
         },
       });
     });
 
-    return { status: 201, success: true, message: 'Calendar created', data: { calendar: result } };
+    return {
+      status: 201,
+      success: true,
+      message: 'Calendar created',
+      data: { calendar: result },
+    };
   }
 
-  async update(uuid: string, branchUuid: string | undefined, decoded: DecodedUser, body: any) {
+  async update(
+    uuid: string,
+    branchUuid: string | undefined,
+    decoded: DecodedUser,
+    body: any,
+  ) {
     const { session, term, next_term_resumption_date, close_date } = body;
 
     if (decoded.position !== 'ADMINISTRATIVE') {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     if (!session || !term || !next_term_resumption_date || !close_date) {
@@ -97,12 +135,22 @@ export class CalendarService {
     }
 
     if (!branchUuid) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
-    const existingCalendar = await this.prisma.calendar.findUnique({ where: { uuid } });
+    const existingCalendar = await this.prisma.calendar.findUnique({
+      where: { uuid },
+    });
     if (!existingCalendar) {
-      throw new NotFoundException({ status: 404, success: false, message: 'Calendar not found' });
+      throw new NotFoundException({
+        status: 404,
+        success: false,
+        message: 'Calendar not found',
+      });
     }
 
     const makeActive = body.status === 'ACTIVE';
@@ -120,29 +168,57 @@ export class CalendarService {
         data: {
           session,
           term,
-          next_term_resumption_date,
-          close_date,
-          status: body.status === 'ACTIVE' || body.status === 'INACTIVE' ? body.status : undefined,
+          close_date: close_date ? new Date(close_date).toISOString() : null,
+          next_term_resumption_date: next_term_resumption_date
+            ? new Date(next_term_resumption_date).toISOString()
+            : null,
+          status:
+            body.status === 'ACTIVE' || body.status === 'INACTIVE'
+              ? body.status
+              : undefined,
         },
       });
     });
 
-    return { status: 200, success: true, message: 'Calendar updated', data: { calendar: result } };
+    return {
+      status: 200,
+      success: true,
+      message: 'Calendar updated',
+      data: { calendar: result },
+    };
   }
 
-  async remove(uuid: string, branchUuid: string | undefined, decoded: DecodedUser) {
+  async remove(
+    uuid: string,
+    branchUuid: string | undefined,
+    decoded: DecodedUser,
+  ) {
     if (decoded.position !== 'ADMINISTRATIVE') {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     if (!branchUuid) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     try {
-      const calendar = await this.prisma.calendar.findUnique({ where: { uuid } });
+      const calendar = await this.prisma.calendar.findUnique({
+        where: { uuid },
+      });
       if (!calendar) {
-        throw new NotFoundException({ status: 404, success: false, message: 'Calendar not found' });
+        throw new NotFoundException({
+          status: 404,
+          success: false,
+          message: 'Calendar not found',
+        });
       }
 
       await this.prisma.calendar.delete({ where: { uuid } });
