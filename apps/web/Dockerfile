@@ -37,16 +37,18 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 USER bun
 
-# Copy static assets and public directory
-COPY --from=builder /app/apps/web/public ./public
-COPY --from=builder --chown=bun:bun /app/apps/web/.next/static ./.next/static
+# Copy public folder safely (won't fail if apps/web/public does not exist)
+COPY --from=builder /app/apps/web/public* ./public/
 
-# Option A: Copy directly from the nested standalone app directory to root
-COPY --from=builder --chown=bun:bun /app/apps/web/.next/standalone/apps/web ./
-COPY --from=builder --chown=bun:bun /app/apps/web/.next/standalone/node_modules ./node_modules
+# Copy static assets from the built application
+COPY --from=builder --chown=bun:bun /app/apps/web/.next/static ./apps/web/.next/static
+
+# Copy the entire standalone monorepo output root
+COPY --from=builder --chown=bun:bun /app/.next/standalone ./
 
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["bun", "run", "server.js"]
+# Execute the server entry point generated inside the app directory
+CMD ["bun", "run", "apps/web/server.js"]
