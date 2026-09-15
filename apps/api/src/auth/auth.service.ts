@@ -28,7 +28,7 @@ export class AuthService {
         school_uuid: (user as any).school_uuid,
       },
       process.env.JWT_SECRET || 'default_secret',
-      { expiresIn: '7d' },
+      { expiresIn: '1d' },
     );
   }
 
@@ -37,7 +37,12 @@ export class AuthService {
     return school ?? null;
   }
 
-  async register(body: { name?: string; role?: string; email?: string; password?: string }) {
+  async register(body: {
+    name?: string;
+    role?: string;
+    email?: string;
+    password?: string;
+  }) {
     const { name, role, email, password } = body;
 
     if (!email || !password || !role) {
@@ -48,7 +53,9 @@ export class AuthService {
       });
     }
 
-    const existingSchool = await this.prisma.school.findUnique({ where: { email } });
+    const existingSchool = await this.prisma.school.findUnique({
+      where: { email },
+    });
     if (existingSchool) {
       throw new ConflictException({
         status: 409,
@@ -121,7 +128,10 @@ export class AuthService {
     };
   }
 
-  async login(schoolToken: string | undefined, body: { email?: string; password?: string; role?: string }) {
+  async login(
+    schoolToken: string | undefined,
+    body: { email?: string; password?: string; role?: string },
+  ) {
     if (!schoolToken) {
       throw new BadRequestException({
         status: 400,
@@ -149,7 +159,7 @@ export class AuthService {
     }
 
     const upperRole = role.toUpperCase() as Role;
-    const isStaff = ['ADMIN', 'STAFF'].includes(upperRole);
+    const isStaff = ['ROOT', 'ADMIN', 'STAFF'].includes(upperRole);
 
     let user: any = null;
     if (isStaff) {
@@ -157,7 +167,7 @@ export class AuthService {
         where: {
           school_uuid: school.uuid,
           email,
-          OR: [{ role: 'ADMIN' }, { role: 'STAFF' }],
+          OR: [{ role: 'ROOT' }, { role: 'ADMIN' }, { role: 'STAFF' }],
         },
       });
     } else {
@@ -180,7 +190,10 @@ export class AuthService {
       });
     }
 
-    const isPasswordValid = await this.hashing.compareHash(password, user.password);
+    const isPasswordValid = await this.hashing.compareHash(
+      password,
+      user.password,
+    );
     if (!isPasswordValid) {
       throw new UnauthorizedException({
         status: 401,
@@ -200,7 +213,9 @@ export class AuthService {
   }
 
   async profile(decoded: DecodedUser) {
-    const user = await this.prisma.user.findUnique({ where: { uuid: decoded.uuid } });
+    const user = await this.prisma.user.findUnique({
+      where: { uuid: decoded.uuid },
+    });
 
     if (!user) {
       throw new NotFoundException({
