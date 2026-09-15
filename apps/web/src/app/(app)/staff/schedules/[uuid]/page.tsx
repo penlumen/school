@@ -3,7 +3,7 @@
 import {useEffect, useMemo, useState, Fragment} from 'react';
 import {useParams, useRouter} from 'next/navigation';
 import {toast} from 'sonner';
-import {ArrowLeft, ChevronLeft, ChevronRight, Plus} from 'lucide-react';
+import {ArrowLeft, ChevronLeft, ChevronRight, Pencil, Plus, Trash2} from 'lucide-react';
 
 import {useCalendar} from '@/hooks/calendar';
 import {useEvent} from '@/hooks/event';
@@ -44,6 +44,17 @@ function monthGrid(date: Date) {
         days.push(d);
     }
     return days;
+}
+
+function isWithinTerm(date: Date, section: any) {
+    if (!section?.open_date || !section?.close_date) return false;
+    const day = new Date(date);
+    day.setHours(0, 0, 0, 0);
+    const open = new Date(section.open_date);
+    const close = new Date(section.close_date);
+    open.setHours(0, 0, 0, 0);
+    close.setHours(0, 0, 0, 0);
+    return day >= open && day <= close;
 }
 
 export default function CalendarDetailPage() {
@@ -185,34 +196,45 @@ export default function CalendarDetailPage() {
                             const key = toKey(day);
                             const dayEvents = eventsByDay.get(key) || [];
                             const inMonth = day.getMonth() === refDate.getMonth();
+                            const inTerm = isWithinTerm(day, section);
                             return (
-                                <button
+                                <div
                                     key={key}
                                     onClick={() => {
                                         setRefDate(day);
                                         setView('day');
                                     }}
-                                    className={`min-h-[100px] border-b border-r p-2 text-left align-top hover:bg-muted/30 ${
+                                    role='button'
+                                    tabIndex={0}
+                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setRefDate(day); setView('day'); } }}
+                                    className={`min-h-[100px] border-b border-r p-2 text-left align-top cursor-pointer hover:bg-muted/30 ${
                                         inMonth ? '' : 'text-muted-foreground/40'
-                                    }`}
+                                    } ${inTerm ? 'bg-primary/[0.045]' : ''}`}
                                 >
-                                    <span className='text-sm'>{day.getDate()}</span>
+                                    <span className={`text-sm ${inTerm ? 'font-semibold text-primary' : ''}`}>{day.getDate()}</span>
                                     <div className='mt-1 space-y-1'>
                                         {dayEvents.slice(0, 2).map((ev) => (
-                                            <p
-                                                key={ev.uuid}
-                                                className='truncate rounded bg-primary/10 px-1.5 py-0.5 text-[11px] text-primary'
-                                            >
-                                                • {ev.title}
-                                            </p>
+                                            <div key={ev.uuid} className='flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[11px] text-primary'>
+                                                <button
+                                                    type='button'
+                                                    onClick={(e) => { e.stopPropagation(); setActiveEvent(ev); setFormOpen(true); }}
+                                                    className='min-w-0 flex-1 truncate text-left'
+                                                >
+                                                    • {ev.title}
+                                                </button>
+                                                <button type='button' title='Edit event' onClick={(e) => { e.stopPropagation(); setActiveEvent(ev); setFormOpen(true); }} className='shrink-0 rounded p-0.5 hover:bg-primary/20'>
+                                                    <Pencil className='h-3 w-3'/>
+                                                </button>
+                                                <button type='button' title='Delete event' onClick={(e) => { e.stopPropagation(); setPendingDelete(ev); }} className='shrink-0 rounded p-0.5 hover:bg-destructive/10 text-destructive'>
+                                                    <Trash2 className='h-3 w-3'/>
+                                                </button>
+                                            </div>
                                         ))}
                                         {dayEvents.length > 2 && (
-                                            <p className='text-[10px] text-muted-foreground'>
-                                                +{dayEvents.length - 2} more
-                                            </p>
+                                            <p className='text-[10px] text-muted-foreground'>+{dayEvents.length - 2} more</p>
                                         )}
                                     </div>
-                                </button>
+                                </div>
                             );
                         })}
                     </div>
@@ -227,7 +249,7 @@ export default function CalendarDetailPage() {
                             const d = new Date(startOfWeek(refDate));
                             d.setDate(d.getDate() + i);
                             return (
-                                <div key={i} className='border-b border-r bg-muted/40 p-2 text-center text-xs font-semibold'>
+                                <div key={i} className={`border-b border-r bg-muted/40 p-2 text-center text-xs font-semibold ${isWithinTerm(d, section) ? 'bg-primary/[0.045]' : ''}`}>
                                     {d.getDate()} <span className='text-muted-foreground'>{WEEKDAYS[i]}</span>
                                 </div>
                             );
@@ -244,19 +266,15 @@ export default function CalendarDetailPage() {
                                     const hourEvents = (eventsByDay.get(key) || []).filter(
                                         (ev) => ev.start_time && parseInt(ev.start_time.split(':')[0]) === hour
                                     );
+                                    const inTerm = isWithinTerm(d, section);
                                     return (
-                                        <div key={`${key}-${hour}`} className='border-b border-r p-1 min-h-[44px]'>
+                                        <div key={`${key}-${hour}`} className={`border-b border-r p-1 min-h-[44px] ${inTerm ? 'bg-primary/[0.045]' : ''}`}>
                                             {hourEvents.map((ev) => (
-                                                <button
-                                                    key={ev.uuid}
-                                                    onClick={() => {
-                                                        setActiveEvent(ev);
-                                                        setFormOpen(true);
-                                                    }}
-                                                    className='w-full truncate rounded bg-primary/10 px-1.5 py-0.5 text-[11px] text-primary text-left'
-                                                >
-                                                    • {ev.title}
-                                                </button>
+                                                <div key={ev.uuid} className='flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[11px] text-primary'>
+                                                    <button type='button' onClick={() => { setActiveEvent(ev); setFormOpen(true); }} className='min-w-0 flex-1 truncate text-left'>• {ev.title}</button>
+                                                    <button type='button' title='Edit event' onClick={() => { setActiveEvent(ev); setFormOpen(true); }}><Pencil className='h-3 w-3'/></button>
+                                                    <button type='button' title='Delete event' onClick={() => setPendingDelete(ev)} className='text-destructive'><Trash2 className='h-3 w-3'/></button>
+                                                </div>
                                             ))}
                                         </div>
                                     );
@@ -271,31 +289,27 @@ export default function CalendarDetailPage() {
                 <div className='rounded-md border'>
                     <div className='grid grid-cols-[80px_1fr]'>
                         <div className='border-b border-r bg-muted/40 p-2 text-xs'>Time</div>
-                        <div className='border-b bg-muted/40 p-2 text-sm font-semibold'>
+                        <div className={`border-b bg-muted/40 p-2 text-sm font-semibold ${isWithinTerm(refDate, section) ? 'bg-primary/[0.045]' : ''}`}>
                             {refDate.toLocaleDateString('en-US', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'})}
                         </div>
                         {HOURS.map((hour) => {
                             const key = toKey(refDate);
                             const hourEvents = (eventsByDay.get(key) || []).filter(
                                 (ev) => ev.start_time && parseInt(ev.start_time.split(':')[0]) === hour
-                            );
+                            )
+                            const inTerm = isWithinTerm(refDate, section);;
                             return (
                                 <Fragment key={hour}>
                                     <div className='border-b border-r p-2 text-xs text-muted-foreground'>
                                         {hour.toString().padStart(2, '0')}:00
                                     </div>
-                                    <div className='border-b p-1 min-h-[48px] space-y-1'>
+                                    <div className={`border-b p-1 min-h-[48px] space-y-1 ${inTerm ? 'bg-primary/[0.045]' : ''}`}>
                                         {hourEvents.map((ev) => (
-                                            <button
-                                                key={ev.uuid}
-                                                onClick={() => {
-                                                    setActiveEvent(ev);
-                                                    setFormOpen(true);
-                                                }}
-                                                className='w-full truncate rounded bg-primary/10 px-2 py-1 text-xs text-primary text-left'
-                                            >
-                                                • {ev.title}
-                                            </button>
+                                            <div key={ev.uuid} className='flex items-center gap-1 rounded bg-primary/10 px-2 py-1 text-xs text-primary'>
+                                                <button type='button' onClick={() => { setActiveEvent(ev); setFormOpen(true); }} className='min-w-0 flex-1 truncate text-left'>• {ev.title}</button>
+                                                <button type='button' title='Edit event' onClick={() => { setActiveEvent(ev); setFormOpen(true); }}><Pencil className='h-3 w-3'/></button>
+                                                <button type='button' title='Delete event' onClick={() => setPendingDelete(ev)} className='text-destructive'><Trash2 className='h-3 w-3'/></button>
+                                            </div>
                                         ))}
                                     </div>
                                 </Fragment>

@@ -38,7 +38,10 @@ export class ClassesService {
           });
         } else if (decoded.position === 'ACADEMIC') {
           classes = await this.prisma.class.findMany({
-            where: { branch_uuid: branchUuid, teacher_uuid: decoded.uuid },
+            where: {
+            branch_uuid: branchUuid,
+            OR: [{ teacher_uuid: decoded.uuid }, { teachers_uuid: { has: decoded.uuid } }],
+          },
             include: { students: true },
             orderBy: { created_at: 'asc' },
           });
@@ -61,6 +64,8 @@ export class ClassesService {
 
   async create(branchUuid: string | undefined, decoded: DecodedUser, body: any) {
     const { name, capacity, teacher_uuid } = body;
+    const teachers_uuid = Array.isArray(body.teachers_uuid) ? body.teachers_uuid.filter(Boolean) : [];
+    if (teacher_uuid && !teachers_uuid.includes(teacher_uuid)) teachers_uuid.unshift(teacher_uuid);
 
     if (decoded.position !== 'ADMINISTRATIVE') {
       throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
@@ -75,7 +80,7 @@ export class ClassesService {
     }
 
     const result = await this.prisma.class.create({
-      data: { name, capacity, branch_uuid: branchUuid, teacher_uuid },
+      data: { name, capacity, branch_uuid: branchUuid, teacher_uuid, teachers_uuid },
     });
     await this.cache.delByPrefix(`classes:index:${branchUuid}:`);
 
@@ -110,6 +115,8 @@ export class ClassesService {
 
   async update(uuid: string, decoded: DecodedUser, body: any) {
     const { name, capacity, teacher_uuid } = body;
+    const teachers_uuid = Array.isArray(body.teachers_uuid) ? body.teachers_uuid.filter(Boolean) : [];
+    if (teacher_uuid && !teachers_uuid.includes(teacher_uuid)) teachers_uuid.unshift(teacher_uuid);
 
     if (decoded.position !== 'ADMINISTRATIVE') {
       throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
@@ -117,7 +124,7 @@ export class ClassesService {
 
     const updatedClass = await this.prisma.class.update({
       where: { uuid },
-      data: { name, capacity, teacher_uuid },
+      data: { name, capacity, teacher_uuid, teachers_uuid },
     });
 
     if (!updatedClass) {

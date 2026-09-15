@@ -211,6 +211,7 @@ model Class {
   uuid         String   @unique @default(uuid())
   branch_uuid  String
   teacher_uuid String?
+  teachers_uuid String[] @default([])
   name         String
   capacity     Int?     @default(0)
   status       String   @default("active")
@@ -264,6 +265,7 @@ model Result {
   class_name       String
   overall          Float        @default(0)
   status           ResultStatus @default(PENDING)
+  approval_requested Boolean      @default(false)
   teacher_remark   String?
   principal_remark String?
   created_at       DateTime     @default(now())

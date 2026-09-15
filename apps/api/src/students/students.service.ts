@@ -27,13 +27,13 @@ export class StudentsService {
       students = await this.prisma.student.findMany({
         where: { branch_uuid: branchUuid },
         include: { parent: true, class: true },
-        orderBy: { name: 'asc' },
+        orderBy: { class: { name: 'asc' } },
       });
     } else if (decoded.position === 'ACADEMIC') {
       students = await this.prisma.student.findMany({
         where: { branch_uuid: branchUuid, class: { teacher_uuid: decoded.uuid } },
         include: { parent: true, class: true },
-        orderBy: { name: 'asc' },
+        orderBy: { class: { name: 'asc' } },
       });
     }
 

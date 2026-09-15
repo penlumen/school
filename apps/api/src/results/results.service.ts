@@ -65,7 +65,10 @@ export class ResultsService {
         });
       } else {
         const classes = await this.prisma.class.findMany({
-          where: { teacher_uuid: decoded.uuid },
+          where: {
+            branch_uuid: branchUuid,
+            OR: [{ teacher_uuid: decoded.uuid }, { teachers_uuid: { has: decoded.uuid } }],
+          },
           select: { name: true },
         });
         const classes_names = classes.map((c) => c.name);
@@ -206,7 +209,7 @@ export class ResultsService {
       }
 
       const isAdmin = decoded.position === 'ADMINISTRATIVE';
-      const isClassTeacher = student.class.teacher_uuid === decoded.uuid;
+      const isClassTeacher = student.class.teacher_uuid === decoded.uuid || student.class.teachers_uuid.includes(decoded.uuid);
 
       if (!isAdmin && !isClassTeacher) {
         throw new ForbiddenException({ status: 403, success: false, message: 'Unauthorized' });
@@ -302,7 +305,7 @@ export class ResultsService {
     }
 
     const isAdmin = decoded.position === 'ADMINISTRATIVE';
-    const isClassTeacher = existing.student && existing.student.class.teacher_uuid === decoded.uuid;
+    const isClassTeacher = existing.student && (existing.student.class.teacher_uuid === decoded.uuid || existing.student.class.teachers_uuid.includes(decoded.uuid));
 
     if (!isAdmin && !isClassTeacher) {
       throw new ForbiddenException({ status: 403, success: false, message: 'Unauthorized' });
@@ -363,14 +366,17 @@ export class ResultsService {
       data: {
         overall: total,
         calendar_uuid: result?.calendar,
-        teacher_remark: result?.teacher_remark,
-        // Only an administrator can approve a result or write the
-        // principal's remark - a class teacher's update() call simply
-        // can't move either of these fields, regardless of what's posted.
+        approval_requested: isAdmin ? existing.approval_requested : !!result?.approval_requested,
+        // Teacher comments are only submitted as part of an explicit approval
+        // request. This keeps ordinary result edits free of a teacher comment.
+        teacher_remark: result?.approval_requested ? result?.teacher_remark : (isAdmin ? result?.teacher_remark : null),
+        // Only an administrator can approve a result or write the principal's
+        // remark. A staff update cannot change either field.
         ...(isAdmin
           ? {
               status: result?.status,
               principal_remark: result?.principal_remark,
+              approval_requested: result?.approval_requested ?? existing.approval_requested,
             }
           : {}),
       },

@@ -66,6 +66,7 @@ interface ResultData {
         teacher_remark: string;
         principal_remark: string;
         status?: string;
+        approval_requested?: boolean;
     };
     summary: ResultSummary;
     assessments: AssessmentObject[];
@@ -84,6 +85,7 @@ export default function ReportPage() {
     const [reportData, setReportData] = useState<ResultData | null>(null);
     const [assessments, setAssessments] = useState<AssessmentObject[]>([]);
     const [approved, setApproved] = useState(false);
+    const [requestApproval, setRequestApproval] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
@@ -99,6 +101,7 @@ export default function ReportPage() {
                 setReportData(response.data);
                 setAssessments(response.data.assessments || []);
                 setApproved(response.data.result.status === 'APPROVED');
+                setRequestApproval(!!response.data.result.approval_requested);
             }
         } catch (error) {
             console.error('Error fetching report', error);
@@ -200,6 +203,7 @@ export default function ReportPage() {
                     teacher_remark: reportData.result.teacher_remark,
                     principal_remark: reportData.result.principal_remark,
                     status: approved ? 'APPROVED' : 'PENDING',
+                    approval_requested: isAdmin ? requestApproval : requestApproval,
                 },
                 assessments
             );
@@ -388,17 +392,37 @@ export default function ReportPage() {
                 </Table>
             </Card>
 
-            {/* APPROVAL (admin only) */}
-            {isEditing && isAdmin && (
-                <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50/50 px-4 py-3">
-                    <Checkbox
-                        id="approve-result"
-                        checked={approved}
-                        onCheckedChange={(checked) => setApproved(checked === true)}
-                    />
-                    <Label htmlFor="approve-result" className="text-sm font-medium cursor-pointer">
-                        Approve this result
-                    </Label>
+            {/* RESULT WORKFLOW */}
+            {isEditing && (
+                <div className="flex flex-col gap-3 rounded-md border border-slate-200 bg-slate-50/50 px-4 py-3">
+                    {isAdmin ? (
+                        <div className="flex items-center gap-2">
+                            <Checkbox
+                                id="approve-result"
+                                checked={approved}
+                                onCheckedChange={(checked) => setApproved(checked === true)}
+                            />
+                            <Label htmlFor="approve-result" className="text-sm font-medium cursor-pointer">
+                                Approve this result
+                            </Label>
+                        </div>
+                    ) : (
+                        <div className="flex items-start gap-2">
+                            <Checkbox
+                                id="request-approval"
+                                checked={requestApproval}
+                                onCheckedChange={(checked) => setRequestApproval(checked === true)}
+                            />
+                            <div>
+                                <Label htmlFor="request-approval" className="text-sm font-medium cursor-pointer">
+                                    Request administrator approval
+                                </Label>
+                                <p className="text-xs text-muted-foreground">
+                                    Submit this result for administrator review. Your teacher comment is included only when approval is requested.
+                                </p>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -411,13 +435,17 @@ export default function ReportPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {isEditing ? (
+                        {isEditing && (isAdmin || requestApproval) ? (
                             <Textarea
                                 value={result.teacher_remark || ''}
                                 onChange={(e) => updateRemark('teacher_remark', e.target.value)}
-                                placeholder="Enter official teacher comment..."
+                                placeholder="Enter teacher comment for the approval request..."
                                 className="min-h-[100px] border-slate-200 focus:border-emerald-500"
                             />
+                        ) : isEditing ? (
+                            <p className="text-sm text-muted-foreground">
+                                Teacher comment is hidden until administrator approval is requested.
+                            </p>
                         ) : (
                             <p className="text-sm italic text-slate-600 leading-relaxed">
                                 {result.teacher_remark || 'No official remark recorded for this period.'}

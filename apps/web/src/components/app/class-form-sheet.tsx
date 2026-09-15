@@ -8,6 +8,7 @@ import {useUser} from '@/hooks/user';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
+import {TagMultiSelect} from '@/components/app/tag-multi-select';
 import {
     Select,
     SelectContent,
@@ -28,6 +29,7 @@ export interface ClassRecord {
     capacity: number | null;
     status: string;
     teacher_uuid: string | null;
+    teachers_uuid: string[];
     studentCount?: number;
 }
 
@@ -38,7 +40,7 @@ interface ClassFormSheetProps {
     onSaved: () => void;
 }
 
-const emptyForm = {name: '', teacher_uuid: '', capacity: ''};
+const emptyForm = {name: '', teacher_uuid: '', teachers_uuid: [] as string[], capacity: ''};
 
 export function ClassFormSheet({open, onOpenChange, classItem, onSaved}: ClassFormSheetProps) {
     const {create, update} = useClass();
@@ -64,6 +66,7 @@ export function ClassFormSheet({open, onOpenChange, classItem, onSaved}: ClassFo
                     ? {
                         name: classItem.name || '',
                         teacher_uuid: classItem.teacher_uuid || '',
+                        teachers_uuid: classItem.teachers_uuid || [],
                         capacity: classItem.capacity ? String(classItem.capacity) : '',
                     }
                     : emptyForm
@@ -84,6 +87,7 @@ export function ClassFormSheet({open, onOpenChange, classItem, onSaved}: ClassFo
             const payload = {
                 name: formData.name,
                 teacher_uuid: formData.teacher_uuid || null,
+                teachers_uuid: Array.from(new Set([...(formData.teachers_uuid || []), ...(formData.teacher_uuid ? [formData.teacher_uuid] : [])])),
                 capacity: formData.capacity ? Number(formData.capacity) : 0,
             };
             const response = isEdit
@@ -140,6 +144,17 @@ export function ClassFormSheet({open, onOpenChange, classItem, onSaved}: ClassFo
                             </SelectContent>
                         </Select>
                     </div>
+
+                    <TagMultiSelect
+                        label='Staff with class access'
+                        placeholder='Select staff'
+                        options={teachers}
+                        selected={formData.teachers_uuid}
+                        all={false}
+                        onChange={(next) => setFormData({...formData, teachers_uuid: next})}
+                    />
+
+                    <p className='-mt-3 text-xs text-muted-foreground'>The class teacher above is always included in class access.</p>
 
                     <div className='space-y-2'>
                         <Label htmlFor='capacity'>Max capacity</Label>

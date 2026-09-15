@@ -4,6 +4,7 @@ type ResultData = {
     teacher_remark: string | null;
     principal_remark: string | null;
     status: 'APPROVED' | 'PENDING' | 'REJECTED';
+    approval_requested?: boolean;
 };
 
 type AssessmentObject = {

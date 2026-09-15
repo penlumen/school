@@ -58,6 +58,7 @@ interface Report {
     student: Student;
     assessments: Assessment[];
     status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    approval_requested?: boolean;
 }
 
 interface ReportsPageProps {
@@ -267,7 +268,12 @@ export default function ReportsPage() {
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className='text-center'>
-                                                {getStatusBadge(report.status)}
+                                                <div className='flex flex-col items-center gap-1'>
+                                                    {getStatusBadge(report.status)}
+                                                    {report.approval_requested && (
+                                                        <Badge variant='outline' className='text-[10px]'>Approval requested</Badge>
+                                                    )}
+                                                </div>
                                             </TableCell>
                                             <TableCell>
                                                 <div className='text-sm'>
