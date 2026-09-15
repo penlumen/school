@@ -40,8 +40,8 @@ USER bun
 # Copy public folder safely (won't fail if apps/web/public does not exist)
 COPY --from=builder /app/apps/web/public* ./public/
 
-# Copy static assets from the built application
-COPY --from=builder --chown=bun:bun /app/apps/web/.next/static ./apps/web/.next/static
+# Copy root static assets to the expected static directory
+COPY --from=builder --chown=bun:bun /app/.next/static ./.next/static
 
 # Copy the entire standalone monorepo output root
 COPY --from=builder --chown=bun:bun /app/.next/standalone ./
@@ -50,5 +50,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Execute the server entry point generated inside the app directory
 CMD ["bun", "run", "apps/web/server.js"]
