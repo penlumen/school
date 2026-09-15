@@ -167,9 +167,9 @@ model Calendar {
   session     String
   term        String?
 
-  open_date   DateTime
-  close_date  DateTime
-  next_term_resumption_date DateTime
+  open_date   DateTime?
+  close_date  DateTime?
+  next_term_resumption_date DateTime?
   
   status      CalendarStatus @default(INACTIVE)
   created_at  DateTime @default(now())
