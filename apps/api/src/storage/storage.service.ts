@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, DeleteObjectCommand, ObjectCannedACL, StorageClass } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import sharp from 'sharp';
 import { randomUUID } from 'crypto';
@@ -32,7 +32,8 @@ export class StorageService {
     });
     // e.g. https://<bucket>.s3.<region>.amazonaws.com or a CDN domain in front of the bucket.
     this.publicBaseUrl =
-      process.env.AWS_S3_PUBLIC_URL || `https://${this.bucket}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com`;
+      process.env.AWS_S3_PUBLIC_URL ||
+      `https://${this.bucket}.s3.${process.env.AWS_REGION || 'eu-west-2'}.amazonaws.com`;
   }
 
   /**
@@ -62,6 +63,8 @@ export class StorageService {
         Key: key,
         Body: webpBuffer,
         ContentType: 'image/webp',
+        StorageClass: 'STANDARD' as StorageClass,
+        ACL: 'public-read' as ObjectCannedACL,
       },
     }).done();
 
@@ -72,7 +75,9 @@ export class StorageService {
 
   async delete(key: string): Promise<void> {
     if (!key) return;
-    await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
+    await this.client.send(
+      new DeleteObjectCommand({ Bucket: this.bucket, Key: key }),
+    );
   }
 
   /** Extracts the S3 key back out of a public URL produced by uploadImage(). */
