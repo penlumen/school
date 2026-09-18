@@ -1,0 +1,494 @@
+'use client';
+
+import {useCallback, useEffect, useState} from 'react';
+import Cookies from 'js-cookie';
+import {ArrowLeft, Clock, Edit, Printer as Print, Save, Users, X} from 'lucide-react';
+import {Badge} from '@/components/ui/badge';
+import {Button} from '@/components/ui/button';
+import {Checkbox} from '@/components/ui/checkbox';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Textarea} from '@/components/ui/textarea';
+import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
+import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
+import {Tooltip, TooltipContent, TooltipTrigger} from '@/components/ui/tooltip';
+import Link from 'next/link';
+import {useResult} from '@/hooks/result';
+import {useReportSocket} from '@/hooks/report-socket';
+import {useParams, useRouter} from 'next/navigation';
+import LoadingPage from '@/components/loading-page';
+
+// --- Interfaces ---
+interface GradingScale {
+    grade: string;
+    score: number;
+    remark: string;
+}
+
+interface StudentData {
+    uuid: string;
+    name: string;
+    reg_number: string;
+    avatar: string | null;
+}
+
+interface AssessmentObject {
+    uuid: string;
+    subject: string;
+    ca_one: number;
+    ca_two: number;
+    examination: number;
+    overall: number;
+    grade?: string;
+    remark?: string;
+}
+
+interface CalendarData {
+    session: string;
+    term: string;
+    close_date: string;
+    open_date: string;
+}
+
+interface ResultSummary {
+    position: string | number;
+    total_students: number;
+    average: number;
+}
+
+interface ResultData {
+    result: {
+        uuid: string;
+        student: StudentData;
+        calendar: CalendarData;
+        class_name: string;
+        teacher_remark: string;
+        principal_remark: string;
+        status?: string;
+        approval_requested?: boolean;
+    };
+    summary: ResultSummary;
+    assessments: AssessmentObject[];
+    grading_system?: GradingScale[];
+}
+
+const EDITABLE_FIELDS = ['ca_one', 'ca_two', 'examination'] as const;
+
+export default function ReportPage() {
+    const {uuid} = useParams();
+    const router = useRouter();
+    const {view, update} = useResult();
+
+    const [isLoading, setIsLoading] = useState(true);
+    const [isEditing, setIsEditing] = useState(false);
+    const [reportData, setReportData] = useState<ResultData | null>(null);
+    const [assessments, setAssessments] = useState<AssessmentObject[]>([]);
+    const [approved, setApproved] = useState(false);
+    const [requestApproval, setRequestApproval] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
+
+    useEffect(() => {
+        const userString = Cookies.get('user');
+        const user = userString ? JSON.parse(userString) : null;
+        setIsAdmin(user?.position === 'ADMINISTRATIVE');
+    }, []);
+
+    const fetchData = async () => {
+        try {
+            const response = await view(uuid as string);
+            if (response.success) {
+                setReportData(response.data);
+                setAssessments(response.data.assessments || []);
+                setApproved(response.data.result.status === 'APPROVED');
+                setRequestApproval(!!response.data.result.approval_requested);
+            }
+        } catch (error) {
+            console.error('Error fetching report', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // --- Live sync: apply a field change that arrived from someone else's socket ---
+    const handleRemoteFieldChange = useCallback(
+        (event: { field: string; value: string | number }) => {
+            if (event.field.startsWith('assessment:')) {
+                const [, assessmentUuid, key] = event.field.split(':');
+                setAssessments((prev) =>
+                    prev.map((item) => {
+                        if (item.uuid !== assessmentUuid) return item;
+                        const updated = {...item, [key]: Number(event.value)};
+                        updated.overall = updated.ca_one + updated.ca_two + updated.examination;
+                        return updated;
+                    }),
+                );
+            } else if (event.field === 'remark:teacher_remark' || event.field === 'remark:principal_remark') {
+                const key = event.field.split(':')[1] as 'teacher_remark' | 'principal_remark';
+                setReportData((prev) => (prev ? {...prev, result: {...prev.result, [key]: event.value}} : prev));
+            }
+        },
+        [],
+    );
+
+    const {presence, emitFieldChange, emitSaved} = useReportSocket({
+        resultUuid: uuid as string,
+        onFieldChanged: handleRemoteFieldChange,
+        onReportSaved: fetchData,
+    });
+
+    // --- Helpers ---
+    const readableDate = (dateString: string) => {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleDateString('en-GB', {
+            day: 'numeric', month: 'short', year: 'numeric'
+        });
+    };
+
+    const getGradeColor = (grade: string) => {
+        const colors: Record<string, string> = {
+            'A': 'bg-white text-black   ',
+            'B': 'bg-primary text-white',
+            'C': 'bg-secondary text-black',
+            'D': 'bg-destructive text-white',
+            'E': 'bg-destructive text-white',
+            'F': 'bg-destructive text-white',
+        };
+        return colors[grade] || 'bg-gray-100 text-gray-700';
+    };
+
+    const getGradeInfo = (overall: number) => {
+        const system = reportData?.grading_system || [];
+        const sorted = [...system].sort((a, b) => b.score - a.score);
+        const found = sorted.find((g) => overall >= g.score);
+        return {
+            grade: found?.grade || 'F',
+            remark: found?.remark || 'Failed'
+        };
+    };
+
+    // --- Handlers ---
+    const updateAssessment = (assessmentUuid: string, field: string, value: number) => {
+        setAssessments(prev => prev.map(item => {
+            if (item.uuid === assessmentUuid) {
+                const updated = {...item, [field]: value};
+                updated.overall = updated.ca_one + updated.ca_two + updated.examination;
+                return updated;
+            }
+            return item;
+        }));
+        emitFieldChange(`assessment:${assessmentUuid}:${field}`, value);
+    };
+
+    const updateRemark = (field: 'teacher_remark' | 'principal_remark', value: string) => {
+        setReportData(prev => prev ? {
+            ...prev,
+            result: {...prev.result, [field]: value}
+        } : null);
+        emitFieldChange(`remark:${field}`, value);
+    };
+
+    const handleSave = async () => {
+        if (!reportData) return;
+        setIsLoading(true);
+        try {
+            const response = await update(
+                reportData.result.uuid,
+                {
+                    teacher_remark: reportData.result.teacher_remark,
+                    principal_remark: reportData.result.principal_remark,
+                    status: approved ? 'APPROVED' : 'PENDING',
+                    approval_requested: isAdmin ? requestApproval : requestApproval,
+                },
+                assessments
+            );
+            if (response.success) {
+                setIsEditing(false);
+                emitSaved();
+                fetchData();
+            }
+        } catch (error) {
+            console.error('Save error', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (isLoading || !reportData) return <LoadingPage/>;
+
+    const {result, summary} = reportData;
+
+    return (
+        <div className='space-y-6'>
+            <Button variant='ghost' size='sm' className='w-fit' onClick={() => router.back()}>
+                <ArrowLeft className='h-4 w-4'/>
+                Back
+            </Button>
+
+            {/* HEADER */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-6">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight">Student Report Card</h1>
+                    <p className="text-sm text-muted-foreground italic">Academic performance
+                        for {result.calendar?.term}, {result.calendar?.session}</p>
+                </div>
+                <div className="flex items-center gap-4">
+                    {/* Presence: staff currently viewing/editing this report */}
+                    {presence.length > 0 && (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <div className="flex items-center -space-x-2 cursor-default">
+                                    {presence.slice(0, 4).map((member) => (
+                                        <Avatar key={member.socketId} className="h-8 w-8 border-2 border-background">
+                                            <AvatarImage src={member.avatar || ''} alt={member.name}/>
+                                            <AvatarFallback className="text-[10px]">
+                                                {member.name.charAt(0).toUpperCase()}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    ))}
+                                    {presence.length > 4 && (
+                                        <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-muted text-xs font-medium">
+                                            +{presence.length - 4}
+                                        </span>
+                                    )}
+                                </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <div className="flex items-center gap-1 text-xs font-semibold mb-1">
+                                    <Users className="h-3 w-3"/>
+                                    Active now
+                                </div>
+                                {presence.map((member) => (
+                                    <p key={member.socketId} className="text-xs">{member.name}</p>
+                                ))}
+                            </TooltipContent>
+                        </Tooltip>
+                    )}
+
+                    <div className="flex gap-2">
+                        {!isEditing ? (
+                            <>
+                                <Button onClick={() => setIsEditing(true)} variant="outline" className="gap-2">
+                                    <Edit className="h-4 w-4"/> Edit report
+                                </Button>
+                                <Link href={`/report/${reportData.result.uuid}`} target="_blank">
+                                    <Button className="gap-2 bg-slate-900 text-white hover:bg-slate-800">
+                                        <Print className="h-4 w-4"/> Preview report
+                                    </Button>
+                                </Link>
+                            </>
+                        ) : (
+                            <>
+                                <Button variant="ghost" onClick={() => setIsEditing(false)}
+                                        className="bg-red-200 text-red-600 hover:text-red-700 hover:bg-red-100">
+                                    <X className="h-4 w-4 mr-1"/> Cancel
+                                </Button>
+                                <Button onClick={handleSave}
+                                        className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
+                                    <Save className="h-4 w-4"/> Save changes
+                                </Button>
+                            </>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* TOP STATS */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <Card className="md:col-span-3 shadow-sm overflow-hidden">
+                    <CardContent className="pt-6">
+                        <div className="flex items-center gap-6">
+                            <Avatar className="h-20 w-20 border-2 border-slate-100 shadow-sm">
+                                <AvatarImage src={result.student.avatar || ''}/>
+                                <AvatarFallback className="bg-slate-100 text-slate-600 text-xl font-bold">
+                                    {result.student.name.charAt(0)}
+                                </AvatarFallback>
+                            </Avatar>
+                            <div className="space-y-1">
+                                <h3 className="text-2xl font-bold text-slate-900">{result.student.name}</h3>
+                                <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">{result.student.reg_number}</p>
+                                <div className="flex flex-wrap gap-2 mt-3">
+                                    <Badge variant="secondary"
+                                           className="px-3 py-1 bg-slate-100 text-slate-700 font-semibold">{result.class_name}</Badge>
+                                    <Badge variant="outline"
+                                           className="px-3 py-1">Position: {summary.position} of {summary.total_students}</Badge>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="shadow-sm">
+                    <CardContent className="pt-6 flex flex-col items-center justify-center h-full">
+                        <p className="text-xs text-muted-foreground uppercase font-bold tracking-tighter">Weighted
+                            Average</p>
+                        <h2 className={`text-4xl font-black mt-1 ${summary.average >= 50 ? 'text-emerald-600' : 'text-red-600'}`}>
+                            {summary.average}%
+                        </h2>
+                        <p className="text-[10px] mt-2 text-muted-foreground">
+                            Next Term Resumes: <span
+                            className="font-bold">{readableDate(result.calendar?.open_date)}</span>
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* SUBJECTS TABLE */}
+            <Card className="shadow-sm border-none bg-white overflow-hidden">
+                <Table>
+                    <TableHeader className="bg-slate-50">
+                        <TableRow>
+                            <TableHead className="font-bold text-slate-700">SUBJECTS</TableHead>
+                            <TableHead className="text-center w-24 font-bold text-slate-700">CA 1</TableHead>
+                            <TableHead className="text-center w-24 font-bold text-slate-700">CA 2</TableHead>
+                            <TableHead className="text-center w-24 font-bold text-slate-700">EXAM</TableHead>
+                            <TableHead className="text-center w-24 font-bold text-slate-700">TOTAL</TableHead>
+                            <TableHead className="text-center font-bold text-slate-700">PERFORMANCE</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {assessments.map((a) => {
+                            const {grade, remark} = getGradeInfo(a.overall);
+                            const gradeStyle = getGradeColor(grade);
+
+                            return (
+                                <TableRow key={a.uuid} className="hover:bg-slate-50/50 transition-colors">
+                                    <TableCell
+                                        className="font-semibold text-slate-800 uppercase text-xs">{a.subject}</TableCell>
+                                    {EDITABLE_FIELDS.map((field) => (
+                                        <TableCell key={field} className="text-center">
+                                            {isEditing ? (
+                                                <Input
+                                                    type="number"
+                                                    value={a[field]}
+                                                    onChange={(e) => updateAssessment(a.uuid, field, Number(e.target.value))}
+                                                    className="w-16 mx-auto text-center h-8 focus:ring-emerald-500"
+                                                />
+                                            ) : (
+                                                <span className="text-slate-600">{a[field]}</span>
+                                            )}
+                                        </TableCell>
+                                    ))}
+                                    <TableCell className="text-center font-black text-slate-900">{a.overall}</TableCell>
+                                    <TableCell className="text-center">
+                                        <Badge variant="outline"
+                                               className={`font-bold px-3 py-0.5 ${gradeStyle}`}>
+                                            {grade}
+                                        </Badge>
+                                        <span
+                                            className={`block text-[9px] mt-1 font-bold uppercase tracking-tighter ${grade === 'F' ? 'text-red-500' : 'text-slate-400'}`}>
+                                            {remark}
+                                        </span>
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        })}
+                    </TableBody>
+                </Table>
+            </Card>
+
+            {/* RESULT WORKFLOW */}
+            {isEditing && (
+                <div className="flex flex-col gap-3 rounded-md border border-slate-200 bg-slate-50/50 px-4 py-3">
+                    {isAdmin ? (
+                        <div className="flex items-center gap-2">
+                            <Checkbox
+                                id="approve-result"
+                                checked={approved}
+                                onCheckedChange={(checked) => setApproved(checked === true)}
+                            />
+                            <Label htmlFor="approve-result" className="text-sm font-medium cursor-pointer">
+                                Approve this result
+                            </Label>
+                        </div>
+                    ) : (
+                        <div className="flex items-start gap-2">
+                            <Checkbox
+                                id="request-approval"
+                                checked={requestApproval}
+                                onCheckedChange={(checked) => setRequestApproval(checked === true)}
+                            />
+                            <div>
+                                <Label htmlFor="request-approval" className="text-sm font-medium cursor-pointer">
+                                    Request administrator approval
+                                </Label>
+                                <p className="text-xs text-muted-foreground">
+                                    Submit this result for administrator review. Your teacher comment is included only when approval is requested.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* REMARKS SECTION - stacked top (teacher) then bottom (principal) */}
+            <div className="flex flex-col gap-6">
+                <Card className="shadow-sm border-slate-200">
+                    <CardHeader className="pb-2 bg-slate-50/50 border-b mb-4">
+                        <CardTitle className="text-xs font-black uppercase text-slate-500 tracking-widest">
+                            Teacher remark
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {isEditing && (isAdmin || requestApproval) ? (
+                            <Textarea
+                                value={result.teacher_remark || ''}
+                                onChange={(e) => updateRemark('teacher_remark', e.target.value)}
+                                placeholder="Enter teacher comment for the approval request..."
+                                className="min-h-[100px] border-slate-200 focus:border-emerald-500"
+                            />
+                        ) : isEditing ? (
+                            <p className="text-sm text-muted-foreground">
+                                Teacher comment is hidden until administrator approval is requested.
+                            </p>
+                        ) : (
+                            <p className="text-sm italic text-slate-600 leading-relaxed">
+                                {result.teacher_remark || 'No official remark recorded for this period.'}
+                            </p>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Principal remark: always visible when reading, but while editing it's
+                    only shown to an admin who has ticked the approval checkbox above. */}
+                {(!isEditing || (isAdmin && approved)) && (
+                    <Card className="shadow-sm border-slate-200">
+                        <CardHeader className="pb-2 bg-slate-50/50 border-b mb-4">
+                            <CardTitle className="text-xs font-black uppercase text-slate-500 tracking-widest">
+                                Principal remark
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {isEditing ? (
+                                <Textarea
+                                    value={result.principal_remark || ''}
+                                    onChange={(e) => updateRemark('principal_remark', e.target.value)}
+                                    placeholder="Enter official principal comment..."
+                                    className="min-h-[100px] border-slate-200 focus:border-emerald-500"
+                                />
+                            ) : (
+                                <p className="text-sm italic text-slate-600 leading-relaxed">
+                                    {result.principal_remark || 'No official remark recorded for this period.'}
+                                </p>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
+
+            {/* UNSAVED CHANGES FLOATER */}
+            {isEditing && (
+                <div
+                    className="fixed bottom-6 right-6 flex items-center gap-3 text-emerald-700 bg-emerald-50 p-4 px-6 border border-emerald-200 rounded-full shadow-lg animate-bounce">
+                    <Clock className="h-5 w-5"/>
+                    <p className="text-sm font-bold">You have unsaved changes!</p>
+                </div>
+            )}
+        </div>
+    );
+}
