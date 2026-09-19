@@ -320,6 +320,7 @@ export default function ClassDetailPage() {
             </Tabs>
 
             <StudentFormSheet
+                key={`${studentFormOpen}-${activeStudent?.uuid ?? 'new'}`}
                 open={studentFormOpen}
                 onOpenChange={setStudentFormOpen}
                 student={activeStudent}
@@ -332,6 +333,7 @@ export default function ClassDetailPage() {
                 student={activeStudent}
             />
             <SubjectFormSheet
+                key={`${subjectFormOpen}-${activeSubject?.uuid ?? 'new'}`}
                 classUuid={classUuid}
                 open={subjectFormOpen}
                 onOpenChange={setSubjectFormOpen}

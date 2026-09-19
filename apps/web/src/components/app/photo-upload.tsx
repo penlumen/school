@@ -11,6 +11,8 @@ import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
 interface PhotoUploadProps {
     label: string;
     folder: 'students' | 'staff' | 'parents' | 'branches' | 'schools';
+    entityUuid?: string;
+    onEntityUuid?: (uuid: string) => void;
     value?: string;
     fallback?: string;
     onChange: (url: string) => void;
@@ -22,6 +24,8 @@ interface PhotoUploadProps {
 export function PhotoUpload({
     label,
     folder,
+    entityUuid,
+    onEntityUuid,
     value,
     fallback,
     onChange,
@@ -67,8 +71,11 @@ export function PhotoUpload({
 
         setUploading(true);
         try {
+            const entity = folder === 'students' ? 'student' : folder === 'staff' ? 'staff' : 'parent';
+            const resolvedUuid = entityUuid || crypto.randomUUID();
+            onEntityUuid?.(resolvedUuid);
             const [response] = await Promise.all([
-                upload(file, folder),
+                upload(file, entity, resolvedUuid),
                 enrollFace ? detectFace(file) : Promise.resolve(),
             ]);
             if (response.success) {

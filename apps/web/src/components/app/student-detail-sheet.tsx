@@ -92,9 +92,11 @@ export function StudentDetailSheet({open, onOpenChange, student}: StudentDetailS
 
     useEffect(() => {
         if (open && student) {
-            fetchResults();
-            fetchAttendance();
-            fetchCalendars();
+            void Promise.resolve().then(() => Promise.all([
+                fetchResults(),
+                fetchAttendance(),
+                fetchCalendars(),
+            ]));
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, student]);

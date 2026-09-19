@@ -9,6 +9,7 @@ import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { HashingService } from '../common/hashing.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
+import { StorageService } from '../storage/storage.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 
 @Injectable()
@@ -17,6 +18,7 @@ export class UsersService {
     private readonly prisma: PrismaService,
     private readonly hashing: HashingService,
     private readonly notifications: NotificationsService,
+    private readonly storage: StorageService,
   ) {}
 
   async index(
@@ -208,6 +210,7 @@ export class UsersService {
     const newUser = await this.prisma.$transaction(async (tx: any) => {
       const created = await tx.user.create({
         data: {
+          uuid: body.uuid || undefined,
           name,
           email,
           address,
@@ -323,6 +326,7 @@ export class UsersService {
     const hashPassword = password
       ? await this.hashing.createHash(password)
       : user.password;
+    const previousAvatar = user.avatar;
 
     const updatedUser = await this.prisma.user.update({
       where: { uuid },
@@ -338,6 +342,11 @@ export class UsersService {
         ...(face_descriptor ? { face_descriptor } : {}),
       },
     });
+
+    if (previousAvatar && previousAvatar !== updatedUser.avatar) {
+      const oldKey = this.storage.keyFromUrl(previousAvatar);
+      if (oldKey) await this.storage.delete(oldKey);
+    }
 
     return {
       status: 200,
@@ -423,6 +432,11 @@ export class UsersService {
     });
 
     if (!existingMultipleBranches || existingMultipleBranches.length === 0) {
+      const entity = user.role === 'PARENT' ? 'parent' : 'staff';
+      await this.storage.deleteAccountAvatars(user.school_uuid || decoded.school_uuid, entity, uuid);
+      // Also remove legacy random-key avatars created before deterministic keys were introduced.
+      const legacyKey = this.storage.keyFromUrl(user.avatar);
+      if (legacyKey) await this.storage.delete(legacyKey);
       await this.prisma.user.delete({ where: { uuid } });
     }
 

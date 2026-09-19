@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect, useState} from 'react';
+import {useState} from 'react';
 import {toast} from 'sonner';
 
 import {useUser} from '@/hooks/user';
@@ -66,33 +66,19 @@ const emptyForm = {
 
 export function PersonFormSheet({role, open, onOpenChange, person, onSaved}: PersonFormSheetProps) {
     const {create, update} = useUser();
-    const [formData, setFormData] = useState(emptyForm);
+    const [formData, setFormData] = useState(() => person ? {
+        uuid: person.uuid,
+        name: person.name || '', contact: person.contact || '', alt_contact: person.alt_contact || '',
+        email: person.email || '', password: '', position: person.position || '',
+        address: person.address || '', avatar: person.avatar || '',
+    } : emptyForm);
     const [faceDescriptor, setFaceDescriptor] = useState<number[] | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
     const isEdit = !!person;
+    const [entityUuid, setEntityUuid] = useState<string | null>(person?.uuid || null);
     const roleLabel = role === 'STAFF' ? 'Staff' : 'Parent';
     const folder = role === 'STAFF' ? 'staff' : 'parents';
-
-    useEffect(() => {
-        if (open) {
-            setFaceDescriptor(null);
-            setFormData(
-                person
-                    ? {
-                        name: person.name || '',
-                        contact: person.contact || '',
-                        alt_contact: person.alt_contact || '',
-                        email: person.email || '',
-                        password: '',
-                        position: person.position || '',
-                        address: person.address || '',
-                        avatar: person.avatar || '',
-                    }
-                    : emptyForm
-            );
-        }
-    }, [open, person]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -105,6 +91,7 @@ export function PersonFormSheet({role, open, onOpenChange, person, onSaved}: Per
         try {
             const payload = {
                 ...formData,
+                ...(entityUuid ? {uuid: entityUuid} : {}),
                 ...(faceDescriptor ? {face_descriptor: faceDescriptor} : {}),
             };
             const response = isEdit

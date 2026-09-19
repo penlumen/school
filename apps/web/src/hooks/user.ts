@@ -38,6 +38,7 @@ export const useUser = () => {
 
   const create = async (userData: any) => {
     const response = await axiosInstance.post('/api/v1/user/create', {
+      uuid: userData.uuid,
       name: userData.name,
       email: userData.email,
       password: userData.password,
@@ -73,6 +74,7 @@ export const useUser = () => {
       };
     }
     const response = await axiosInstance.patch(`/api/v1/user/update/${uuid}`, {
+      uuid: userData.uuid,
       name: userData.name,
       email: userData.email,
       password: userData.password,

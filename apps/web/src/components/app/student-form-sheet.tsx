@@ -55,38 +55,42 @@ export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, 
 
     const [classes, setClasses] = useState<{ uuid: string; name: string }[]>([]);
     const [parents, setParents] = useState<{ uuid: string; name: string }[]>([]);
-    const [formData, setFormData] = useState(emptyForm);
+    const [formData, setFormData] = useState(() =>
+        student
+            ? {
+                uuid: student.uuid,
+                name: student.name || '',
+                reg_number: student.reg_number || '',
+                gender: student.gender || '',
+                parent_uuid: student.parent_uuid || '',
+                class_uuid: student.class_uuid || '',
+                avatar: student.avatar || '',
+            }
+            : {...emptyForm, class_uuid: lockedClassUuid || ''}
+    );
+    const [entityUuid, setEntityUuid] = useState<string | null>(student?.uuid || null);
     const [faceDescriptor, setFaceDescriptor] = useState<number[] | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
     const isEdit = !!student;
 
     useEffect(() => {
-        if (open) {
-            indexClasses().then((response) => {
-                if (response.success) setClasses(response.data.classes || []);
-            });
-            indexUsers('parent').then((response) => {
-                if (response.success) {
-                    setParents((response.data.user || []).map((entry: any) => entry.user));
-                }
-            });
-            setFaceDescriptor(null);
-            setFormData(
-                student
-                    ? {
-                        name: student.name || '',
-                        reg_number: student.reg_number || '',
-                        gender: student.gender || '',
-                        parent_uuid: student.parent_uuid || '',
-                        class_uuid: student.class_uuid || '',
-                        avatar: student.avatar || '',
-                    }
-                    : {...emptyForm, class_uuid: lockedClassUuid || ''}
-            );
-        }
+        if (!open) return;
+
+        let cancelled = false;
+        void Promise.all([indexClasses(), indexUsers('parent')]).then(([classesResponse, parentsResponse]) => {
+            if (cancelled) return;
+            if (classesResponse.success) setClasses(classesResponse.data.classes || []);
+            if (parentsResponse.success) {
+                setParents((parentsResponse.data.user || []).map((entry: any) => entry.user));
+            }
+        });
+
+        return () => {
+            cancelled = true;
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open, student, lockedClassUuid]);
+    }, [open]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -99,6 +103,7 @@ export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, 
         try {
             const payload = {
                 ...formData,
+                ...(entityUuid ? {uuid: entityUuid} : {}),
                 ...(faceDescriptor ? {face_descriptor: faceDescriptor} : {}),
             };
             const response = isEdit
@@ -130,6 +135,8 @@ export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, 
                     <PhotoUpload
                         label='Student passport'
                         folder='students'
+                        entityUuid={entityUuid || undefined}
+                        onEntityUuid={setEntityUuid}
                         value={formData.avatar}
                         fallback={formData.name}
                         onChange={(url) => setFormData({...formData, avatar: url})}

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
+import { StorageService } from '../storage/storage.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class StudentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly storage: StorageService,
   ) {}
 
   async index(branchUuid: string | undefined, decoded: DecodedUser) {
@@ -91,6 +93,7 @@ export class StudentsService {
 
     const result = await this.prisma.student.create({
       data: {
+        uuid: body.uuid || undefined,
         name,
         reg_number,
         parent_uuid,
@@ -144,10 +147,16 @@ export class StudentsService {
       });
     }
 
+    const previousStudent = await this.prisma.student.findUnique({ where: { uuid } });
     const result = await this.prisma.student.update({
       where: { uuid },
       data: { name, reg_number, parent_uuid, class_uuid, gender, avatar, ...(face_descriptor ? { face_descriptor } : {}) },
     });
+
+    if (previousStudent?.avatar && previousStudent.avatar !== result.avatar) {
+      const oldKey = this.storage.keyFromUrl(previousStudent.avatar);
+      if (oldKey) await this.storage.delete(oldKey);
+    }
 
     return { status: 200, success: true, message: 'Student updated', data: { student: result } };
   }
@@ -168,6 +177,9 @@ export class StudentsService {
       }
 
       await this.prisma.result.deleteMany({ where: { student_uuid: uuid } });
+      await this.storage.deleteAvatar(decoded.school_uuid, student.branch_uuid, 'student', uuid);
+      const legacyKey = this.storage.keyFromUrl(student.avatar);
+      if (legacyKey) await this.storage.delete(legacyKey);
       await this.prisma.student.delete({ where: { uuid } });
 
       return { status: 200, success: true, message: 'Student deleted' };

@@ -6,10 +6,14 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { DecodedUser } from '../common/types/auth.js';
+import { StorageService } from '../storage/storage.service.js';
 
 @Injectable()
 export class BranchesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: StorageService,
+  ) {}
 
   async index(decoded: DecodedUser) {
     const [branch_access, user] = await Promise.all([
@@ -205,6 +209,7 @@ export class BranchesService {
       where: { uuid },
       include: { access: true, classes: true },
     });
+    await this.storage.deleteBranchFiles(branch.school_uuid, uuid);
 
     return { status: 200, success: true, message: 'Branch deleted successfully' };
   }

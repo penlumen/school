@@ -36,6 +36,7 @@ export const useStudent = () => {
 
   const create = async (studentData: any) => {
     const response = await axiosInstance.post('/api/v1/student/create', {
+      uuid: studentData.uuid,
       name: studentData.name,
       reg_number: studentData.reg_number,
       parent_uuid: studentData.parent_uuid,
