@@ -433,7 +433,11 @@ export class UsersService {
 
     if (!existingMultipleBranches || existingMultipleBranches.length === 0) {
       const entity = user.role === 'PARENT' ? 'parent' : 'staff';
-      await this.storage.deleteAccountAvatars(user.school_uuid || decoded.school_uuid, entity, uuid);
+      await this.storage.deleteAccountAvatars(
+        user.school_uuid || decoded.school_uuid,
+        entity,
+        uuid,
+      );
       // Also remove legacy random-key avatars created before deterministic keys were introduced.
       const legacyKey = this.storage.keyFromUrl(user.avatar);
       if (legacyKey) await this.storage.delete(legacyKey);

@@ -27,7 +27,9 @@ export class BranchesService {
     // Default active branch: the user's last-used branch, if they still have
     // access to it, otherwise fall back to the first branch they can access.
     // This replaces the old forced branch-selection page.
-    const hasLastBranch = branch_access.some((a) => a.branch_uuid === user?.last_branch_uuid);
+    const hasLastBranch = branch_access.some(
+      (a) => a.branch_uuid === user?.last_branch_uuid,
+    );
     const active_branch_uuid = hasLastBranch
       ? user!.last_branch_uuid
       : (branch_access[0]?.branch_uuid ?? null);
@@ -65,16 +67,30 @@ export class BranchesService {
     const { name, email, contact, address } = body;
 
     if (decoded.role !== 'ADMIN') {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     if (!name) {
-      throw new UnprocessableEntityException({ status: 422, success: false, message: 'Name is required' });
+      throw new UnprocessableEntityException({
+        status: 422,
+        success: false,
+        message: 'Name is required',
+      });
     }
 
     const result = await this.prisma.$transaction(async (tx: any) => {
       const branch = await tx.branch.create({
-        data: { name, email, contact, address, school_uuid: decoded.school_uuid },
+        data: {
+          name,
+          email,
+          contact,
+          address,
+          school_uuid: decoded.school_uuid,
+        },
       });
 
       await tx.branchAccess.create({
@@ -99,7 +115,11 @@ export class BranchesService {
 
   async show(uuid: string, decoded: DecodedUser) {
     if (decoded.role !== 'ADMIN') {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     const branch = await this.prisma.branch.findUnique({ where: { uuid } });
@@ -111,7 +131,11 @@ export class BranchesService {
     const { name, email, contact, address } = body;
 
     if (decoded.role !== 'ADMIN') {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     const branch = await this.prisma.branch.update({
@@ -120,7 +144,11 @@ export class BranchesService {
     });
 
     if (!branch) {
-      throw new NotFoundException({ status: 404, success: false, message: 'Branch not found' });
+      throw new NotFoundException({
+        status: 404,
+        success: false,
+        message: 'Branch not found',
+      });
     }
 
     return {
@@ -131,24 +159,46 @@ export class BranchesService {
     };
   }
 
-  async createAccess(decoded: DecodedUser, branchUuid: string | undefined, body: any) {
+  async createAccess(
+    decoded: DecodedUser,
+    branchUuid: string | undefined,
+    body: any,
+  ) {
     const { user_uuid } = body;
 
     if (decoded.role !== 'ADMIN') {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     if (!branchUuid) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     if (!user_uuid) {
-      throw new BadRequestException({ status: 400, success: false, message: 'User uuid is required' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'User uuid is required',
+      });
     }
 
-    const user = await this.prisma.user.findUnique({ where: { uuid: user_uuid } });
+    const user = await this.prisma.user.findUnique({
+      where: { uuid: user_uuid },
+    });
     if (!user) {
-      throw new NotFoundException({ status: 404, success: false, message: 'User not found' });
+      throw new NotFoundException({
+        status: 404,
+        success: false,
+        message: 'User not found',
+      });
     }
 
     if (!user.school_uuid) {
@@ -173,7 +223,11 @@ export class BranchesService {
 
   async remove(uuid: string, decoded: DecodedUser) {
     if (decoded.role !== 'ADMIN') {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     const branch = await this.prisma.branch.findUnique({
@@ -182,7 +236,11 @@ export class BranchesService {
     });
 
     if (!branch) {
-      throw new NotFoundException({ status: 404, success: false, message: 'Branch not found' });
+      throw new NotFoundException({
+        status: 404,
+        success: false,
+        message: 'Branch not found',
+      });
     }
 
     await this.prisma.grade.deleteMany({ where: { branch_uuid: uuid } });
@@ -195,7 +253,9 @@ export class BranchesService {
       });
     }
 
-    await this.prisma.branchAccess.deleteMany({ where: { branch_uuid: uuid, user_uuid: uuid } });
+    await this.prisma.branchAccess.deleteMany({
+      where: { branch_uuid: uuid, user_uuid: uuid },
+    });
 
     const existingMultipleBranches = await this.prisma.branchAccess.findMany({
       where: { user_uuid: uuid, NOT: { branch_uuid: uuid } },
@@ -211,6 +271,10 @@ export class BranchesService {
     });
     await this.storage.deleteBranchFiles(branch.school_uuid, uuid);
 
-    return { status: 200, success: true, message: 'Branch deleted successfully' };
+    return {
+      status: 200,
+      success: true,
+      message: 'Branch deleted successfully',
+    };
   }
 }

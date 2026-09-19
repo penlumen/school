@@ -93,7 +93,9 @@ export class StorageService {
 
   async delete(key: string): Promise<void> {
     if (!key) return;
-    await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
+    await this.client.send(
+      new DeleteObjectCommand({ Bucket: this.bucket, Key: key }),
+    );
   }
 
   async deleteAvatar(
@@ -102,7 +104,9 @@ export class StorageService {
     entity: StorageEntity,
     entityUuid: string,
   ): Promise<void> {
-    await this.delete(this.avatarKey(schoolUuid, branchUuid, entity, entityUuid));
+    await this.delete(
+      this.avatarKey(schoolUuid, branchUuid, entity, entityUuid),
+    );
   }
 
   /** Delete every branch-scoped avatar for an account before the account is removed. */
@@ -117,49 +121,66 @@ export class StorageService {
     let continuationToken: string | undefined;
 
     do {
-      const page = await this.client.send(new ListObjectsV2Command({
-        Bucket: this.bucket,
-        Prefix: prefix,
-        ContinuationToken: continuationToken,
-      }));
+      const page = await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: this.bucket,
+          Prefix: prefix,
+          ContinuationToken: continuationToken,
+        }),
+      );
       const keys = (page.Contents || [])
         .map((item) => item.Key)
-        .filter((key): key is string => !!key && key.endsWith(suffix + 'avatar.webp'));
+        .filter(
+          (key): key is string => !!key && key.endsWith(suffix + 'avatar.webp'),
+        );
 
       if (keys.length) {
-        await this.client.send(new DeleteObjectsCommand({
-          Bucket: this.bucket,
-          Delete: { Objects: keys.map((Key) => ({ Key })) },
-        }));
+        await this.client.send(
+          new DeleteObjectsCommand({
+            Bucket: this.bucket,
+            Delete: { Objects: keys.map((Key) => ({ Key })) },
+          }),
+        );
       }
 
-      continuationToken = page.IsTruncated ? page.NextContinuationToken : undefined;
+      continuationToken = page.IsTruncated
+        ? page.NextContinuationToken
+        : undefined;
     } while (continuationToken);
   }
 
   /** Delete all branch-owned files, including student avatars. */
-  async deleteBranchFiles(schoolUuid: string, branchUuid: string): Promise<void> {
+  async deleteBranchFiles(
+    schoolUuid: string,
+    branchUuid: string,
+  ): Promise<void> {
     const prefix = `${schoolUuid}/${branchUuid}/`;
     let continuationToken: string | undefined;
 
     do {
-      const page = await this.client.send(new ListObjectsV2Command({
-        Bucket: this.bucket,
-        Prefix: prefix,
-        ContinuationToken: continuationToken,
-      }));
+      const page = await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: this.bucket,
+          Prefix: prefix,
+          ContinuationToken: continuationToken,
+        }),
+      );
       const keys = (page.Contents || [])
         .map((item) => item.Key)
         .filter((key): key is string => !!key);
 
       if (keys.length) {
-        await this.client.send(new DeleteObjectsCommand({
-          Bucket: this.bucket,
-          Delete: { Objects: keys.map((Key) => ({ Key })) },
-        }));
+        await this.client.send(
+          new DeleteObjectsCommand({
+            Bucket: this.bucket,
+            Delete: { Objects: keys.map((Key) => ({ Key })) },
+          }),
+        );
       }
 
-      continuationToken = page.IsTruncated ? page.NextContinuationToken : undefined;
+      continuationToken = page.IsTruncated
+        ? page.NextContinuationToken
+        : undefined;
     } while (continuationToken);
   }
 

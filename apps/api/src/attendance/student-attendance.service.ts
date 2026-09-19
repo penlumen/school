@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { AttendanceStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { DecodedUser } from '../common/types/auth.js';
@@ -14,19 +19,28 @@ export class StudentAttendanceService {
   constructor(private readonly prisma: PrismaService) {}
 
   private async assertCanMarkClass(classUuid: string, decoded: DecodedUser) {
-    const classData = await this.prisma.class.findUnique({ where: { uuid: classUuid } });
+    const classData = await this.prisma.class.findUnique({
+      where: { uuid: classUuid },
+    });
     if (!classData) {
-      throw new NotFoundException({ status: 404, success: false, message: 'Class not found' });
+      throw new NotFoundException({
+        status: 404,
+        success: false,
+        message: 'Class not found',
+      });
     }
 
     const isAdmin = decoded.position === 'ADMINISTRATIVE';
-    const isOwnClassTeacher = decoded.position === 'ACADEMIC' && classData.teacher_uuid === decoded.uuid;
+    const isOwnClassTeacher =
+      decoded.position === 'ACADEMIC' &&
+      classData.teacher_uuid === decoded.uuid;
 
     if (!isAdmin && !isOwnClassTeacher) {
       throw new ForbiddenException({
         status: 403,
         success: false,
-        message: 'Only an administrator or this class\'s teacher can mark attendance for it',
+        message:
+          "Only an administrator or this class's teacher can mark attendance for it",
       });
     }
 
@@ -34,12 +48,19 @@ export class StudentAttendanceService {
   }
 
   /** Daily attendance log for a class: every student, with their record for the date if one exists. */
-  async index(classUuid: string, dateStr: string | undefined, decoded: DecodedUser) {
+  async index(
+    classUuid: string,
+    dateStr: string | undefined,
+    decoded: DecodedUser,
+  ) {
     await this.assertCanMarkClass(classUuid, decoded);
     const date = startOfDay(dateStr);
 
     const [students, records] = await Promise.all([
-      this.prisma.student.findMany({ where: { class_uuid: classUuid }, orderBy: { name: 'asc' } }),
+      this.prisma.student.findMany({
+        where: { class_uuid: classUuid },
+        orderBy: { name: 'asc' },
+      }),
       this.prisma.studentAttendance.findMany({
         where: { class_uuid: classUuid, date },
         include: { marked_by: true },
@@ -52,7 +73,12 @@ export class StudentAttendanceService {
       attendance: byStudent.get(student.uuid) || null,
     }));
 
-    return { status: 200, success: true, message: 'Attendance log', data: { date, log } };
+    return {
+      status: 200,
+      success: true,
+      message: 'Attendance log',
+      data: { date, log },
+    };
   }
 
   /** Faces + enrolled descriptors for every student in a class, for client-side matching. */
@@ -60,21 +86,50 @@ export class StudentAttendanceService {
     await this.assertCanMarkClass(classUuid, decoded);
 
     const students = await this.prisma.student.findMany({
-      where: { class_uuid: classUuid, NOT: { face_descriptor: { isEmpty: true } } },
-      select: { uuid: true, name: true, reg_number: true, avatar: true, face_descriptor: true },
+      where: {
+        class_uuid: classUuid,
+        NOT: { face_descriptor: { isEmpty: true } },
+      },
+      select: {
+        uuid: true,
+        name: true,
+        reg_number: true,
+        avatar: true,
+        face_descriptor: true,
+      },
     });
 
-    return { status: 200, success: true, message: 'Enrolled faces', data: { students } };
+    return {
+      status: 200,
+      success: true,
+      message: 'Enrolled faces',
+      data: { students },
+    };
   }
 
-  async mark(studentUuid: string, branchUuid: string | undefined, decoded: DecodedUser, body: any) {
+  async mark(
+    studentUuid: string,
+    branchUuid: string | undefined,
+    decoded: DecodedUser,
+    body: any,
+  ) {
     if (!branchUuid) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized branch' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized branch',
+      });
     }
 
-    const student = await this.prisma.student.findUnique({ where: { uuid: studentUuid } });
+    const student = await this.prisma.student.findUnique({
+      where: { uuid: studentUuid },
+    });
     if (!student) {
-      throw new NotFoundException({ status: 404, success: false, message: 'Student not found' });
+      throw new NotFoundException({
+        status: 404,
+        success: false,
+        message: 'Student not found',
+      });
     }
 
     await this.assertCanMarkClass(student.class_uuid, decoded);
@@ -95,13 +150,24 @@ export class StudentAttendanceService {
       update: { status, marked_by_uuid: decoded.uuid },
     });
 
-    return { status: 201, success: true, message: 'Attendance marked', data: { attendance: record } };
+    return {
+      status: 201,
+      success: true,
+      message: 'Attendance marked',
+      data: { attendance: record },
+    };
   }
 
   async update(uuid: string, decoded: DecodedUser, body: any) {
-    const existing = await this.prisma.studentAttendance.findUnique({ where: { uuid } });
+    const existing = await this.prisma.studentAttendance.findUnique({
+      where: { uuid },
+    });
     if (!existing) {
-      throw new NotFoundException({ status: 404, success: false, message: 'Attendance record not found' });
+      throw new NotFoundException({
+        status: 404,
+        success: false,
+        message: 'Attendance record not found',
+      });
     }
 
     await this.assertCanMarkClass(existing.class_uuid, decoded);
@@ -111,14 +177,25 @@ export class StudentAttendanceService {
       data: { status: body?.status, marked_by_uuid: decoded.uuid },
     });
 
-    return { status: 200, success: true, message: 'Attendance updated', data: { attendance: record } };
+    return {
+      status: 200,
+      success: true,
+      message: 'Attendance updated',
+      data: { attendance: record },
+    };
   }
 
   /** Full attendance history for one student (across all dates), for their profile's Attendance tab. */
   async history(studentUuid: string, decoded: DecodedUser) {
-    const student = await this.prisma.student.findUnique({ where: { uuid: studentUuid } });
+    const student = await this.prisma.student.findUnique({
+      where: { uuid: studentUuid },
+    });
     if (!student) {
-      throw new NotFoundException({ status: 404, success: false, message: 'Student not found' });
+      throw new NotFoundException({
+        status: 404,
+        success: false,
+        message: 'Student not found',
+      });
     }
 
     await this.assertCanMarkClass(student.class_uuid, decoded);
@@ -128,6 +205,11 @@ export class StudentAttendanceService {
       orderBy: { date: 'desc' },
     });
 
-    return { status: 200, success: true, message: 'Attendance history', data: { attendance: records } };
+    return {
+      status: 200,
+      success: true,
+      message: 'Attendance history',
+      data: { attendance: records },
+    };
   }
 }

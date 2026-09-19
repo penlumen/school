@@ -13,8 +13,12 @@ export class CacheService implements OnModuleDestroy {
       maxRetriesPerRequest: 1,
       lazyConnect: true,
     });
-    this.client.on('error', (err) => this.logger.warn(`Redis error: ${err.message}`));
-    this.client.connect().catch((err) => this.logger.warn(`Redis unavailable: ${err.message}`));
+    this.client.on('error', (err) =>
+      this.logger.warn(`Redis error: ${err.message}`),
+    );
+    this.client
+      .connect()
+      .catch((err) => this.logger.warn(`Redis unavailable: ${err.message}`));
   }
 
   async get<T>(key: string): Promise<T | null> {
@@ -39,24 +43,35 @@ export class CacheService implements OnModuleDestroy {
     try {
       await this.client.del(...keys);
     } catch (err: any) {
-      this.logger.warn(`Cache invalidation failed for ${keys.join(', ')}: ${err.message}`);
+      this.logger.warn(
+        `Cache invalidation failed for ${keys.join(', ')}: ${err.message}`,
+      );
     }
   }
 
   /** Deletes every key matching a prefix, e.g. "grades:index:" */
   async delByPrefix(prefix: string): Promise<void> {
     try {
-      const stream = this.client.scanStream({ match: `${prefix}*`, count: 100 });
+      const stream = this.client.scanStream({
+        match: `${prefix}*`,
+        count: 100,
+      });
       for await (const keys of stream) {
         if (keys.length) await this.client.del(...keys);
       }
     } catch (err: any) {
-      this.logger.warn(`Cache prefix invalidation failed for ${prefix}: ${err.message}`);
+      this.logger.warn(
+        `Cache prefix invalidation failed for ${prefix}: ${err.message}`,
+      );
     }
   }
 
   /** Cache-aside helper: return the cached value, or compute + cache it. */
-  async remember<T>(key: string, ttlSeconds: number, fn: () => Promise<T>): Promise<T> {
+  async remember<T>(
+    key: string,
+    ttlSeconds: number,
+    fn: () => Promise<T>,
+  ): Promise<T> {
     const cached = await this.get<T>(key);
     if (cached !== null) return cached;
 

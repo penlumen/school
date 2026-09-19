@@ -34,39 +34,80 @@ export class StorageController {
     @CurrentUser() user: DecodedUser,
   ) {
     if (!file) {
-      throw new BadRequestException({ status: 400, success: false, message: 'File is required' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'File is required',
+      });
     }
     if (!ALLOWED_ENTITIES.includes(entity)) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Invalid storage entity' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Invalid storage entity',
+      });
     }
     if (!uuid || !branchUuid || !user.school_uuid) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Entity, school and branch are required' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Entity, school and branch are required',
+      });
     }
     if (!file.mimetype.startsWith('image/')) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Only image uploads are supported' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Only image uploads are supported',
+      });
     }
     if (file.size > MAX_SIZE_BYTES) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Image must be under 5MB' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Image must be under 5MB',
+      });
     }
 
     const branch = await this.prisma.branch.findFirst({
       where: { uuid: branchUuid, school_uuid: user.school_uuid },
     });
     if (!branch) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Invalid branch' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Invalid branch',
+      });
     }
 
     if (entity === 'student') {
-      const student = await this.prisma.student.findFirst({ where: { uuid, branch_uuid: branchUuid } });
-      if (!student) throw new BadRequestException({ status: 400, success: false, message: 'Student not found in this branch' });
+      const student = await this.prisma.student.findFirst({
+        where: { uuid, branch_uuid: branchUuid },
+      });
+      if (!student)
+        throw new BadRequestException({
+          status: 400,
+          success: false,
+          message: 'Student not found in this branch',
+        });
     } else {
       const access = await this.prisma.branchAccess.findFirst({
-        where: { user_uuid: uuid, branch_uuid: branchUuid, school_uuid: user.school_uuid },
+        where: {
+          user_uuid: uuid,
+          branch_uuid: branchUuid,
+          school_uuid: user.school_uuid,
+        },
       });
-      const validRole = entity === 'staff'
-        ? !!access && ['ROOT', 'ADMIN', 'STAFF'].includes(access.role)
-        : !!access && access.role === 'PARENT';
-      if (!validRole) throw new BadRequestException({ status: 400, success: false, message: 'Account is not assigned to this branch' });
+      const validRole =
+        entity === 'staff'
+          ? !!access && ['ROOT', 'ADMIN', 'STAFF'].includes(access.role)
+          : !!access && access.role === 'PARENT';
+      if (!validRole)
+        throw new BadRequestException({
+          status: 400,
+          success: false,
+          message: 'Account is not assigned to this branch',
+        });
     }
 
     const uploaded = await this.storageService.uploadAvatar(
@@ -77,6 +118,11 @@ export class StorageController {
       uuid,
     );
 
-    return { status: 201, success: true, message: 'File uploaded successfully', data: uploaded };
+    return {
+      status: 201,
+      success: true,
+      message: 'File uploaded successfully',
+      data: uploaded,
+    };
   }
 }

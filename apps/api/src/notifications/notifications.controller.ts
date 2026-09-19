@@ -23,7 +23,14 @@ export class NotificationsController {
   }
 
   @Post('device-token')
-  registerToken(@CurrentUser() user: DecodedUser, @Body() body: { token: string; platform?: string }) {
-    return this.notificationsService.registerToken(user, body.token, body.platform);
+  registerToken(
+    @CurrentUser() user: DecodedUser,
+    @Body() body: { token: string; platform?: string },
+  ) {
+    return this.notificationsService.registerToken(
+      user,
+      body.token,
+      body.platform,
+    );
   }
 }

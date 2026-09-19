@@ -29,7 +29,12 @@ export class ResultsService {
   async index(
     branchUuid: string | undefined,
     decoded: DecodedUser,
-    query: { status?: 'PENDING' | 'APPROVED' | 'REJECTED'; search?: string; page?: string; limit?: string },
+    query: {
+      status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+      search?: string;
+      page?: string;
+      limit?: string;
+    },
   ) {
     const status = query.status;
     const search = query.search;
@@ -38,7 +43,10 @@ export class ResultsService {
     const skip = (page - 1) * limit;
 
     if (!branchUuid) {
-      throw new BadRequestException({ success: false, message: 'Branch session header is required' });
+      throw new BadRequestException({
+        success: false,
+        message: 'Branch session header is required',
+      });
     }
 
     try {
@@ -67,7 +75,10 @@ export class ResultsService {
         const classes = await this.prisma.class.findMany({
           where: {
             branch_uuid: branchUuid,
-            OR: [{ teacher_uuid: decoded.uuid }, { teachers_uuid: { has: decoded.uuid } }],
+            OR: [
+              { teacher_uuid: decoded.uuid },
+              { teachers_uuid: { has: decoded.uuid } },
+            ],
           },
           select: { name: true },
         });
@@ -99,14 +110,19 @@ export class ResultsService {
         data: {
           results: results.map((r: any) => ({
             ...r,
-            assessments: r.assessments.map((a: any) => this.toPlainAssessment(a)),
+            assessments: r.assessments.map((a: any) =>
+              this.toPlainAssessment(a),
+            ),
           })),
           page,
           hasMore: results.length === limit,
         },
       };
     } catch (error) {
-      throw new InternalServerErrorException({ success: false, message: 'Failed to fetch results' });
+      throw new InternalServerErrorException({
+        success: false,
+        message: 'Failed to fetch results',
+      });
     }
   }
 
@@ -140,11 +156,18 @@ export class ResultsService {
 
   async view(branchUuid: string | undefined, resultUuid: string) {
     if (!resultUuid) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Result uuid is required' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Result uuid is required',
+      });
     }
 
     const [grading, result] = await Promise.all([
-      this.prisma.grade.findMany({ where: { branch_uuid: branchUuid }, orderBy: { score: 'desc' } }),
+      this.prisma.grade.findMany({
+        where: { branch_uuid: branchUuid },
+        orderBy: { score: 'desc' },
+      }),
       this.prisma.result.findUnique({
         where: { uuid: resultUuid },
         include: { student: true, assessments: true, calendar: true },
@@ -152,11 +175,18 @@ export class ResultsService {
     ]);
 
     if (!result) {
-      throw new NotFoundException({ status: 404, success: false, message: 'Result not found' });
+      throw new NotFoundException({
+        status: 404,
+        success: false,
+        message: 'Result not found',
+      });
     }
 
     const classResults = await this.prisma.result.findMany({
-      where: { class_name: result.class_name, calendar_uuid: result.calendar_uuid },
+      where: {
+        class_name: result.class_name,
+        calendar_uuid: result.calendar_uuid,
+      },
       select: { uuid: true, overall: true },
       orderBy: { overall: 'desc' },
     });
@@ -177,7 +207,10 @@ export class ResultsService {
       return { ...plain, total, grade, remark };
     });
 
-    const average = enrichedAssessments.length > 0 ? result.overall / enrichedAssessments.length : 0;
+    const average =
+      enrichedAssessments.length > 0
+        ? result.overall / enrichedAssessments.length
+        : 0;
 
     return {
       status: 200,
@@ -192,12 +225,20 @@ export class ResultsService {
           total_students: totalStudents,
           average: average.toFixed(1),
         },
-        grading_system: grading.map((g) => ({ grade: g.grade, score: g.score, remark: g.remark })),
+        grading_system: grading.map((g) => ({
+          grade: g.grade,
+          score: g.score,
+          remark: g.remark,
+        })),
       },
     };
   }
 
-  async create(studentUuid: string, decoded: DecodedUser, calendarUuid?: string) {
+  async create(
+    studentUuid: string,
+    decoded: DecodedUser,
+    calendarUuid?: string,
+  ) {
     try {
       const student = await this.prisma.student.findUnique({
         where: { uuid: studentUuid },
@@ -205,14 +246,24 @@ export class ResultsService {
       });
 
       if (!student) {
-        throw new NotFoundException({ status: 404, success: false, message: 'Student not found' });
+        throw new NotFoundException({
+          status: 404,
+          success: false,
+          message: 'Student not found',
+        });
       }
 
       const isAdmin = decoded.position === 'ADMINISTRATIVE';
-      const isClassTeacher = student.class.teacher_uuid === decoded.uuid || student.class.teachers_uuid.includes(decoded.uuid);
+      const isClassTeacher =
+        student.class.teacher_uuid === decoded.uuid ||
+        student.class.teachers_uuid.includes(decoded.uuid);
 
       if (!isAdmin && !isClassTeacher) {
-        throw new ForbiddenException({ status: 403, success: false, message: 'Unauthorized' });
+        throw new ForbiddenException({
+          status: 403,
+          success: false,
+          message: 'Unauthorized',
+        });
       }
 
       // Default to the branch's active term; an explicit calendar_uuid lets
@@ -231,7 +282,7 @@ export class ResultsService {
           success: false,
           message: calendarUuid
             ? 'Selected term was not found for this branch'
-            : "No active term set for this branch - set one as active, or pass a specific calendar_uuid",
+            : 'No active term set for this branch - set one as active, or pass a specific calendar_uuid',
         });
       }
 
@@ -262,18 +313,26 @@ export class ResultsService {
       const currentSubjectNames = student.class.subjects.map((s) => s.name);
 
       await this.prisma.assessments.deleteMany({
-        where: { result_uuid: result.uuid, subject: { notIn: currentSubjectNames } },
+        where: {
+          result_uuid: result.uuid,
+          subject: { notIn: currentSubjectNames },
+        },
       });
 
       await this.prisma.assessments.createMany({
-        data: currentSubjectNames.map((subject) => ({ result_uuid: result.uuid, subject })),
+        data: currentSubjectNames.map((subject) => ({
+          result_uuid: result.uuid,
+          subject,
+        })),
         skipDuplicates: true,
       });
 
       return {
         status: existingResult ? 200 : 201,
         success: true,
-        message: existingResult ? 'Result refreshed successfully' : 'Result created successfully',
+        message: existingResult
+          ? 'Result refreshed successfully'
+          : 'Result created successfully',
         data: { result },
       };
     } catch (error) {
@@ -292,7 +351,11 @@ export class ResultsService {
     }
   }
 
-  async update(resultUuid: string, decoded: DecodedUser, body: { result?: any; assessments?: any[] }) {
+  async update(
+    resultUuid: string,
+    decoded: DecodedUser,
+    body: { result?: any; assessments?: any[] },
+  ) {
     const { result, assessments } = body;
 
     const existing = await this.prisma.result.findUnique({
@@ -301,14 +364,25 @@ export class ResultsService {
     });
 
     if (!existing) {
-      throw new NotFoundException({ status: 404, success: false, message: 'Result not found' });
+      throw new NotFoundException({
+        status: 404,
+        success: false,
+        message: 'Result not found',
+      });
     }
 
     const isAdmin = decoded.position === 'ADMINISTRATIVE';
-    const isClassTeacher = existing.student && (existing.student.class.teacher_uuid === decoded.uuid || existing.student.class.teachers_uuid.includes(decoded.uuid));
+    const isClassTeacher =
+      existing.student &&
+      (existing.student.class.teacher_uuid === decoded.uuid ||
+        existing.student.class.teachers_uuid.includes(decoded.uuid));
 
     if (!isAdmin && !isClassTeacher) {
-      throw new ForbiddenException({ status: 403, success: false, message: 'Unauthorized' });
+      throw new ForbiddenException({
+        status: 403,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     if (!Array.isArray(assessments)) {
@@ -335,7 +409,8 @@ export class ResultsService {
     }
 
     const computedAssessments = assessments.map((a: any) => {
-      const overall = Number(a.ca_one) + Number(a.ca_two) + Number(a.examination);
+      const overall =
+        Number(a.ca_one) + Number(a.ca_two) + Number(a.examination);
       return {
         uuid: a.uuid,
         ca_one: Number(a.ca_one),
@@ -366,17 +441,24 @@ export class ResultsService {
       data: {
         overall: total,
         calendar_uuid: result?.calendar,
-        approval_requested: isAdmin ? existing.approval_requested : !!result?.approval_requested,
+        approval_requested: isAdmin
+          ? existing.approval_requested
+          : !!result?.approval_requested,
         // Teacher comments are only submitted as part of an explicit approval
         // request. This keeps ordinary result edits free of a teacher comment.
-        teacher_remark: result?.approval_requested ? result?.teacher_remark : (isAdmin ? result?.teacher_remark : null),
+        teacher_remark: result?.approval_requested
+          ? result?.teacher_remark
+          : isAdmin
+            ? result?.teacher_remark
+            : null,
         // Only an administrator can approve a result or write the principal's
         // remark. A staff update cannot change either field.
         ...(isAdmin
           ? {
               status: result?.status,
               principal_remark: result?.principal_remark,
-              approval_requested: result?.approval_requested ?? existing.approval_requested,
+              approval_requested:
+                result?.approval_requested ?? existing.approval_requested,
             }
           : {}),
       },
@@ -390,7 +472,9 @@ export class ResultsService {
       data: {
         result: {
           ...updated,
-          assessments: updated.assessments.map((a) => this.toPlainAssessment(a)),
+          assessments: updated.assessments.map((a) =>
+            this.toPlainAssessment(a),
+          ),
         },
       },
     };
@@ -398,14 +482,24 @@ export class ResultsService {
 
   async remove(resultUuid: string, decoded: DecodedUser) {
     if (decoded.position !== 'ADMINISTRATIVE') {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     try {
-      await this.prisma.assessments.deleteMany({ where: { result_uuid: resultUuid } });
+      await this.prisma.assessments.deleteMany({
+        where: { result_uuid: resultUuid },
+      });
       await this.prisma.result.delete({ where: { uuid: resultUuid } });
 
-      return { status: 200, success: true, message: 'Result deleted successfully' };
+      return {
+        status: 200,
+        success: true,
+        message: 'Result deleted successfully',
+      };
     } catch (error) {
       throw new InternalServerErrorException({
         status: 500,

@@ -44,7 +44,10 @@ export class JwtAuthGuard implements CanActivate {
 
     try {
       const token = authHeader.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_secret');
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET || 'default_secret',
+      );
       if (!decoded) {
         throw new UnauthorizedException(UNAUTHENTICATED_RESPONSE);
       }

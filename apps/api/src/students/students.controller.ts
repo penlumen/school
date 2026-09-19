@@ -1,4 +1,13 @@
-import { Body, Controller, Delete, Get, Headers, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Headers,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { StudentsService } from './students.service.js';
@@ -8,7 +17,10 @@ export class StudentsController {
   constructor(private readonly studentsService: StudentsService) {}
 
   @Get('index')
-  index(@Headers('x-branch-session') branchUuid: string, @CurrentUser() user: DecodedUser) {
+  index(
+    @Headers('x-branch-session') branchUuid: string,
+    @CurrentUser() user: DecodedUser,
+  ) {
     return this.studentsService.index(branchUuid, user);
   }
 

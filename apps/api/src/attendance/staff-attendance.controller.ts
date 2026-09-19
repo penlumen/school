@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Headers, Param, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { StaffAttendanceService } from './staff-attendance.service.js';
@@ -17,7 +26,10 @@ export class StaffAttendanceController {
   }
 
   @Get('faces')
-  faces(@Headers('x-branch-session') branchUuid: string, @CurrentUser() user: DecodedUser) {
+  faces(
+    @Headers('x-branch-session') branchUuid: string,
+    @CurrentUser() user: DecodedUser,
+  ) {
     return this.service.faces(branchUuid, user);
   }
 
@@ -32,7 +44,11 @@ export class StaffAttendanceController {
   }
 
   @Patch(':uuid')
-  update(@Param('uuid') uuid: string, @CurrentUser() user: DecodedUser, @Body() body: any) {
+  update(
+    @Param('uuid') uuid: string,
+    @CurrentUser() user: DecodedUser,
+    @Body() body: any,
+  ) {
     return this.service.update(uuid, user, body);
   }
 }

@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { AttendanceStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { DecodedUser } from '../common/types/auth.js';
@@ -23,17 +28,28 @@ function assertIsAdmin(decoded: DecodedUser) {
 export class StaffAttendanceService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async index(branchUuid: string | undefined, dateStr: string | undefined, decoded: DecodedUser) {
+  async index(
+    branchUuid: string | undefined,
+    dateStr: string | undefined,
+    decoded: DecodedUser,
+  ) {
     assertIsAdmin(decoded);
     if (!branchUuid) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized branch' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized branch',
+      });
     }
 
     const date = startOfDay(dateStr);
 
     const [staffAccess, records] = await Promise.all([
       this.prisma.branchAccess.findMany({
-        where: { branch_uuid: branchUuid, OR: [{ role: 'ADMIN' }, { role: 'STAFF' }] },
+        where: {
+          branch_uuid: branchUuid,
+          OR: [{ role: 'ADMIN' }, { role: 'STAFF' }],
+        },
         include: { user: true },
       }),
       this.prisma.staffAttendance.findMany({
@@ -48,13 +64,22 @@ export class StaffAttendanceService {
       attendance: byStaff.get(access.user_uuid) || null,
     }));
 
-    return { status: 200, success: true, message: 'Staff attendance log', data: { date, log } };
+    return {
+      status: 200,
+      success: true,
+      message: 'Staff attendance log',
+      data: { date, log },
+    };
   }
 
   async faces(branchUuid: string | undefined, decoded: DecodedUser) {
     assertIsAdmin(decoded);
     if (!branchUuid) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized branch' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized branch',
+      });
     }
 
     const staffAccess = await this.prisma.branchAccess.findMany({
@@ -64,7 +89,14 @@ export class StaffAttendanceService {
         user: { NOT: { face_descriptor: { isEmpty: true } } },
       },
       include: {
-        user: { select: { uuid: true, name: true, avatar: true, face_descriptor: true } },
+        user: {
+          select: {
+            uuid: true,
+            name: true,
+            avatar: true,
+            face_descriptor: true,
+          },
+        },
       },
     });
 
@@ -76,15 +108,30 @@ export class StaffAttendanceService {
     };
   }
 
-  async mark(staffUuid: string, branchUuid: string | undefined, decoded: DecodedUser, body: any) {
+  async mark(
+    staffUuid: string,
+    branchUuid: string | undefined,
+    decoded: DecodedUser,
+    body: any,
+  ) {
     assertIsAdmin(decoded);
     if (!branchUuid) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized branch' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized branch',
+      });
     }
 
-    const staff = await this.prisma.user.findUnique({ where: { uuid: staffUuid } });
+    const staff = await this.prisma.user.findUnique({
+      where: { uuid: staffUuid },
+    });
     if (!staff) {
-      throw new NotFoundException({ status: 404, success: false, message: 'Staff not found' });
+      throw new NotFoundException({
+        status: 404,
+        success: false,
+        message: 'Staff not found',
+      });
     }
 
     const date = startOfDay(body?.date);
@@ -92,19 +139,36 @@ export class StaffAttendanceService {
 
     const record = await this.prisma.staffAttendance.upsert({
       where: { staff_uuid_date: { staff_uuid: staffUuid, date } },
-      create: { staff_uuid: staffUuid, branch_uuid: branchUuid, date, status, marked_by_uuid: decoded.uuid },
+      create: {
+        staff_uuid: staffUuid,
+        branch_uuid: branchUuid,
+        date,
+        status,
+        marked_by_uuid: decoded.uuid,
+      },
       update: { status, marked_by_uuid: decoded.uuid },
     });
 
-    return { status: 201, success: true, message: 'Attendance marked', data: { attendance: record } };
+    return {
+      status: 201,
+      success: true,
+      message: 'Attendance marked',
+      data: { attendance: record },
+    };
   }
 
   async update(uuid: string, decoded: DecodedUser, body: any) {
     assertIsAdmin(decoded);
 
-    const existing = await this.prisma.staffAttendance.findUnique({ where: { uuid } });
+    const existing = await this.prisma.staffAttendance.findUnique({
+      where: { uuid },
+    });
     if (!existing) {
-      throw new NotFoundException({ status: 404, success: false, message: 'Attendance record not found' });
+      throw new NotFoundException({
+        status: 404,
+        success: false,
+        message: 'Attendance record not found',
+      });
     }
 
     const record = await this.prisma.staffAttendance.update({
@@ -112,6 +176,11 @@ export class StaffAttendanceService {
       data: { status: body?.status, marked_by_uuid: decoded.uuid },
     });
 
-    return { status: 200, success: true, message: 'Attendance updated', data: { attendance: record } };
+    return {
+      status: 200,
+      success: true,
+      message: 'Attendance updated',
+      data: { attendance: record },
+    };
   }
 }
