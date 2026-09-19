@@ -43,13 +43,13 @@ export class AuthService {
     email?: string;
     password?: string;
   }) {
-    const { name, role, email, password } = body;
+    const { name, email, password } = body;
 
-    if (!email || !password || !role) {
+    if (!email || !password) {
       throw new BadRequestException({
         status: 400,
         success: false,
-        message: 'Email, password and role are required',
+        message: 'Email or password are required',
       });
     }
 
@@ -109,6 +109,7 @@ export class AuthService {
           school_uuid: school.uuid,
           position: 'ADMINISTRATIVE',
           role: 'ADMIN',
+          face_descriptor: [],
         },
       });
 
