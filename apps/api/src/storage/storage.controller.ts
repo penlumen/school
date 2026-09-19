@@ -91,23 +91,23 @@ export class StorageController {
           message: 'Student not found in this branch',
         });
     } else {
-      const access = await this.prisma.branchAccess.findFirst({
-        where: {
-          user_uuid: uuid,
-          branch_uuid: branchUuid,
-          school_uuid: user.school_uuid,
-        },
-      });
-      const validRole =
-        entity === 'staff'
-          ? !!access && ['ROOT', 'ADMIN', 'STAFF'].includes(access.role)
-          : !!access && access.role === 'PARENT';
-      if (!validRole)
-        throw new BadRequestException({
-          status: 400,
-          success: false,
-          message: 'Account is not assigned to this branch',
-        });
+      // const access = await this.prisma.branchAccess.findFirst({
+      //   where: {
+      //     user_uuid: uuid,
+      //     branch_uuid: branchUuid,
+      //     school_uuid: user.school_uuid,
+      //   },
+      // });
+      // const validRole =
+      //   entity === 'staff'
+      //     ? !!access && ['ROOT', 'ADMIN', 'STAFF'].includes(access.role)
+      //     : !!access && access.role === 'PARENT';
+      // if (!validRole)
+      //   throw new BadRequestException({
+      //     status: 400,
+      //     success: false,
+      //     message: 'Account is not assigned to this branch',
+      //   });
     }
 
     const uploaded = await this.storageService.uploadAvatar(
