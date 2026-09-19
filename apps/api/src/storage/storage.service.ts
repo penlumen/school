@@ -53,7 +53,7 @@ export class StorageService {
     entityUuid: string,
   ): string {
     const folder = entity === 'staff' ? 'staffs' : `${entity}s`;
-    return `${schoolUuid}/${branchUuid}/${folder}/${entityUuid}/avatar.webp`;
+    return `storage/${schoolUuid}/${branchUuid}/${folder}/${entityUuid}/avatar.webp`;
   }
 
   async uploadAvatar(
