@@ -21,24 +21,39 @@ export class GradesService {
 
   async index(branchUuid: string | undefined) {
     if (!branchUuid) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
-    const grades = await this.cache.remember(this.cacheKey(branchUuid), 300, () =>
-      this.prisma.grade.findMany({
-        where: { branch_uuid: branchUuid },
-        orderBy: { score: 'desc' },
-      }),
+    const grades = await this.cache.remember(
+      this.cacheKey(branchUuid),
+      300,
+      () =>
+        this.prisma.grade.findMany({
+          where: { branch_uuid: branchUuid },
+          orderBy: { score: 'desc' },
+        }),
     );
 
     return { status: 200, success: true, message: 'Grades', data: { grades } };
   }
 
-  async create(branchUuid: string | undefined, decoded: DecodedUser, body: any) {
+  async create(
+    branchUuid: string | undefined,
+    decoded: DecodedUser,
+    body: any,
+  ) {
     const { score, grade, remark, description } = body;
 
     if (decoded.position !== 'ADMINISTRATIVE') {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     if (!score || !grade || !remark) {
@@ -50,7 +65,11 @@ export class GradesService {
     }
 
     if (!branchUuid) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     const result = await this.prisma.grade.create({
@@ -58,14 +77,28 @@ export class GradesService {
     });
     await this.cache.del(this.cacheKey(branchUuid));
 
-    return { status: 201, success: true, message: 'Grade created', data: { grade: result } };
+    return {
+      status: 201,
+      success: true,
+      message: 'Grade created',
+      data: { grade: result },
+    };
   }
 
-  async update(uuid: string, branchUuid: string | undefined, decoded: DecodedUser, body: any) {
+  async update(
+    uuid: string,
+    branchUuid: string | undefined,
+    decoded: DecodedUser,
+    body: any,
+  ) {
     const { score, grade, remark, description } = body;
 
     if (decoded.position !== 'ADMINISTRATIVE') {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     if (!score || !grade || !remark) {
@@ -77,12 +110,22 @@ export class GradesService {
     }
 
     if (!branchUuid) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
-    const existingGrade = await this.prisma.grade.findUnique({ where: { uuid } });
+    const existingGrade = await this.prisma.grade.findUnique({
+      where: { uuid },
+    });
     if (!existingGrade) {
-      throw new NotFoundException({ status: 404, success: false, message: 'Grade not found' });
+      throw new NotFoundException({
+        status: 404,
+        success: false,
+        message: 'Grade not found',
+      });
     }
 
     const result = await this.prisma.grade.update({
@@ -91,22 +134,43 @@ export class GradesService {
     });
     await this.cache.del(this.cacheKey(branchUuid));
 
-    return { status: 200, success: true, message: 'Grade updated', data: { grade: result } };
+    return {
+      status: 200,
+      success: true,
+      message: 'Grade updated',
+      data: { grade: result },
+    };
   }
 
-  async remove(uuid: string, branchUuid: string | undefined, decoded: DecodedUser) {
+  async remove(
+    uuid: string,
+    branchUuid: string | undefined,
+    decoded: DecodedUser,
+  ) {
     if (decoded.position !== 'ADMINISTRATIVE') {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     if (!branchUuid) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     try {
       const grade = await this.prisma.grade.findUnique({ where: { uuid } });
       if (!grade) {
-        throw new NotFoundException({ status: 404, success: false, message: 'Grade not found' });
+        throw new NotFoundException({
+          status: 404,
+          success: false,
+          message: 'Grade not found',
+        });
       }
 
       await this.prisma.grade.delete({ where: { uuid } });

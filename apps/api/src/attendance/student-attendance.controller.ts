@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Headers, Param, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { StudentAttendanceService } from './student-attendance.service.js';
@@ -17,12 +26,18 @@ export class StudentAttendanceController {
   }
 
   @Get('faces/:class_uuid')
-  faces(@Param('class_uuid') classUuid: string, @CurrentUser() user: DecodedUser) {
+  faces(
+    @Param('class_uuid') classUuid: string,
+    @CurrentUser() user: DecodedUser,
+  ) {
     return this.service.faces(classUuid, user);
   }
 
   @Get('history/:student_uuid')
-  history(@Param('student_uuid') studentUuid: string, @CurrentUser() user: DecodedUser) {
+  history(
+    @Param('student_uuid') studentUuid: string,
+    @CurrentUser() user: DecodedUser,
+  ) {
     return this.service.history(studentUuid, user);
   }
 
@@ -37,7 +52,11 @@ export class StudentAttendanceController {
   }
 
   @Patch(':uuid')
-  update(@Param('uuid') uuid: string, @CurrentUser() user: DecodedUser, @Body() body: any) {
+  update(
+    @Param('uuid') uuid: string,
+    @CurrentUser() user: DecodedUser,
+    @Body() body: any,
+  ) {
     return this.service.update(uuid, user, body);
   }
 }

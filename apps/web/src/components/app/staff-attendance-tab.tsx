@@ -59,12 +59,13 @@ export function StaffAttendanceTab() {
     };
 
     useEffect(() => {
-        fetchLog();
+        void Promise.resolve().then(fetchLog);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [date]);
 
     useEffect(() => {
-        fetchFaces();
+        void Promise.resolve().then(fetchFaces);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleMatchConfirmed = async (match: { uuid: string }) => {

@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Headers, Param, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Headers,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { ResultsService } from './results.service.js';
@@ -11,13 +21,22 @@ export class ResultsController {
   index(
     @Headers('x-branch-session') branchUuid: string,
     @CurrentUser() user: DecodedUser,
-    @Query() query: { status?: 'PENDING' | 'APPROVED' | 'REJECTED'; search?: string; page?: string; limit?: string },
+    @Query()
+    query: {
+      status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+      search?: string;
+      page?: string;
+      limit?: string;
+    },
   ) {
     return this.resultsService.index(branchUuid, user, query);
   }
 
   @Get('view/:result_uuid')
-  view(@Headers('x-branch-session') branchUuid: string, @Param('result_uuid') resultUuid: string) {
+  view(
+    @Headers('x-branch-session') branchUuid: string,
+    @Param('result_uuid') resultUuid: string,
+  ) {
     return this.resultsService.view(branchUuid, resultUuid);
   }
 
@@ -36,12 +55,19 @@ export class ResultsController {
   }
 
   @Patch('update/:result_uuid')
-  update(@Param('result_uuid') resultUuid: string, @CurrentUser() user: DecodedUser, @Body() body: any) {
+  update(
+    @Param('result_uuid') resultUuid: string,
+    @CurrentUser() user: DecodedUser,
+    @Body() body: any,
+  ) {
     return this.resultsService.update(resultUuid, user, body);
   }
 
   @Delete('delete/:result_uuid')
-  remove(@Param('result_uuid') resultUuid: string, @CurrentUser() user: DecodedUser) {
+  remove(
+    @Param('result_uuid') resultUuid: string,
+    @CurrentUser() user: DecodedUser,
+  ) {
     return this.resultsService.remove(resultUuid, user);
   }
 }

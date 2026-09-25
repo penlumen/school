@@ -11,7 +11,10 @@ export class DashboardController {
   }
 
   @Get('attendance')
-  attendance(@Headers('x-branch-session') branchUuid: string, @Query('year') year: string) {
+  attendance(
+    @Headers('x-branch-session') branchUuid: string,
+    @Query('year') year: string,
+  ) {
     return this.dashboardService.attendancePerformance(branchUuid, year);
   }
 }

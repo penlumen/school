@@ -1,4 +1,13 @@
-import { Body, Controller, Delete, Get, Headers, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Headers,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { CalendarService } from './calendar.service.js';
@@ -15,7 +24,12 @@ export class CalendarController {
   @Get('active')
   async active(@Headers('x-branch-session') branchUuid: string) {
     const calendar = await this.calendarService.active(branchUuid);
-    return { status: 200, success: true, message: 'Active term', data: { calendar } };
+    return {
+      status: 200,
+      success: true,
+      message: 'Active term',
+      data: { calendar },
+    };
   }
 
   @Post('create')

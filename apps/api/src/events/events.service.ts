@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 
@@ -14,13 +18,19 @@ export class EventsService {
   constructor(private readonly prisma: PrismaService) {}
 
   private tagInclude = {
-    tags: { include: { user: { select: { uuid: true, name: true, avatar: true } } } },
+    tags: {
+      include: { user: { select: { uuid: true, name: true, avatar: true } } },
+    },
     created_by: { select: { uuid: true, name: true } },
   };
 
   async index(calendarUuid: string) {
     if (!calendarUuid) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Calendar uuid is required' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Calendar uuid is required',
+      });
     }
 
     const events = await this.prisma.event.findMany({
@@ -33,23 +43,43 @@ export class EventsService {
   }
 
   async show(uuid: string) {
-    const event = await this.prisma.event.findUnique({ where: { uuid }, include: this.tagInclude });
+    const event = await this.prisma.event.findUnique({
+      where: { uuid },
+      include: this.tagInclude,
+    });
     if (!event) {
-      throw new NotFoundException({ status: 404, success: false, message: 'Event not found' });
+      throw new NotFoundException({
+        status: 404,
+        success: false,
+        message: 'Event not found',
+      });
     }
     return { status: 200, success: true, message: 'Event', data: { event } };
   }
 
-  async create(calendarUuid: string, branchUuid: string | undefined, decoded: DecodedUser, body: any) {
+  async create(
+    calendarUuid: string,
+    branchUuid: string | undefined,
+    decoded: DecodedUser,
+    body: any,
+  ) {
     if (!branchUuid) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized branch' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized branch',
+      });
     }
 
     const { title, description, date, start_time, end_time, location } = body;
     const tags: EventTagsInput = body || {};
 
     if (!title || !date) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Title and date are required' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Title and date are required',
+      });
     }
 
     const event = await this.prisma.event.create({
@@ -67,21 +97,36 @@ export class EventsService {
         created_by_uuid: decoded.uuid,
         tags: {
           create: [
-            ...(tags.staff_uuids || []).map((user_uuid) => ({ user_uuid, tag_type: 'STAFF' })),
-            ...(tags.parent_uuids || []).map((user_uuid) => ({ user_uuid, tag_type: 'PARENT' })),
+            ...(tags.staff_uuids || []).map((user_uuid) => ({
+              user_uuid,
+              tag_type: 'STAFF',
+            })),
+            ...(tags.parent_uuids || []).map((user_uuid) => ({
+              user_uuid,
+              tag_type: 'PARENT',
+            })),
           ],
         },
       },
       include: this.tagInclude,
     });
 
-    return { status: 201, success: true, message: 'Event created', data: { event } };
+    return {
+      status: 201,
+      success: true,
+      message: 'Event created',
+      data: { event },
+    };
   }
 
   async update(uuid: string, body: any) {
     const existing = await this.prisma.event.findUnique({ where: { uuid } });
     if (!existing) {
-      throw new NotFoundException({ status: 404, success: false, message: 'Event not found' });
+      throw new NotFoundException({
+        status: 404,
+        success: false,
+        message: 'Event not found',
+      });
     }
 
     const { title, description, date, start_time, end_time, location } = body;
@@ -103,8 +148,14 @@ export class EventsService {
           tag_all_parents: !!tags.tag_all_parents,
           tags: {
             create: [
-              ...(tags.staff_uuids || []).map((user_uuid) => ({ user_uuid, tag_type: 'STAFF' })),
-              ...(tags.parent_uuids || []).map((user_uuid) => ({ user_uuid, tag_type: 'PARENT' })),
+              ...(tags.staff_uuids || []).map((user_uuid) => ({
+                user_uuid,
+                tag_type: 'STAFF',
+              })),
+              ...(tags.parent_uuids || []).map((user_uuid) => ({
+                user_uuid,
+                tag_type: 'PARENT',
+              })),
             ],
           },
         },
@@ -112,13 +163,22 @@ export class EventsService {
       });
     });
 
-    return { status: 200, success: true, message: 'Event updated', data: { event } };
+    return {
+      status: 200,
+      success: true,
+      message: 'Event updated',
+      data: { event },
+    };
   }
 
   async remove(uuid: string) {
     const existing = await this.prisma.event.findUnique({ where: { uuid } });
     if (!existing) {
-      throw new NotFoundException({ status: 404, success: false, message: 'Event not found' });
+      throw new NotFoundException({
+        status: 404,
+        success: false,
+        message: 'Event not found',
+      });
     }
 
     await this.prisma.event.delete({ where: { uuid } });

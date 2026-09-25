@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { SubjectsService } from './subjects.service.js';
@@ -36,7 +44,10 @@ export class SubjectsController {
   }
 
   @Delete('delete/:subject_uuid')
-  remove(@CurrentUser() user: DecodedUser, @Param('subject_uuid') subjectUuid: string) {
+  remove(
+    @CurrentUser() user: DecodedUser,
+    @Param('subject_uuid') subjectUuid: string,
+  ) {
     return this.subjectsService.remove(user, subjectUuid);
   }
 }

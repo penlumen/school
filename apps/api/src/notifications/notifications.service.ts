@@ -16,9 +16,17 @@ export class NotificationsService {
    * Both channels always fire together - this is the single place any other
    * service should call to notify admins of something happening.
    */
-  async notifyBranchAdmins(branchUuid: string, type: string, title: string, message: string) {
+  async notifyBranchAdmins(
+    branchUuid: string,
+    type: string,
+    title: string,
+    message: string,
+  ) {
     const admins = await this.prisma.branchAccess.findMany({
-      where: { branch_uuid: branchUuid, OR: [{ role: 'ADMIN' }, { role: 'ROOT' }] },
+      where: {
+        branch_uuid: branchUuid,
+        OR: [{ role: 'ADMIN' }, { role: 'ROOT' }],
+      },
       select: { user_uuid: true },
     });
 
@@ -40,9 +48,15 @@ export class NotificationsService {
     });
 
     if (tokens.length > 0) {
-      const stale = await this.firebase.sendToTokens(tokens.map((t) => t.token), title, message);
+      const stale = await this.firebase.sendToTokens(
+        tokens.map((t) => t.token),
+        title,
+        message,
+      );
       if (stale.length > 0) {
-        await this.prisma.deviceToken.deleteMany({ where: { token: { in: stale } } });
+        await this.prisma.deviceToken.deleteMany({
+          where: { token: { in: stale } },
+        });
       }
     }
   }
@@ -54,10 +68,17 @@ export class NotificationsService {
         orderBy: { created_at: 'desc' },
         take: 50,
       }),
-      this.prisma.notification.count({ where: { user_uuid: decoded.uuid, is_read: false } }),
+      this.prisma.notification.count({
+        where: { user_uuid: decoded.uuid, is_read: false },
+      }),
     ]);
 
-    return { status: 200, success: true, message: 'Notifications', data: { notifications, unread_count } };
+    return {
+      status: 200,
+      success: true,
+      message: 'Notifications',
+      data: { notifications, unread_count },
+    };
   }
 
   async markRead(uuid: string, decoded: DecodedUser) {
@@ -66,7 +87,11 @@ export class NotificationsService {
       data: { is_read: true },
     });
 
-    return { status: 200, success: true, message: 'Notification marked as read' };
+    return {
+      status: 200,
+      success: true,
+      message: 'Notification marked as read',
+    };
   }
 
   async markAllRead(decoded: DecodedUser) {
@@ -75,12 +100,20 @@ export class NotificationsService {
       data: { is_read: true },
     });
 
-    return { status: 200, success: true, message: 'All notifications marked as read' };
+    return {
+      status: 200,
+      success: true,
+      message: 'All notifications marked as read',
+    };
   }
 
   async registerToken(decoded: DecodedUser, token: string, platform?: string) {
     if (!token) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Device token is required' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Device token is required',
+      });
     }
 
     await this.prisma.deviceToken.upsert({
@@ -89,6 +122,10 @@ export class NotificationsService {
       update: { user_uuid: decoded.uuid, platform },
     });
 
-    return { status: 201, success: true, message: 'Device registered for push notifications' };
+    return {
+      status: 201,
+      success: true,
+      message: 'Device registered for push notifications',
+    };
   }
 }

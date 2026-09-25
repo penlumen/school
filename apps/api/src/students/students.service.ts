@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
+import { StorageService } from '../storage/storage.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 
 @Injectable()
@@ -14,11 +15,16 @@ export class StudentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly storage: StorageService,
   ) {}
 
   async index(branchUuid: string | undefined, decoded: DecodedUser) {
     if (!branchUuid) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Branch ID is required' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Branch ID is required',
+      });
     }
 
     let students: any = [];
@@ -31,7 +37,10 @@ export class StudentsService {
       });
     } else if (decoded.position === 'ACADEMIC') {
       students = await this.prisma.student.findMany({
-        where: { branch_uuid: branchUuid, class: { teacher_uuid: decoded.uuid } },
+        where: {
+          branch_uuid: branchUuid,
+          class: { teacher_uuid: decoded.uuid },
+        },
         include: { parent: true, class: true },
         orderBy: { class: { name: 'asc' } },
       });
@@ -52,17 +61,42 @@ export class StudentsService {
     });
 
     if (!student) {
-      throw new NotFoundException({ status: 404, success: false, message: 'Student not found' });
+      throw new NotFoundException({
+        status: 404,
+        success: false,
+        message: 'Student not found',
+      });
     }
 
-    return { status: 200, success: true, message: 'Student', data: { student } };
+    return {
+      status: 200,
+      success: true,
+      message: 'Student',
+      data: { student },
+    };
   }
 
-  async create(branchUuid: string | undefined, decoded: DecodedUser, body: any) {
-    const { name, reg_number, parent_uuid, class_uuid, gender, avatar, face_descriptor } = body;
+  async create(
+    branchUuid: string | undefined,
+    decoded: DecodedUser,
+    body: any,
+  ) {
+    const {
+      name,
+      reg_number,
+      parent_uuid,
+      class_uuid,
+      gender,
+      avatar,
+      face_descriptor,
+    } = body;
 
     if (decoded.position !== 'ADMINISTRATIVE') {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     if (!name || !parent_uuid || !class_uuid || !reg_number) {
@@ -74,11 +108,17 @@ export class StudentsService {
     }
 
     if (!branchUuid) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     const existingReg = await this.prisma.student.findUnique({
-      where: { branch_uuid_reg_number: { branch_uuid: branchUuid, reg_number } },
+      where: {
+        branch_uuid_reg_number: { branch_uuid: branchUuid, reg_number },
+      },
     });
 
     if (existingReg) {
@@ -91,6 +131,7 @@ export class StudentsService {
 
     const result = await this.prisma.student.create({
       data: {
+        uuid: body.uuid || undefined,
         name,
         reg_number,
         parent_uuid,
@@ -110,14 +151,36 @@ export class StudentsService {
       `${result.name} was successfully added as a student to ${result.class?.name || 'a'} class.`,
     );
 
-    return { status: 201, success: true, message: 'Student created', data: { student: result } };
+    return {
+      status: 201,
+      success: true,
+      message: 'Student created',
+      data: { student: result },
+    };
   }
 
-  async update(uuid: string, branchUuid: string | undefined, decoded: DecodedUser, body: any) {
-    const { name, reg_number, parent_uuid, class_uuid, gender, avatar, face_descriptor } = body;
+  async update(
+    uuid: string,
+    branchUuid: string | undefined,
+    decoded: DecodedUser,
+    body: any,
+  ) {
+    const {
+      name,
+      reg_number,
+      parent_uuid,
+      class_uuid,
+      gender,
+      avatar,
+      face_descriptor,
+    } = body;
 
     if (decoded.position !== 'ADMINISTRATIVE') {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     if (!name || !parent_uuid || !class_uuid || !reg_number) {
@@ -129,11 +192,17 @@ export class StudentsService {
     }
 
     if (!branchUuid) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     const existingReg = await this.prisma.student.findUnique({
-      where: { branch_uuid_reg_number: { branch_uuid: branchUuid, reg_number } },
+      where: {
+        branch_uuid_reg_number: { branch_uuid: branchUuid, reg_number },
+      },
     });
 
     if (existingReg && existingReg.uuid !== uuid) {
@@ -144,30 +213,75 @@ export class StudentsService {
       });
     }
 
+    const previousStudent = await this.prisma.student.findUnique({
+      where: { uuid },
+    });
     const result = await this.prisma.student.update({
       where: { uuid },
-      data: { name, reg_number, parent_uuid, class_uuid, gender, avatar, ...(face_descriptor ? { face_descriptor } : {}) },
+      data: {
+        name,
+        reg_number,
+        parent_uuid,
+        class_uuid,
+        gender,
+        avatar,
+        ...(face_descriptor ? { face_descriptor } : {}),
+      },
     });
 
-    return { status: 200, success: true, message: 'Student updated', data: { student: result } };
+    if (previousStudent?.avatar && previousStudent.avatar !== result.avatar) {
+      const oldKey = this.storage.keyFromUrl(previousStudent.avatar);
+      if (oldKey) await this.storage.delete(oldKey);
+    }
+
+    return {
+      status: 200,
+      success: true,
+      message: 'Student updated',
+      data: { student: result },
+    };
   }
 
-  async remove(uuid: string, branchUuid: string | undefined, decoded: DecodedUser) {
+  async remove(
+    uuid: string,
+    branchUuid: string | undefined,
+    decoded: DecodedUser,
+  ) {
     if (decoded.position !== 'ADMINISTRATIVE') {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     if (!branchUuid) {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     try {
       const student = await this.prisma.student.findUnique({ where: { uuid } });
       if (!student) {
-        throw new NotFoundException({ status: 404, success: false, message: 'Student not found' });
+        throw new NotFoundException({
+          status: 404,
+          success: false,
+          message: 'Student not found',
+        });
       }
 
       await this.prisma.result.deleteMany({ where: { student_uuid: uuid } });
+      await this.storage.deleteAvatar(
+        decoded.school_uuid,
+        student.branch_uuid,
+        'student',
+        uuid,
+      );
+      const legacyKey = this.storage.keyFromUrl(student.avatar);
+      if (legacyKey) await this.storage.delete(legacyKey);
       await this.prisma.student.delete({ where: { uuid } });
 
       return { status: 200, success: true, message: 'Student deleted' };

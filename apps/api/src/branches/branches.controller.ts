@@ -37,7 +37,11 @@ export class BranchesController {
   }
 
   @Patch('update/:uuid')
-  update(@Param('uuid') uuid: string, @CurrentUser() user: DecodedUser, @Body() body: any) {
+  update(
+    @Param('uuid') uuid: string,
+    @CurrentUser() user: DecodedUser,
+    @Body() body: any,
+  ) {
     return this.branchesService.update(uuid, user, body);
   }
 

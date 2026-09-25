@@ -86,7 +86,10 @@ export class ReportGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('leave')
-  handleLeave(@ConnectedSocket() client: Socket, @MessageBody() body: { result_uuid: string }) {
+  handleLeave(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { result_uuid: string },
+  ) {
     const room = this.roomName(body.result_uuid);
     client.leave(room);
     const members = this.presence.get(room);
@@ -123,7 +126,10 @@ export class ReportGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   /** Tells the room a save just happened, so everyone refetches the canonical state. */
   @SubscribeMessage('saved')
-  handleSaved(@ConnectedSocket() client: Socket, @MessageBody() body: { result_uuid: string }) {
+  handleSaved(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { result_uuid: string },
+  ) {
     const room = this.roomName(body.result_uuid);
     client.to(room).emit('report-saved');
   }

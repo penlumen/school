@@ -78,6 +78,7 @@ export default function StudentsPage() {
             />
 
             <StudentFormSheet
+                key={`${formOpen}-${activeStudent?.uuid ?? 'new'}`}
                 open={formOpen}
                 onOpenChange={setFormOpen}
                 student={activeStudent}

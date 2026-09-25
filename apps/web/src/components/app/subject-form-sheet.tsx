@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect, useState} from 'react';
+import {useState} from 'react';
 import {toast} from 'sonner';
 
 import {useSubject} from '@/hooks/subject';
@@ -32,18 +32,11 @@ interface SubjectFormSheetProps {
 
 export function SubjectFormSheet({classUuid, open, onOpenChange, subject, onSaved}: SubjectFormSheetProps) {
     const {create, update} = useSubject();
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
+    const [name, setName] = useState(() => subject?.name || '');
+    const [description, setDescription] = useState(() => subject?.description || '');
     const [submitting, setSubmitting] = useState(false);
 
     const isEdit = !!subject;
-
-    useEffect(() => {
-        if (open) {
-            setName(subject?.name || '');
-            setDescription(subject?.description || '');
-        }
-    }, [open, subject]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

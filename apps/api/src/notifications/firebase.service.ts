@@ -23,7 +23,9 @@ export class FirebaseService {
 
     try {
       if (getApps().length === 0) {
-        initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
+        initializeApp({
+          credential: cert({ projectId, clientEmail, privateKey }),
+        });
       }
       this.enabled = true;
     } catch (error: any) {
@@ -32,7 +34,11 @@ export class FirebaseService {
   }
 
   /** Sends the same push to a batch of device tokens; drops any tokens that have gone stale. */
-  async sendToTokens(tokens: string[], title: string, body: string): Promise<string[]> {
+  async sendToTokens(
+    tokens: string[],
+    title: string,
+    body: string,
+  ): Promise<string[]> {
     if (!this.enabled || tokens.length === 0) return [];
 
     try {

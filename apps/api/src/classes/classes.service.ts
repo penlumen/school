@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CacheService } from '../cache/cache.service.js';
 import { DecodedUser } from '../common/types/auth.js';
@@ -39,9 +43,12 @@ export class ClassesService {
         } else if (decoded.position === 'ACADEMIC') {
           classes = await this.prisma.class.findMany({
             where: {
-            branch_uuid: branchUuid,
-            OR: [{ teacher_uuid: decoded.uuid }, { teachers_uuid: { has: decoded.uuid } }],
-          },
+              branch_uuid: branchUuid,
+              OR: [
+                { teacher_uuid: decoded.uuid },
+                { teachers_uuid: { has: decoded.uuid } },
+              ],
+            },
             include: { students: true },
             orderBy: { created_at: 'asc' },
           });
@@ -62,13 +69,24 @@ export class ClassesService {
     };
   }
 
-  async create(branchUuid: string | undefined, decoded: DecodedUser, body: any) {
+  async create(
+    branchUuid: string | undefined,
+    decoded: DecodedUser,
+    body: any,
+  ) {
     const { name, capacity, teacher_uuid } = body;
-    const teachers_uuid = Array.isArray(body.teachers_uuid) ? body.teachers_uuid.filter(Boolean) : [];
-    if (teacher_uuid && !teachers_uuid.includes(teacher_uuid)) teachers_uuid.unshift(teacher_uuid);
+    const teachers_uuid = Array.isArray(body.teachers_uuid)
+      ? body.teachers_uuid.filter(Boolean)
+      : [];
+    if (teacher_uuid && !teachers_uuid.includes(teacher_uuid))
+      teachers_uuid.unshift(teacher_uuid);
 
     if (decoded.position !== 'ADMINISTRATIVE') {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     if (!branchUuid || !name) {
@@ -80,11 +98,22 @@ export class ClassesService {
     }
 
     const result = await this.prisma.class.create({
-      data: { name, capacity, branch_uuid: branchUuid, teacher_uuid, teachers_uuid },
+      data: {
+        name,
+        capacity,
+        branch_uuid: branchUuid,
+        teacher_uuid,
+        teachers_uuid,
+      },
     });
     await this.cache.delByPrefix(`classes:index:${branchUuid}:`);
 
-    return { status: 201, success: true, message: 'Class created successfully', data: { class: result } };
+    return {
+      status: 201,
+      success: true,
+      message: 'Class created successfully',
+      data: { class: result },
+    };
   }
 
   async show(uuid: string) {
@@ -102,7 +131,11 @@ export class ClassesService {
     });
 
     if (!classData) {
-      throw new NotFoundException({ status: 404, success: false, message: 'Class not found' });
+      throw new NotFoundException({
+        status: 404,
+        success: false,
+        message: 'Class not found',
+      });
     }
 
     return {
@@ -115,11 +148,18 @@ export class ClassesService {
 
   async update(uuid: string, decoded: DecodedUser, body: any) {
     const { name, capacity, teacher_uuid } = body;
-    const teachers_uuid = Array.isArray(body.teachers_uuid) ? body.teachers_uuid.filter(Boolean) : [];
-    if (teacher_uuid && !teachers_uuid.includes(teacher_uuid)) teachers_uuid.unshift(teacher_uuid);
+    const teachers_uuid = Array.isArray(body.teachers_uuid)
+      ? body.teachers_uuid.filter(Boolean)
+      : [];
+    if (teacher_uuid && !teachers_uuid.includes(teacher_uuid))
+      teachers_uuid.unshift(teacher_uuid);
 
     if (decoded.position !== 'ADMINISTRATIVE') {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     const updatedClass = await this.prisma.class.update({
@@ -128,7 +168,11 @@ export class ClassesService {
     });
 
     if (!updatedClass) {
-      throw new NotFoundException({ status: 404, success: false, message: 'Class not found' });
+      throw new NotFoundException({
+        status: 404,
+        success: false,
+        message: 'Class not found',
+      });
     }
     await this.cache.delByPrefix(`classes:index:${updatedClass.branch_uuid}:`);
 
@@ -142,7 +186,11 @@ export class ClassesService {
 
   async remove(uuid: string, decoded: DecodedUser) {
     if (decoded.position !== 'ADMINISTRATIVE') {
-      throw new BadRequestException({ status: 400, success: false, message: 'Unauthorized' });
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
     }
 
     const classWithStudents = await this.prisma.class.findUnique({
@@ -151,7 +199,11 @@ export class ClassesService {
     });
 
     if (!classWithStudents) {
-      throw new NotFoundException({ status: 404, success: false, message: 'Class not found' });
+      throw new NotFoundException({
+        status: 404,
+        success: false,
+        message: 'Class not found',
+      });
     }
 
     if (classWithStudents.students.length > 0) {
@@ -163,8 +215,14 @@ export class ClassesService {
     }
 
     await this.prisma.class.delete({ where: { uuid } });
-    await this.cache.delByPrefix(`classes:index:${classWithStudents.branch_uuid}:`);
+    await this.cache.delByPrefix(
+      `classes:index:${classWithStudents.branch_uuid}:`,
+    );
 
-    return { status: 200, success: true, message: 'Class deleted successfully' };
+    return {
+      status: 200,
+      success: true,
+      message: 'Class deleted successfully',
+    };
   }
 }

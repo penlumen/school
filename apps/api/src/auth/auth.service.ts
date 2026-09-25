@@ -43,13 +43,13 @@ export class AuthService {
     email?: string;
     password?: string;
   }) {
-    const { name, role, email, password } = body;
+    const { name, email, password } = body;
 
-    if (!email || !password || !role) {
+    if (!email || !password) {
       throw new BadRequestException({
         status: 400,
         success: false,
-        message: 'Email, password and role are required',
+        message: 'Email or password are required',
       });
     }
 
@@ -66,25 +66,24 @@ export class AuthService {
 
     const hashPassword = await this.hashing.createHash(password);
 
-    const result = await this.prisma.$transaction(async (tx: any) => {
-      const user = await tx.user.create({
-        data: {
-          name,
-          email,
-          password: hashPassword,
-          position: 'ADMINISTRATIVE',
-        },
-      });
-
+    const result = await this.prisma.$transaction(async (tx) => {
+      // 1. Generate unique school slug
       let generatedName = email.split('@')[0];
       let nameToCheck = generatedName;
       let counter = 1;
-      while (await tx.school.findUnique({ where: { slug: nameToCheck } })) {
+
+      while (
+        await tx.school.findUnique({
+          where: { slug: nameToCheck },
+        })
+      ) {
         nameToCheck = `${generatedName}${counter}`;
         counter++;
       }
+
       generatedName = nameToCheck;
 
+      // 2. Create school first
       const school = await tx.school.create({
         data: {
           email,
@@ -93,6 +92,7 @@ export class AuthService {
         },
       });
 
+      // 3. Create default branch
       const branch = await tx.branch.create({
         data: {
           school_uuid: school.uuid,
@@ -100,6 +100,20 @@ export class AuthService {
         },
       });
 
+      // 4. Create school owner
+      const user = await tx.user.create({
+        data: {
+          name,
+          email,
+          password: hashPassword,
+          school_uuid: school.uuid,
+          position: 'ADMINISTRATIVE',
+          role: 'ADMIN',
+          face_descriptor: [],
+        },
+      });
+
+      // 5. Give owner access to the branch
       await tx.branchAccess.create({
         data: {
           role: user.role,
@@ -109,12 +123,7 @@ export class AuthService {
         },
       });
 
-      await tx.user.update({
-        where: { uuid: user.uuid },
-        data: { school_uuid: school.uuid },
-      });
-
-      return { user, school };
+      return { user, school, branch };
     });
 
     const { user, school } = result;
