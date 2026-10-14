@@ -47,6 +47,14 @@ interface PerformancePoint {
 const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = [CURRENT_YEAR - 1, CURRENT_YEAR, CURRENT_YEAR + 1];
 
+function getGreeting() {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 16) return 'Good afternoon';
+    if (hour < 23) return 'Good evening';
+    return 'Good day';
+}
+
 function TrendBadge({value}: { value: number }) {
     const positive = value >= 0;
     return (
@@ -172,7 +180,7 @@ export default function DashboardPage() {
     return (
         <div className='space-y-6'>
             <div>
-                <h1 className='text-2xl font-bold tracking-tight'>Good morning, {name || 'there'}</h1>
+                <h1 className='text-2xl font-bold tracking-tight'>{getGreeting()}, {name || 'there'}</h1>
                 <p className='text-muted-foreground text-sm'>
                     Here&apos;s a quick summary of how your school is performing
                 </p>
