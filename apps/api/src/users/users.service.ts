@@ -183,25 +183,27 @@ export class UsersService {
       },
     });
 
-    const existingInCurrentBranch = await this.prisma.branchAccess.findFirst({
-      where: { branch_uuid: branchUuid, user_uuid: existingUser?.uuid },
-    });
+    if (existingUser) {
+      const memberLabel =
+        existingUser.role === 'PARENT' ? 'parent' : 'staff member';
+      const existingInCurrentBranch = await this.prisma.branchAccess.findFirst({
+        where: { branch_uuid: branchUuid, user_uuid: existingUser.uuid },
+      });
 
-    if (existingUser && !existingInCurrentBranch) {
+      if (existingInCurrentBranch) {
+        throw new BadRequestException({
+          status: 400,
+          success: false,
+          message: `This ${memberLabel} already exists in the school records and current branch.`,
+        });
+      }
+
       return {
         status: 200,
         success: false,
-        message:
-          'This staff member already exists in the school records. Would you like to add them to this branch?',
-        data: { user_uuid: existingUser.uuid },
+        message: `This ${memberLabel} already exists in the school records. Would you like to add them to this branch?`,
+        data: { user_uuid: existingUser.uuid, name: existingUser.name },
       };
-    } else if (existingUser) {
-      throw new BadRequestException({
-        status: 400,
-        success: false,
-        message:
-          'This staff member already exists in the school records and current branch.',
-      });
     }
 
     const formatRole = role.toUpperCase() as Role;
@@ -252,6 +254,100 @@ export class UsersService {
       success: true,
       message: 'User created successfully',
       data: { newUser },
+    };
+  }
+
+  async attach(
+    uuid: string,
+    branchUuid: string | undefined,
+    decoded: DecodedUser,
+  ) {
+    if (decoded.position !== 'ADMINISTRATIVE') {
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
+    }
+
+    if (!branchUuid) {
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized branch',
+      });
+    }
+
+    const currentUser = await this.prisma.user.findUnique({
+      where: { uuid: decoded.uuid },
+    });
+    const user = uuid
+      ? await this.prisma.user.findUnique({ where: { uuid } })
+      : null;
+
+    if (
+      !currentUser?.school_uuid ||
+      !user ||
+      user.school_uuid !== currentUser.school_uuid
+    ) {
+      throw new NotFoundException({
+        status: 404,
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    if (user.role === 'ROOT' || user.role === 'ADMIN') {
+      throw new ForbiddenException({
+        status: 403,
+        success: false,
+        message: 'Cannot add Admin or Root account',
+      });
+    }
+
+    const branch = await this.prisma.branch.findFirst({
+      where: { uuid: branchUuid, school_uuid: currentUser.school_uuid },
+    });
+    if (!branch) {
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized branch',
+      });
+    }
+
+    const existing = await this.prisma.branchAccess.findFirst({
+      where: { branch_uuid: branchUuid, user_uuid: uuid },
+    });
+    if (existing) {
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'User already belongs to this branch',
+      });
+    }
+
+    await this.prisma.branchAccess.create({
+      data: {
+        branch_uuid: branchUuid,
+        role: user.role,
+        user_uuid: user.uuid,
+        school_uuid: currentUser.school_uuid,
+      },
+    });
+
+    await this.notifications.notifyBranchAdmins(
+      branchUuid,
+      `${user.role}_CREATED`,
+      'New team member added',
+      `${user.name} was successfully added as a ${user.role.toLowerCase()}.`,
+    );
+
+    return {
+      status: 200,
+      success: true,
+      message: 'User added to branch successfully',
+      data: { user },
     };
   }
 

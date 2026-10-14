@@ -40,6 +40,15 @@ export class UsersController {
     return this.usersService.create(branchUuid, user, body);
   }
 
+  @Post('attach/:uuid')
+  attach(
+    @Param('uuid') uuid: string,
+    @Headers('x-branch-session') branchUuid: string,
+    @CurrentUser() user: DecodedUser,
+  ) {
+    return this.usersService.attach(uuid, branchUuid, user);
+  }
+
   @Patch('update/:uuid')
   update(
     @Param('uuid') uuid: string,
