@@ -1,7 +1,7 @@
 'use client';
 
 import {useEffect, useState} from 'react';
-import {Bell, Check, GraduationCap, Users, X} from 'lucide-react';
+import {Bell, CalendarDays, CalendarRange, Check, ClipboardCheck, FileText, GraduationCap, School, Users, X} from 'lucide-react';
 import {toast} from 'sonner';
 
 import {useNotification} from '@/hooks/notification';
@@ -27,6 +27,11 @@ function timeAgo(dateString: string) {
 
 function iconFor(type: string) {
     if (type.startsWith('STUDENT')) return GraduationCap;
+    if (type.startsWith('EVENT')) return CalendarDays;
+    if (type.startsWith('RESULT')) return FileText;
+    if (type.startsWith('ATTENDANCE')) return ClipboardCheck;
+    if (type.startsWith('CLASS')) return School;
+    if (type.startsWith('TERM')) return CalendarRange;
     return Users;
 }
 

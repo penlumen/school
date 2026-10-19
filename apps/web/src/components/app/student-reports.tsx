@@ -419,14 +419,20 @@ export default function ReportsPage() {
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>
-                              <Link
-                                href={`/report/${report.student.uuid}`}
-                                target='_blank'
-                              >
-                                Generate Report
-                              </Link>
-                            </DropdownMenuItem>
+                            {report.status === 'approved' ? (
+                              <DropdownMenuItem>
+                                <Link
+                                  href={`/report/${report.student.uuid}`}
+                                  target='_blank'
+                                >
+                                  Generate Report
+                                </Link>
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem disabled>
+                                Generate Report (awaiting approval)
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

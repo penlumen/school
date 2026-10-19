@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CacheService } from '../cache/cache.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 
 @Injectable()
@@ -12,7 +13,41 @@ export class ClassesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
+    private readonly notifications: NotificationsService,
   ) {}
+
+  private teachersOf(cls: {
+    teacher_uuid: string | null;
+    teachers_uuid: string[];
+  }) {
+    return [cls.teacher_uuid, ...(cls.teachers_uuid || [])].filter(
+      (u): u is string => !!u,
+    );
+  }
+
+  /** Notifies teachers on `cls` who weren't already assigned (per `previousTeachers`). */
+  private async notifyNewTeachers(
+    cls: {
+      name: string;
+      branch_uuid: string;
+      teacher_uuid: string | null;
+      teachers_uuid: string[];
+    },
+    previousTeachers: string[],
+    decoded: DecodedUser,
+  ) {
+    const added = this.teachersOf(cls).filter(
+      (u) => !previousTeachers.includes(u),
+    );
+    await this.notifications.notifyUsers(
+      added,
+      cls.branch_uuid,
+      'CLASS_ASSIGNED',
+      'Class assigned',
+      `You have been assigned as a teacher to ${cls.name}.`,
+      { excludeUuid: decoded.uuid },
+    );
+  }
 
   private cacheKey(branchUuid: string, decoded: DecodedUser) {
     const scope = decoded.position === 'ACADEMIC' ? decoded.uuid : 'all';
@@ -107,6 +142,7 @@ export class ClassesService {
       },
     });
     await this.cache.delByPrefix(`classes:index:${branchUuid}:`);
+    await this.notifyNewTeachers(result, [], decoded);
 
     return {
       status: 201,
@@ -162,6 +198,10 @@ export class ClassesService {
       });
     }
 
+    const previousClass = await this.prisma.class.findUnique({
+      where: { uuid },
+    });
+
     const updatedClass = await this.prisma.class.update({
       where: { uuid },
       data: { name, capacity, teacher_uuid, teachers_uuid },
@@ -175,6 +215,11 @@ export class ClassesService {
       });
     }
     await this.cache.delByPrefix(`classes:index:${updatedClass.branch_uuid}:`);
+    await this.notifyNewTeachers(
+      updatedClass,
+      previousClass ? this.teachersOf(previousClass) : [],
+      decoded,
+    );
 
     return {
       status: 200,

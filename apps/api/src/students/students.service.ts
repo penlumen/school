@@ -150,6 +150,13 @@ export class StudentsService {
       'New student added',
       `${result.name} was successfully added as a student to ${result.class?.name || 'a'} class.`,
     );
+    await this.notifications.notifyUsers(
+      [result.parent_uuid],
+      branchUuid,
+      'STUDENT_ENROLLED',
+      'Student enrolled',
+      `${result.name} has been enrolled in ${result.class?.name || 'a class'}.`,
+    );
 
     return {
       status: 201,
@@ -227,7 +234,26 @@ export class StudentsService {
         avatar,
         ...(face_descriptor ? { face_descriptor } : {}),
       },
+      include: { class: true },
     });
+
+    if (previousStudent && previousStudent.class_uuid !== result.class_uuid) {
+      await this.notifications.notifyUsers(
+        [result.parent_uuid],
+        branchUuid,
+        'STUDENT_CLASS_CHANGED',
+        'Class changed',
+        `${result.name} has been moved to ${result.class.name}.`,
+      );
+      await this.notifications.notifyUsers(
+        [result.class.teacher_uuid, ...result.class.teachers_uuid],
+        branchUuid,
+        'STUDENT_CLASS_CHANGED',
+        'New student in your class',
+        `${result.name} has joined ${result.class.name}.`,
+        { excludeUuid: decoded.uuid },
+      );
+    }
 
     if (previousStudent?.avatar && previousStudent.avatar !== result.avatar) {
       const oldKey = this.storage.keyFromUrl(previousStudent.avatar);

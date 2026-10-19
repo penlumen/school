@@ -6,12 +6,21 @@ import {
 } from '@nestjs/common';
 import { AttendanceStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 
 function startOfDay(dateStr?: string): Date {
   const date = dateStr ? new Date(dateStr) : new Date();
   date.setHours(0, 0, 0, 0);
   return date;
+}
+
+function formatDate(date: Date) {
+  return date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
 }
 
 /** Parses `YYYY-MM` into a [start, end) date range, or returns undefined when absent. */
@@ -35,7 +44,26 @@ function monthRange(month?: string): { gte: Date; lt: Date } | undefined {
 
 @Injectable()
 export class StudentAttendanceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
+
+  /** Tells a student's parent when they've been marked absent (only on the transition, not repeats). */
+  private async notifyIfAbsent(
+    student: { name: string; parent_uuid: string; branch_uuid: string },
+    previousStatus: AttendanceStatus | undefined,
+    record: { status: AttendanceStatus; date: Date },
+  ) {
+    if (record.status !== 'ABSENT' || previousStatus === 'ABSENT') return;
+    await this.notifications.notifyUsers(
+      [student.parent_uuid],
+      student.branch_uuid,
+      'ATTENDANCE_STUDENT_ABSENT',
+      'Absence recorded',
+      `${student.name} was marked absent on ${formatDate(record.date)}.`,
+    );
+  }
 
   private async assertCanMarkClass(classUuid: string, decoded: DecodedUser) {
     const classData = await this.prisma.class.findUnique({
@@ -156,6 +184,9 @@ export class StudentAttendanceService {
     const date = startOfDay(body?.date);
     const status: AttendanceStatus = body?.status || 'PRESENT';
 
+    const previous = await this.prisma.studentAttendance.findUnique({
+      where: { student_uuid_date: { student_uuid: studentUuid, date } },
+    });
     const record = await this.prisma.studentAttendance.upsert({
       where: { student_uuid_date: { student_uuid: studentUuid, date } },
       create: {
@@ -169,6 +200,8 @@ export class StudentAttendanceService {
       update: { status, marked_by_uuid: decoded.uuid },
     });
 
+    await this.notifyIfAbsent(student, previous?.status, record);
+
     return {
       status: 201,
       success: true,
@@ -180,6 +213,7 @@ export class StudentAttendanceService {
   async update(uuid: string, decoded: DecodedUser, body: any) {
     const existing = await this.prisma.studentAttendance.findUnique({
       where: { uuid },
+      include: { student: true },
     });
     if (!existing) {
       throw new NotFoundException({
@@ -195,6 +229,8 @@ export class StudentAttendanceService {
       where: { uuid },
       data: { status: body?.status, marked_by_uuid: decoded.uuid },
     });
+
+    await this.notifyIfAbsent(existing.student, existing.status, record);
 
     return {
       status: 200,

@@ -342,6 +342,7 @@ export class UsersService {
       'New team member added',
       `${user.name} was successfully added as a ${user.role.toLowerCase()}.`,
     );
+    await this.notifications.notifyBranchAccessGranted(user.uuid, branchUuid);
 
     return {
       status: 200,

@@ -6,11 +6,15 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 
 @Injectable()
 export class ResultsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   // Assessments' score columns are Prisma.Decimal now (Assessments.ca_one/ca_two/
   // examination/overall). Decimal serializes to a JSON *string*, which would silently
@@ -465,6 +469,8 @@ export class ResultsService {
       include: { student: true, assessments: true },
     });
 
+    await this.notifyResultChange(existing, updated, decoded);
+
     return {
       status: 200,
       success: true,
@@ -478,6 +484,77 @@ export class ResultsService {
         },
       },
     };
+  }
+
+  /**
+   * A teacher newly requesting approval notifies the branch admins; an admin
+   * approving/rejecting notifies the class teachers, and on approval the
+   * student's parent too.
+   */
+  private async notifyResultChange(
+    before: {
+      status: string;
+      approval_requested: boolean;
+      class_name: string;
+      student: {
+        name: string;
+        branch_uuid: string;
+        parent_uuid: string;
+        class: { teacher_uuid: string | null; teachers_uuid: string[] };
+      } | null;
+    },
+    after: { status: string; approval_requested: boolean },
+    decoded: DecodedUser,
+  ) {
+    const student = before.student;
+    if (!student) return;
+    const subject = `${student.name}'s result (${before.class_name})`;
+
+    if (decoded.position !== 'ADMINISTRATIVE') {
+      if (after.approval_requested && !before.approval_requested) {
+        await this.notifications.notifyBranchAdmins(
+          student.branch_uuid,
+          'RESULT_APPROVAL_REQUESTED',
+          'Result awaiting approval',
+          `${subject} has been submitted for approval.`,
+          { excludeUuid: decoded.uuid },
+        );
+      }
+      return;
+    }
+
+    if (after.status === before.status) return;
+    const teachers = [
+      student.class.teacher_uuid,
+      ...student.class.teachers_uuid,
+    ];
+
+    if (after.status === 'APPROVED') {
+      await this.notifications.notifyUsers(
+        teachers,
+        student.branch_uuid,
+        'RESULT_APPROVED',
+        'Result approved',
+        `${subject} has been approved.`,
+        { excludeUuid: decoded.uuid },
+      );
+      await this.notifications.notifyUsers(
+        [student.parent_uuid],
+        student.branch_uuid,
+        'RESULT_PUBLISHED',
+        'Result available',
+        `${student.name}'s ${before.class_name} result is now available.`,
+      );
+    } else if (after.status === 'REJECTED') {
+      await this.notifications.notifyUsers(
+        teachers,
+        student.branch_uuid,
+        'RESULT_REJECTED',
+        'Result rejected',
+        `${subject} was rejected and needs to be reviewed.`,
+        { excludeUuid: decoded.uuid },
+      );
+    }
   }
 
   async remove(resultUuid: string, decoded: DecodedUser) {
