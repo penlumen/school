@@ -36,9 +36,10 @@ export class StudentAttendanceController {
   @Get('history/:student_uuid')
   history(
     @Param('student_uuid') studentUuid: string,
+    @Query('month') month: string,
     @CurrentUser() user: DecodedUser,
   ) {
-    return this.service.history(studentUuid, user);
+    return this.service.history(studentUuid, month, user);
   }
 
   @Post(':student_uuid')

@@ -36,5 +36,16 @@ export const useStaffAttendance = () => {
             : {success: false, message: data.message || 'Something went wrong'};
     };
 
-    return {index, faces, mark, update};
+    const history = async (staffUuid: string, month?: string) => {
+        const response = await axiosInstance.get(
+            `/api/v1/attendance/staff/history/${staffUuid}`,
+            {params: month ? {month} : {}}
+        );
+        const data = response.data;
+        return data.success
+            ? {success: true, data: data.data}
+            : {success: false, message: data.message || 'Something went wrong'};
+    };
+
+    return {index, faces, mark, update, history};
 };

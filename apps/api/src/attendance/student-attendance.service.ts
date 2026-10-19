@@ -14,6 +14,25 @@ function startOfDay(dateStr?: string): Date {
   return date;
 }
 
+/** Parses `YYYY-MM` into a [start, end) date range, or returns undefined when absent. */
+function monthRange(month?: string): { gte: Date; lt: Date } | undefined {
+  if (!month) return undefined;
+  const match = /^(\d{4})-(\d{2})$/.exec(month);
+  if (!match) {
+    throw new BadRequestException({
+      status: 400,
+      success: false,
+      message: 'Month must be in YYYY-MM format',
+    });
+  }
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  return {
+    gte: new Date(Date.UTC(year, monthIndex, 1)),
+    lt: new Date(Date.UTC(year, monthIndex + 1, 1)),
+  };
+}
+
 @Injectable()
 export class StudentAttendanceService {
   constructor(private readonly prisma: PrismaService) {}
@@ -185,8 +204,13 @@ export class StudentAttendanceService {
     };
   }
 
-  /** Full attendance history for one student (across all dates), for their profile's Attendance tab. */
-  async history(studentUuid: string, decoded: DecodedUser) {
+  /** Attendance history for one student — all dates, or a single month when `month` (YYYY-MM) is given. */
+  async history(
+    studentUuid: string,
+    month: string | undefined,
+    decoded: DecodedUser,
+  ) {
+    const dateRange = monthRange(month);
     const student = await this.prisma.student.findUnique({
       where: { uuid: studentUuid },
     });
@@ -201,7 +225,7 @@ export class StudentAttendanceService {
     await this.assertCanMarkClass(student.class_uuid, decoded);
 
     const records = await this.prisma.studentAttendance.findMany({
-      where: { student_uuid: studentUuid },
+      where: { student_uuid: studentUuid, date: dateRange },
       orderBy: { date: 'desc' },
     });
 

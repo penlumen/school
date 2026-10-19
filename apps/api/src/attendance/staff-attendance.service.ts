@@ -14,6 +14,25 @@ function startOfDay(dateStr?: string): Date {
   return date;
 }
 
+/** Parses `YYYY-MM` into a [start, end) date range, or returns undefined when absent. */
+function monthRange(month?: string): { gte: Date; lt: Date } | undefined {
+  if (!month) return undefined;
+  const match = /^(\d{4})-(\d{2})$/.exec(month);
+  if (!match) {
+    throw new BadRequestException({
+      status: 400,
+      success: false,
+      message: 'Month must be in YYYY-MM format',
+    });
+  }
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  return {
+    gte: new Date(Date.UTC(year, monthIndex, 1)),
+    lt: new Date(Date.UTC(year, monthIndex + 1, 1)),
+  };
+}
+
 function assertIsAdmin(decoded: DecodedUser) {
   if (decoded.position !== 'ADMINISTRATIVE') {
     throw new ForbiddenException({
@@ -105,6 +124,36 @@ export class StaffAttendanceService {
       success: true,
       message: 'Enrolled faces',
       data: { staff: staffAccess.map((a) => a.user) },
+    };
+  }
+
+  /** Attendance history for one staff member in this branch — all dates, or a single month (YYYY-MM). */
+  async history(
+    staffUuid: string,
+    branchUuid: string | undefined,
+    month: string | undefined,
+    decoded: DecodedUser,
+  ) {
+    assertIsAdmin(decoded);
+    if (!branchUuid) {
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized branch',
+      });
+    }
+    const dateRange = monthRange(month);
+
+    const records = await this.prisma.staffAttendance.findMany({
+      where: { staff_uuid: staffUuid, branch_uuid: branchUuid, date: dateRange },
+      orderBy: { date: 'desc' },
+    });
+
+    return {
+      status: 200,
+      success: true,
+      message: 'Attendance history',
+      data: { attendance: records },
     };
   }
 

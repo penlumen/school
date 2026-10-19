@@ -2,11 +2,18 @@
 
 import {useRef, useState} from 'react';
 import {toast} from 'sonner';
-import {Loader2, ScanFace, Upload} from 'lucide-react';
+import {Camera, ImageIcon, Loader2, ScanFace, Upload} from 'lucide-react';
 
 import {useStorage} from '@/hooks/storage';
 import {getFaceDescriptor} from '@/lib/face-recognition';
 import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {CameraCaptureDialog} from '@/components/app/camera-capture-dialog';
 
 interface PhotoUploadProps {
     label: string;
@@ -34,6 +41,8 @@ export function PhotoUpload({
 }: PhotoUploadProps) {
     const {upload} = useStorage();
     const inputRef = useRef<HTMLInputElement>(null);
+    const captureInputRef = useRef<HTMLInputElement>(null);
+    const [cameraOpen, setCameraOpen] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [faceStatus, setFaceStatus] = useState<'idle' | 'detecting' | 'found' | 'not-found'>('idle');
 
@@ -60,10 +69,7 @@ export function PhotoUpload({
         }
     };
 
-    const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
+    const uploadFile = async (file: File) => {
         if (!file.type.startsWith('image/')) {
             toast.error('Please choose an image file');
             return;
@@ -87,8 +93,22 @@ export function PhotoUpload({
             toast.error(error.message || 'Upload failed');
         } finally {
             setUploading(false);
-            if (inputRef.current) inputRef.current.value = '';
         }
+    };
+
+    const handleTakePhoto = () => {
+        if (typeof navigator.mediaDevices?.getUserMedia === 'function') {
+            setCameraOpen(true);
+        } else {
+            captureInputRef.current?.click();
+        }
+    };
+
+    const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const input = e.target;
+        const file = input.files?.[0];
+        if (file) await uploadFile(file);
+        input.value = '';
     };
 
     return (
@@ -101,19 +121,32 @@ export function PhotoUpload({
             </Avatar>
             <div>
                 <p className='text-sm font-medium mb-1'>{label}</p>
-                <button
-                    type='button'
-                    onClick={() => inputRef.current?.click()}
-                    disabled={uploading}
-                    className='flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50'
-                >
-                    {uploading ? (
-                        <Loader2 className='h-3.5 w-3.5 animate-spin'/>
-                    ) : (
-                        <Upload className='h-3.5 w-3.5'/>
-                    )}
-                    <span>{uploading ? 'Uploading...' : 'Upload image'}</span>
-                </button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <button
+                            type='button'
+                            disabled={uploading}
+                            className='flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50'
+                        >
+                            {uploading ? (
+                                <Loader2 className='h-3.5 w-3.5 animate-spin'/>
+                            ) : (
+                                <Upload className='h-3.5 w-3.5'/>
+                            )}
+                            <span>{uploading ? 'Uploading...' : 'Upload image'}</span>
+                        </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align='start'>
+                        <DropdownMenuItem onSelect={handleTakePhoto}>
+                            <Camera className='h-4 w-4'/>
+                            Take photo
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => inputRef.current?.click()}>
+                            <ImageIcon className='h-4 w-4'/>
+                            Choose from gallery
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
                 {enrollFace && faceStatus !== 'idle' && (
                     <p
                         className={`flex items-center gap-1 text-[11px] mt-1 ${
@@ -136,6 +169,21 @@ export function PhotoUpload({
                     accept='image/*'
                     className='hidden'
                     onChange={handleFile}
+                />
+                {/* Fallback for browsers without getUserMedia (e.g. non-HTTPS): opens the device camera natively on mobile. */}
+                <input
+                    ref={captureInputRef}
+                    type='file'
+                    accept='image/*'
+                    capture='user'
+                    className='hidden'
+                    onChange={handleFile}
+                />
+                <CameraCaptureDialog
+                    open={cameraOpen}
+                    onOpenChange={setCameraOpen}
+                    onCapture={uploadFile}
+                    onUnavailable={() => captureInputRef.current?.click()}
                 />
             </div>
         </div>

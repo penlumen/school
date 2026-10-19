@@ -80,6 +80,7 @@ export default function StaffPage() {
                 open={detailOpen}
                 onOpenChange={setDetailOpen}
                 person={activePerson}
+                showAttendance={isAdmin}
             />
         </>
     );
