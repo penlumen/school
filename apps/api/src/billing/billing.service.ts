@@ -339,16 +339,9 @@ export class BillingService {
     };
   }
 
-  async invoice(
-    uuid: string,
-    branchUuid: string | undefined,
-    decoded: DecodedUser,
-  ) {
-    this.assertStaff(decoded);
-    const branch = this.requireBranch(branchUuid);
-    await this.findInvoice(uuid, branch);
-
-    const invoice = await this.prisma.invoice.findUnique({
+  /** Full invoice with everything the printable document needs. Shared with the parent portal. */
+  invoiceDetail(uuid: string) {
+    return this.prisma.invoice.findUnique({
       where: { uuid },
       include: {
         items: { orderBy: { position: 'asc' } },
@@ -391,6 +384,18 @@ export class BillingService {
         },
       },
     });
+  }
+
+  async invoice(
+    uuid: string,
+    branchUuid: string | undefined,
+    decoded: DecodedUser,
+  ) {
+    this.assertStaff(decoded);
+    const branch = this.requireBranch(branchUuid);
+    await this.findInvoice(uuid, branch);
+
+    const invoice = await this.invoiceDetail(uuid);
 
     return {
       status: 200,

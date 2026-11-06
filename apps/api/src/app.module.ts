@@ -22,6 +22,7 @@ import { NotificationsModule } from './notifications/notifications.module.js';
 import { SchoolModule } from './school/school.module.js';
 import { BillingModule } from './billing/billing.module.js';
 import { PresenceModule } from './presence/presence.module.js';
+import { ParentModule } from './parent/parent.module.js';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { PresenceModule } from './presence/presence.module.js';
     SchoolModule,
     BillingModule,
     PresenceModule,
+    ParentModule,
   ],
   controllers: [AppController],
   providers: [

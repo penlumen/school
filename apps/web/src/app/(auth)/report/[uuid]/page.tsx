@@ -5,6 +5,7 @@ import {Printer as Print, User} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import LoadingPage from '@/components/loading-page';
 import {useResult} from '@/hooks/result';
+import {isParentSession, useParent} from '@/hooks/parent';
 import {useParams} from 'next/navigation';
 
 // ... (Interfaces and Constants remain the same as your original code)
@@ -88,6 +89,7 @@ export default function TraditionalResultSheet() {
     const [shouldPrint, setShouldPrint] = useState(false);
     const [loading, setLoading] = useState(true);
     const {view} = useResult();
+    const {result: parentResult} = useParent();
     const {uuid} = useParams();
 
     const totalScores = assessments.reduce((sum, subject) => sum + subject.overall, 0);
@@ -101,7 +103,8 @@ export default function TraditionalResultSheet() {
 
     const fetchData = async () => {
         try {
-            const response = await view(uuid as string);
+            // Parents may only open their own children's approved reports.
+            const response = isParentSession() ? await parentResult(uuid as string) : await view(uuid as string);
             if (response.success) {
                 setResultData(response.data);
                 setAssessments(response.data.assessments || []);

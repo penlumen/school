@@ -5,6 +5,7 @@ import {useParams} from 'next/navigation';
 import {Printer} from 'lucide-react';
 
 import {type InvoiceDetail, useBilling} from '@/hooks/billing';
+import {isParentSession, useParent} from '@/hooks/parent';
 import {Button} from '@/components/ui/button';
 import LoadingPage from '@/components/loading-page';
 import {InvoiceDocument} from '@/components/app/invoice-document';
@@ -12,12 +13,13 @@ import {InvoiceDocument} from '@/components/app/invoice-document';
 /** Bare invoice page, outside the app shell, that opens the print dialog once loaded. */
 export default function PrintInvoicePage() {
     const {uuid} = useParams<{ uuid: string }>();
-    const {invoice: fetchInvoice} = useBilling();
+    const {invoice: staffInvoice} = useBilling();
+    const {invoice: parentInvoice} = useParent();
     const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        fetchInvoice(uuid).then((response) => {
+        (isParentSession() ? parentInvoice(uuid) : staffInvoice(uuid)).then((response) => {
             if (response.success) setInvoice(response.data.invoice);
             else setError(response.message);
         });

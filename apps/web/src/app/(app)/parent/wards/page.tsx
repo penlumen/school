@@ -1,10 +1,6 @@
-import React from 'react';
-import ComingSoonPage from '@/components/coming-soon';
+import { redirect } from 'next/navigation';
 
-export default function DashboardPage() {
-  return (
-    <div>
-      <ComingSoonPage />
-    </div>
-  );
+// The children overview now lives on the parent home page.
+export default function WardsPage() {
+  redirect('/parent/dashboard');
 }
