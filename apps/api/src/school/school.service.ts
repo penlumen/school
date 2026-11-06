@@ -350,38 +350,37 @@ export class SchoolService {
       .filter((row) => row.name);
 
     const schoolUuid = decoded.school_uuid;
-    await this.prisma.$transaction(async (tx: any) => {
-      const existing = await tx.galleryCategory.findMany({
-        where: { school_uuid: schoolUuid },
-        select: { uuid: true },
-      });
-      const existingUuids = new Set(existing.map((c: any) => c.uuid));
-      const keptUuids = new Set(
-        rows
-          .filter((r) => r.uuid && existingUuids.has(r.uuid))
-          .map((r) => r.uuid),
-      );
+    const existing = await this.prisma.galleryCategory.findMany({
+      where: { school_uuid: schoolUuid },
+      select: { uuid: true },
+    });
+    const existingUuids = new Set(existing.map((c) => c.uuid));
+    const keptUuids = new Set(
+      rows
+        .filter((r) => r.uuid && existingUuids.has(r.uuid))
+        .map((r) => r.uuid as string),
+    );
 
-      await tx.galleryCategory.deleteMany({
+    // One batched transaction (a single request) instead of an interactive
+    // one, which connection poolers such as Prisma Postgres don't support well.
+    await this.prisma.$transaction([
+      this.prisma.galleryCategory.deleteMany({
         where: {
           school_uuid: schoolUuid,
-          uuid: { notIn: Array.from(keptUuids) as string[] },
+          uuid: { notIn: Array.from(keptUuids) },
         },
-      });
-
-      for (const [position, row] of rows.entries()) {
-        if (row.uuid && keptUuids.has(row.uuid)) {
-          await tx.galleryCategory.update({
-            where: { uuid: row.uuid },
-            data: { name: row.name, position },
-          });
-        } else {
-          await tx.galleryCategory.create({
-            data: { school_uuid: schoolUuid, name: row.name, position },
-          });
-        }
-      }
-    });
+      }),
+      ...rows.map((row, position) =>
+        row.uuid && keptUuids.has(row.uuid)
+          ? this.prisma.galleryCategory.update({
+              where: { uuid: row.uuid },
+              data: { name: row.name, position },
+            })
+          : this.prisma.galleryCategory.create({
+              data: { school_uuid: schoolUuid, name: row.name, position },
+            }),
+      ),
+    ]);
 
     const categories = await this.prisma.galleryCategory.findMany({
       where: { school_uuid: schoolUuid },

@@ -4,7 +4,7 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { randomBytes } from 'crypto';
+import { randomBytes, randomUUID } from 'crypto';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
@@ -244,25 +244,34 @@ export class BillingService {
 
     const items = 'items' in body ? this.items(body.items) : null;
 
-    const template = await this.prisma.$transaction(async (tx: any) => {
-      if (items) {
-        await tx.billingTemplateItem.deleteMany({
-          where: { template_uuid: uuid },
-        });
-        data.items = {
-          create: items.map((item, position) => ({
-            description: item.description,
-            amount: item.amount,
-            position,
-          })),
-        };
-      }
-      return tx.billingTemplate.update({
+    // A single batched transaction (one request) rather than an interactive
+    // one: connection poolers such as Prisma Postgres don't keep an
+    // interactive transaction on one connection, and every extra round trip
+    // counts towards its timeout.
+    const replaceItems = items
+      ? [
+          this.prisma.billingTemplateItem.deleteMany({
+            where: { template_uuid: uuid },
+          }),
+          this.prisma.billingTemplateItem.createMany({
+            data: items.map((item, position) => ({
+              template_uuid: uuid,
+              description: item.description,
+              amount: item.amount,
+              position,
+            })),
+          }),
+        ]
+      : [];
+    const results = await this.prisma.$transaction([
+      ...replaceItems,
+      this.prisma.billingTemplate.update({
         where: { uuid },
         data,
         include: this.templateInclude,
-      });
-    });
+      }),
+    ]);
+    const template = results[results.length - 1];
 
     return {
       status: 200,
@@ -306,19 +315,13 @@ export class BillingService {
     return invoice ?? this.notFound('Invoice not found');
   }
 
-  private async newInvoiceNumber(tx: any): Promise<string> {
+  /**
+   * INV-YYMM-XXXXXXXX with 32 random bits, so no lookup is needed; the
+   * unique index catches the rare clash and the batch is retried.
+   */
+  private newInvoiceNumber(): string {
     const stamp = new Date().toISOString().slice(2, 7).replace('-', '');
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const suffix = randomBytes(4).toString('hex').toUpperCase().slice(0, 6);
-      const number = `INV-${stamp}-${suffix}`;
-      const taken = await tx.invoice.findUnique({ where: { number } });
-      if (!taken) return number;
-    }
-    throw new BadRequestException({
-      status: 400,
-      success: false,
-      message: 'Could not generate an invoice number, please retry',
-    });
+    return `INV-${stamp}-${randomBytes(4).toString('hex').toUpperCase()}`;
   }
 
   async invoices(branchUuid: string | undefined, decoded: DecodedUser) {
@@ -466,40 +469,62 @@ export class BillingService {
     const dueAt = this.date(body?.due_at);
     const note = this.text(body?.note, 500);
 
-    const invoices = await this.prisma.$transaction(async (tx: any) => {
-      const created: any[] = [];
-      for (const student of students) {
-        created.push(
-          await tx.invoice.create({
-            data: {
-              number: await this.newInvoiceNumber(tx),
-              branch_uuid: branch,
-              student_uuid: student.uuid,
-              template_uuid: templateUuid,
-              total,
-              due_at: dueAt,
-              note,
-              items: {
-                create: items.map((item, position) => ({
-                  description: item.description,
-                  amount: item.amount,
-                  quantity: item.quantity,
-                  position,
-                })),
-              },
-              history: {
-                create: {
-                  status: 'PENDING',
-                  description: 'Invoice issued',
-                  created_by_uuid: decoded.uuid,
-                },
-              },
-            },
-            include: this.invoiceListInclude,
+    // Ids are generated here so invoices, their lines and history can be
+    // written as three flat inserts in one batched transaction (a single
+    // request). See updateTemplate for why this avoids interactive ones.
+    const insert = () => {
+      const rows = students.map((student) => ({
+        uuid: randomUUID(),
+        number: this.newInvoiceNumber(),
+        branch_uuid: branch,
+        student_uuid: student.uuid,
+        template_uuid: templateUuid,
+        total,
+        due_at: dueAt,
+        note,
+      }));
+      return this.prisma
+        .$transaction([
+          this.prisma.invoice.createMany({ data: rows }),
+          this.prisma.invoiceItem.createMany({
+            data: rows.flatMap((row) =>
+              items.map((item, position) => ({
+                invoice_uuid: row.uuid,
+                description: item.description,
+                amount: item.amount,
+                quantity: item.quantity,
+                position,
+              })),
+            ),
           }),
-        );
+          this.prisma.invoiceStatusChange.createMany({
+            data: rows.map((row) => ({
+              invoice_uuid: row.uuid,
+              status: 'PENDING' as const,
+              description: 'Invoice issued',
+              created_by_uuid: decoded.uuid,
+            })),
+          }),
+        ])
+        .then(() => rows.map((row) => row.uuid));
+    };
+
+    let createdUuids: string[] = [];
+    for (let attempt = 1; ; attempt++) {
+      try {
+        createdUuids = await insert();
+        break;
+      } catch (error: any) {
+        // Invoice number clash: extremely unlikely, so simply try again.
+        if (error?.code === 'P2002' && attempt < 3) continue;
+        throw error;
       }
-      return created;
+    }
+
+    const invoices = await this.prisma.invoice.findMany({
+      where: { uuid: { in: createdUuids } },
+      orderBy: { created_at: 'desc' },
+      include: this.invoiceListInclude,
     });
 
     for (const invoice of invoices) {
