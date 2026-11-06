@@ -192,16 +192,16 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
       label: 'Billings',
       items: [
         {
-          title: 'Templates',
+          title: 'Billing Templates',
           icon: FileText,
           href: '/staff/templates',
-          description: 'Billing templates for invoices - coming soon.',
+          description: 'Reusable fee lists, such as school fees for a group of classes, used to issue invoices.',
         },
         {
           title: 'Invoices',
           icon: CreditCard,
           href: '/staff/invoices',
-          description: 'Manage invoices sent to parents - coming soon.',
+          description: 'Issue invoices to parents from a template, record payments and print invoices.',
         },
       ],
     },
@@ -211,14 +211,14 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
         {
           title: 'Branch Settings',
           icon: SlidersHorizontal,
-          href: '/staff/account-settings',
-          description: 'Settings for the branch you currently have selected - coming soon.',
+          href: '/staff/branch-settings',
+          description: 'Details, logo and grade scale for the branch you currently have selected.',
         },
         {
           title: 'School Settings',
           icon: Settings,
           href: '/staff/school-settings',
-          description: 'School-wide settings across all branches - coming soon.',
+          description: 'School-wide details and the content of your public website: home page, about page and gallery.',
         },
       ],
     },

@@ -60,7 +60,7 @@ function TrendBadge({value}: { value: number }) {
     return (
         <span
             className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-                positive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+                positive ? 'bg-success-muted text-success-foreground' : 'bg-destructive-muted text-destructive'
             }`}
         >
             {positive ? '↑' : '↓'} {Math.abs(value)}%
@@ -236,7 +236,7 @@ export default function DashboardPage() {
                                     Students
                                 </span>
                                 <span className='flex items-center gap-1.5'>
-                                    <span className='h-2 w-2 rounded-full bg-emerald-500'/>
+                                    <span className='h-2 w-2 rounded-full bg-success'/>
                                     Staff
                                 </span>
                             </div>
@@ -278,7 +278,7 @@ export default function DashboardPage() {
                                 <Line
                                     type='monotone'
                                     dataKey='staff'
-                                    stroke='#10b981'
+                                    stroke='var(--success)'
                                     strokeWidth={2}
                                     dot={false}
                                 />

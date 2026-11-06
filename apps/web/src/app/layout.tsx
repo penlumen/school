@@ -1,10 +1,10 @@
 import './globals.css';
 import type {Metadata} from 'next';
 import {Toaster} from '@/components/ui/sonner';
-import {Geist, Geist_Mono} from 'next/font/google';
+import {DM_Sans, Geist_Mono} from 'next/font/google';
 
-const geistSans = Geist({
-    variable: '--font-geist-sans',
+const dmSans = DM_Sans({
+    variable: '--font-dm-sans',
     subsets: ['latin'],
 });
 
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
 export default function RootLayout({children}: { children: React.ReactNode }) {
     return (
         <html lang="en" suppressHydrationWarning>
-            <body className={`${geistSans.variable} ${geistMono.variable}`}>
+            <body className={`${dmSans.variable} ${geistMono.variable}`}>
                 <main>{children}</main>
                 <Toaster/>
             </body>

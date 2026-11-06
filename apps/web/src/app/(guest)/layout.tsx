@@ -1,15 +1,17 @@
 'use client';
 
 import type React from 'react';
-import { redirect } from 'next/navigation';
 import GuestNavFooter from '@/components/guest/guest-nav-footer';
+import {SiteProvider} from '@/hooks/site';
 
 export default function GuestLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  redirect('/login');
-
-  return <GuestNavFooter>{children}</GuestNavFooter>;
+  return (
+    <SiteProvider>
+      <GuestNavFooter>{children}</GuestNavFooter>
+    </SiteProvider>
+  );
 }

@@ -12,9 +12,19 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { StorageEntity, StorageService } from './storage.service.js';
+import {
+  SiteAssetEntity,
+  StorageEntity,
+  StorageService,
+} from './storage.service.js';
 
 const ALLOWED_ENTITIES: StorageEntity[] = ['student', 'staff', 'parent'];
+const SITE_ENTITIES: SiteAssetEntity[] = [
+  'branch',
+  'school',
+  'gallery',
+  'facility',
+];
 const MAX_SIZE_BYTES = 5 * 1024 * 1024;
 
 @Controller('storage')
@@ -28,7 +38,7 @@ export class StorageController {
   @UseInterceptors(FileInterceptor('file'))
   async upload(
     @UploadedFile() file: Express.Multer.File,
-    @Query('entity') entity: StorageEntity,
+    @Query('entity') entity: StorageEntity | SiteAssetEntity,
     @Query('uuid') uuid: string,
     @Headers('x-branch-session') branchUuid: string,
     @CurrentUser() user: DecodedUser,
@@ -40,7 +50,8 @@ export class StorageController {
         message: 'File is required',
       });
     }
-    if (!ALLOWED_ENTITIES.includes(entity)) {
+    const isSiteAsset = SITE_ENTITIES.includes(entity as SiteAssetEntity);
+    if (!isSiteAsset && !ALLOWED_ENTITIES.includes(entity as StorageEntity)) {
       throw new BadRequestException({
         status: 400,
         success: false,
@@ -67,6 +78,33 @@ export class StorageController {
         success: false,
         message: 'Image must be under 5MB',
       });
+    }
+
+    if (isSiteAsset) {
+      if (!['ROOT', 'ADMIN'].includes(user.role)) {
+        throw new BadRequestException({
+          status: 400,
+          success: false,
+          message: 'Unauthorized',
+        });
+      }
+      const ownerUuid = await this.siteAssetOwner(
+        entity as SiteAssetEntity,
+        uuid,
+        user.school_uuid,
+      );
+      const uploaded = await this.storageService.uploadSiteAsset(
+        file.buffer,
+        user.school_uuid,
+        entity as SiteAssetEntity,
+        ownerUuid,
+      );
+      return {
+        status: 201,
+        success: true,
+        message: 'File uploaded successfully',
+        data: uploaded,
+      };
     }
 
     const branch = await this.prisma.branch.findFirst({
@@ -114,7 +152,7 @@ export class StorageController {
       file.buffer,
       user.school_uuid,
       branchUuid,
-      entity,
+      entity as StorageEntity,
       uuid,
     );
 
@@ -124,5 +162,40 @@ export class StorageController {
       message: 'File uploaded successfully',
       data: uploaded,
     };
+  }
+
+  /**
+   * Branch logos must belong to the user's school; the school logo is always
+   * keyed by the school itself. Gallery and facility photos are uploaded
+   * before their record exists, so the client supplies a fresh uuid that the
+   * record is then created with.
+   */
+  private async siteAssetOwner(
+    entity: SiteAssetEntity,
+    uuid: string,
+    schoolUuid: string,
+  ): Promise<string> {
+    if (entity === 'school') return schoolUuid;
+    // The uuid becomes part of the S3 key, so only accept a plain uuid.
+    if (!/^[0-9a-f-]{36}$/i.test(uuid)) {
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Invalid uuid',
+      });
+    }
+    if (entity === 'branch') {
+      const branch = await this.prisma.branch.findFirst({
+        where: { uuid, school_uuid: schoolUuid },
+      });
+      if (!branch) {
+        throw new BadRequestException({
+          status: 400,
+          success: false,
+          message: 'Invalid branch',
+        });
+      }
+    }
+    return uuid;
   }
 }

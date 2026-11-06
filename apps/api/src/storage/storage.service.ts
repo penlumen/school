@@ -11,6 +11,7 @@ import { Upload } from '@aws-sdk/lib-storage';
 import sharp from 'sharp';
 
 export type StorageEntity = 'staff' | 'student' | 'parent';
+export type SiteAssetEntity = 'branch' | 'school' | 'gallery' | 'facility';
 
 export interface UploadedFile {
   key: string;
@@ -89,6 +90,61 @@ export class StorageService {
 
     this.logger.log(`Uploaded/replaced ${key} (${webpBuffer.length} bytes)`);
     return { key, url: `${this.publicBaseUrl}/${key}` };
+  }
+
+  /**
+   * Website assets (logos, gallery and facility photos). Like avatars, each
+   * record owns one deterministic key so replacing an image overwrites it.
+   */
+  siteAssetKey(
+    schoolUuid: string,
+    entity: SiteAssetEntity,
+    entityUuid: string,
+  ): string {
+    switch (entity) {
+      case 'branch':
+        return `storage/${schoolUuid}/${entityUuid}/logo.webp`;
+      case 'school':
+        return `storage/${schoolUuid}/website/logo.webp`;
+      case 'gallery':
+        return `storage/${schoolUuid}/website/gallery/${entityUuid}.webp`;
+      case 'facility':
+        return `storage/${schoolUuid}/website/facilities/${entityUuid}.webp`;
+    }
+  }
+
+  async uploadSiteAsset(
+    buffer: Buffer,
+    schoolUuid: string,
+    entity: SiteAssetEntity,
+    entityUuid: string,
+  ): Promise<UploadedFile> {
+    const isPhoto = entity === 'gallery' || entity === 'facility';
+    const webpBuffer = await sharp(buffer)
+      .rotate()
+      .resize({ width: isPhoto ? 1600 : 512, withoutEnlargement: true })
+      .webp({ quality: isPhoto ? 82 : 90 })
+      .toBuffer();
+
+    const key = this.siteAssetKey(schoolUuid, entity, entityUuid);
+
+    await new Upload({
+      client: this.client,
+      params: {
+        Bucket: this.bucket,
+        Key: key,
+        Body: webpBuffer,
+        ContentType: 'image/webp',
+        CacheControl: 'no-cache, max-age=0, must-revalidate',
+        StorageClass: 'STANDARD' as StorageClass,
+        ACL: 'public-read' as ObjectCannedACL,
+      },
+    }).done();
+
+    this.logger.log(`Uploaded/replaced ${key} (${webpBuffer.length} bytes)`);
+    // The key never changes, so a version param stops browsers and CDNs
+    // from showing the previous image after a replacement.
+    return { key, url: `${this.publicBaseUrl}/${key}?v=${Date.now()}` };
   }
 
   async delete(key: string): Promise<void> {

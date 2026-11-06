@@ -104,12 +104,66 @@ model School {
   state      String?
   country    String?
   zip        String?
+
+  // Public website content, edited from School Settings.
+  subtext    String?
+  about      String?
+  mission    String?
+  vision     String?
+  features   Json?
+  values     Json?
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  users    User[]
-  branches Branch[]
-  access   BranchAccess[]
+  users              User[]
+  branches           Branch[]
+  access             BranchAccess[]
+  facilities         SchoolFacility[]
+  gallery_categories GalleryCategory[]
+  gallery_images     GalleryImage[]
+}
+
+// ========== WEBSITE ==========
+model SchoolFacility {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(uuid())
+  school_uuid String
+  title       String
+  description String?
+  image       String?
+  position    Int      @default(0)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  school School @relation(fields: [school_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+}
+
+model GalleryCategory {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(uuid())
+  school_uuid String
+  name        String
+  position    Int      @default(0)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  school School         @relation(fields: [school_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  images GalleryImage[]
+}
+
+model GalleryImage {
+  id            Int      @id @default(autoincrement())
+  uuid          String   @unique @default(uuid())
+  school_uuid   String
+  category_uuid String?
+  title         String
+  image         String
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  school   School           @relation(fields: [school_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  category GalleryCategory? @relation(fields: [category_uuid], references: [uuid], onUpdate: Cascade, onDelete: SetNull)
 }
 
 // ========== BRANCH ==========
@@ -136,6 +190,8 @@ model Branch {
   staff_attendance   StaffAttendance[]
   events   Event[]
   notifications Notification[]
+  billing_templates BillingTemplate[]
+  invoices Invoice[]
   school   School          @relation(fields: [school_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
 }
 
@@ -201,6 +257,7 @@ model Student {
   class   Class    @relation(fields: [class_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
   results Result[]
   attendance StudentAttendance[]
+  invoices Invoice[]
 
   @@unique([branch_uuid, reg_number])
 }
@@ -359,6 +416,7 @@ model Event {
   location        String?
   tag_all_staff   Boolean  @default(false)
   tag_all_parents Boolean  @default(false)
+  is_public       Boolean  @default(false)
   created_by_uuid String?
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
@@ -408,4 +466,95 @@ model DeviceToken {
   created_at DateTime @default(now())
 
   user User @relation(fields: [user_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+}
+
+// ========== BILLING ==========
+enum BillingTemplateStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum InvoiceStatus {
+  PENDING
+  PART_PAYMENT
+  FULL_PAYMENT
+  CANCELLED
+  REFUNDED
+}
+
+model BillingTemplate {
+  id          Int                   @id @default(autoincrement())
+  uuid        String                @unique @default(uuid())
+  branch_uuid String
+  name        String
+  description String?
+  status      BillingTemplateStatus @default(ACTIVE)
+  created_at  DateTime              @default(now())
+  updated_at  DateTime              @updatedAt
+
+  branch   Branch                @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  items    BillingTemplateItem[]
+  invoices Invoice[]
+}
+
+model BillingTemplateItem {
+  id            Int      @id @default(autoincrement())
+  uuid          String   @unique @default(uuid())
+  template_uuid String
+  description   String
+  amount        Decimal  @db.Decimal(12, 2)
+  position      Int      @default(0)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  template BillingTemplate @relation(fields: [template_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+}
+
+model Invoice {
+  id            Int           @id @default(autoincrement())
+  uuid          String        @unique @default(uuid())
+  number        String        @unique
+  branch_uuid   String
+  student_uuid  String
+  template_uuid String?
+  status        InvoiceStatus @default(PENDING)
+  total         Decimal       @db.Decimal(12, 2)
+  paid          Decimal       @default(0) @db.Decimal(12, 2)
+  issued_at     DateTime      @default(now()) @db.Date
+  due_at        DateTime?     @db.Date
+  note          String?
+  created_at    DateTime      @default(now())
+  updated_at    DateTime      @updatedAt
+
+  branch   Branch           @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  student  Student          @relation(fields: [student_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  template BillingTemplate? @relation(fields: [template_uuid], references: [uuid], onUpdate: Cascade, onDelete: SetNull)
+  items    InvoiceItem[]
+  history  InvoiceStatusChange[]
+}
+
+// Line items are copied from the template, so later template edits never change issued invoices.
+model InvoiceItem {
+  id           Int     @id @default(autoincrement())
+  uuid         String  @unique @default(uuid())
+  invoice_uuid String
+  description  String
+  quantity     Int     @default(1)
+  amount       Decimal @db.Decimal(12, 2)
+  position     Int     @default(0)
+
+  invoice Invoice @relation(fields: [invoice_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+}
+
+model InvoiceStatusChange {
+  id              Int           @id @default(autoincrement())
+  uuid            String        @unique @default(uuid())
+  invoice_uuid    String
+  status          InvoiceStatus
+  amount          Decimal       @default(0) @db.Decimal(12, 2)
+  description     String?
+  created_by_uuid String?
+  created_at      DateTime      @default(now())
+
+  invoice Invoice @relation(fields: [invoice_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
 }
