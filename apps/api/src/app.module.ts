@@ -19,6 +19,7 @@ import { CalendarModule } from './calendar/calendar.module.js';
 import { AttendanceModule } from './attendance/attendance.module.js';
 import { EventsModule } from './events/events.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
+import { SchoolModule } from './school/school.module.js';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { NotificationsModule } from './notifications/notifications.module.js';
     CalendarModule,
     AttendanceModule,
     EventsModule,
+    SchoolModule,
   ],
   controllers: [AppController],
   providers: [

@@ -67,6 +67,7 @@ export const useBranch = () => {
         email: branchData.email,
         contact: branchData.contact,
         address: branchData.address,
+        avatar: branchData.avatar,
       }
     );
     const data = response.data;

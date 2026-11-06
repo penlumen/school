@@ -104,12 +104,66 @@ model School {
   state      String?
   country    String?
   zip        String?
+
+  // Public website content, edited from School Settings.
+  subtext    String?
+  about      String?
+  mission    String?
+  vision     String?
+  features   Json?
+  values     Json?
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  users    User[]
-  branches Branch[]
-  access   BranchAccess[]
+  users              User[]
+  branches           Branch[]
+  access             BranchAccess[]
+  facilities         SchoolFacility[]
+  gallery_categories GalleryCategory[]
+  gallery_images     GalleryImage[]
+}
+
+// ========== WEBSITE ==========
+model SchoolFacility {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(uuid())
+  school_uuid String
+  title       String
+  description String?
+  image       String?
+  position    Int      @default(0)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  school School @relation(fields: [school_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+}
+
+model GalleryCategory {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(uuid())
+  school_uuid String
+  name        String
+  position    Int      @default(0)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  school School         @relation(fields: [school_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  images GalleryImage[]
+}
+
+model GalleryImage {
+  id            Int      @id @default(autoincrement())
+  uuid          String   @unique @default(uuid())
+  school_uuid   String
+  category_uuid String?
+  title         String
+  image         String
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  school   School           @relation(fields: [school_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  category GalleryCategory? @relation(fields: [category_uuid], references: [uuid], onUpdate: Cascade, onDelete: SetNull)
 }
 
 // ========== BRANCH ==========
@@ -359,6 +413,7 @@ model Event {
   location        String?
   tag_all_staff   Boolean  @default(false)
   tag_all_parents Boolean  @default(false)
+  is_public       Boolean  @default(false)
   created_by_uuid String?
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt

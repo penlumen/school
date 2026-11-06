@@ -1,6 +1,6 @@
 import {axiosInstance} from '@/lib/axios';
 
-export type StorageEntity = 'student' | 'staff' | 'parent';
+export type StorageEntity = 'student' | 'staff' | 'parent' | 'branch' | 'school' | 'gallery' | 'facility';
 
 export const useStorage = () => {
     const upload = async (file: File, entity: StorageEntity, uuid: string) => {

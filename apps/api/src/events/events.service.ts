@@ -135,6 +135,7 @@ export class EventsService {
         location,
         tag_all_staff: !!tags.tag_all_staff,
         tag_all_parents: !!tags.tag_all_parents,
+        is_public: !!body.is_public,
         created_by_uuid: decoded.uuid,
         tags: {
           create: [
@@ -196,6 +197,7 @@ export class EventsService {
           location,
           tag_all_staff: !!tags.tag_all_staff,
           tag_all_parents: !!tags.tag_all_parents,
+          is_public: !!body.is_public,
           tags: {
             create: [
               ...(tags.staff_uuids || []).map((user_uuid) => ({

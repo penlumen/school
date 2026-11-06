@@ -211,14 +211,14 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
         {
           title: 'Branch Settings',
           icon: SlidersHorizontal,
-          href: '/staff/account-settings',
-          description: 'Settings for the branch you currently have selected - coming soon.',
+          href: '/staff/branch-settings',
+          description: 'Details, logo and grade scale for the branch you currently have selected.',
         },
         {
           title: 'School Settings',
           icon: Settings,
           href: '/staff/school-settings',
-          description: 'School-wide settings across all branches - coming soon.',
+          description: 'School-wide details and the content of your public website: home page, about page and gallery.',
         },
       ],
     },
