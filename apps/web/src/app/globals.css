@@ -25,6 +25,9 @@
     --success: #0f973d;
     --success-foreground: #0e8938;
     --success-muted: #e7f5ec;
+    --warning: #dd900d;
+    --warning-foreground: #ad6f07;
+    --warning-muted: #fef6e7;
     --border: #e7e7e7;
     --input: #e7e7e7;
     --ring: #003884;
@@ -67,6 +70,9 @@
     --success: #34b864;
     --success-foreground: #5fd38a;
     --success-muted: #143322;
+    --warning: #f2b23b;
+    --warning-foreground: #f6c86f;
+    --warning-muted: #3a2a0c;
     --border: #2a3145;
     --input: #2a3145;
     --ring: #6f9be0;
@@ -109,6 +115,9 @@
     --color-success: var(--success);
     --color-success-foreground: var(--success-foreground);
     --color-success-muted: var(--success-muted);
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-warning-muted: var(--warning-muted);
     --color-border: var(--border);
     --color-input: var(--input);
     --color-ring: var(--ring);
@@ -162,5 +171,20 @@
     }
     .rich-text li {
         @apply mb-1;
+    }
+}
+
+/* Invoices print on a single A4 page without browser margins. */
+@media print {
+    @page {
+        size: A4;
+        margin: 0;
+    }
+    .invoice-document {
+        height: 297mm;
+        width: 210mm;
+        aspect-ratio: auto;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 }

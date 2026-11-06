@@ -192,16 +192,16 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
       label: 'Billings',
       items: [
         {
-          title: 'Templates',
+          title: 'Billing Templates',
           icon: FileText,
           href: '/staff/templates',
-          description: 'Billing templates for invoices - coming soon.',
+          description: 'Reusable fee lists, such as school fees for a group of classes, used to issue invoices.',
         },
         {
           title: 'Invoices',
           icon: CreditCard,
           href: '/staff/invoices',
-          description: 'Manage invoices sent to parents - coming soon.',
+          description: 'Issue invoices to parents from a template, record payments and print invoices.',
         },
       ],
     },
