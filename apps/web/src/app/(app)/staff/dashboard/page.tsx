@@ -47,12 +47,20 @@ interface PerformancePoint {
 const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = [CURRENT_YEAR - 1, CURRENT_YEAR, CURRENT_YEAR + 1];
 
+function getGreeting() {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 16) return 'Good afternoon';
+    if (hour < 23) return 'Good evening';
+    return 'Good day';
+}
+
 function TrendBadge({value}: { value: number }) {
     const positive = value >= 0;
     return (
         <span
             className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-                positive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+                positive ? 'bg-success-muted text-success-foreground' : 'bg-destructive-muted text-destructive'
             }`}
         >
             {positive ? '↑' : '↓'} {Math.abs(value)}%
@@ -172,7 +180,7 @@ export default function DashboardPage() {
     return (
         <div className='space-y-6'>
             <div>
-                <h1 className='text-2xl font-bold tracking-tight'>Good morning, {name || 'there'}</h1>
+                <h1 className='text-2xl font-bold tracking-tight'>{getGreeting()}, {name || 'there'}</h1>
                 <p className='text-muted-foreground text-sm'>
                     Here&apos;s a quick summary of how your school is performing
                 </p>
@@ -228,7 +236,7 @@ export default function DashboardPage() {
                                     Students
                                 </span>
                                 <span className='flex items-center gap-1.5'>
-                                    <span className='h-2 w-2 rounded-full bg-emerald-500'/>
+                                    <span className='h-2 w-2 rounded-full bg-success'/>
                                     Staff
                                 </span>
                             </div>
@@ -270,7 +278,7 @@ export default function DashboardPage() {
                                 <Line
                                     type='monotone'
                                     dataKey='staff'
-                                    stroke='#10b981'
+                                    stroke='var(--success)'
                                     strokeWidth={2}
                                     dot={false}
                                 />

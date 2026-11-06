@@ -1,146 +1,181 @@
-"use client"
+'use client';
 
-import Link from "next/link"
-import {ReactNode, useState} from "react"
-import {Mail, MapPin, Menu, Phone, X} from "lucide-react"
+import Link from 'next/link';
+import {usePathname} from 'next/navigation';
+import {type ReactNode, useEffect, useState} from 'react';
+import {ArrowRight, Mail, MapPin, Menu, Phone, X} from 'lucide-react';
 
-const APP_NAME = process.env.NEXT_PUBLIC_APP_FULL_NAME || 'School';
-const APP_LOGO = process.env.NEXT_PUBLIC_APP_LOGO || '/placeholder.svg';
-const APP_ADDRESS = process.env.NEXT_PUBLIC_APP_ADDRESS || 'School';
-const APP_EMAIL = process.env.NEXT_PUBLIC_APP_EMAIL || 'School';
-const APP_PHONE = process.env.NEXT_PUBLIC_APP_PHONE || 'School';
+import {useSite} from '@/hooks/site';
+import {cn} from '@/lib/utils';
+import {Container, SchoolMark} from '@/components/guest/site-ui';
+
+const LINKS = [
+    {href: '/', label: 'Home'},
+    {href: '/about', label: 'About'},
+    {href: '/events', label: 'Events'},
+    {href: '/gallery', label: 'Gallery'},
+];
 
 export default function GuestNavFooter({children}: { children: ReactNode }) {
-    const [isOpen, setIsOpen] = useState(false)
+    const {site, fallbackName} = useSite();
+    const pathname = usePathname();
+    const [open, setOpen] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
+
+    const name = site?.name || fallbackName;
+    const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
+
+    useEffect(() => {
+        const onScroll = () => setScrolled(window.scrollY > 8);
+        onScroll();
+        window.addEventListener('scroll', onScroll, {passive: true});
+        return () => window.removeEventListener('scroll', onScroll);
+    }, []);
+
+    useEffect(() => setOpen(false), [pathname]);
+
+    // The root layout's title comes from env; show the school's real name once loaded.
+    useEffect(() => {
+        if (site?.name) document.title = site.name;
+    }, [site?.name, pathname]);
+
+    const branches = site?.branches || [];
+    const phone = site?.contact || branches[0]?.contact;
+    const email = site?.email || branches[0]?.email;
+    const address = site?.address || branches[0]?.address;
 
     return (
-        <>
-            <nav className="sticky top-0 z-50 bg-white shadow-sm border-b border-border">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-16">
-                        {/* Logo */}
-                        <Link href="/" className="flex items-center gap-3">
-                            <div className="w-12 h-12 relative">
-                                <img
-                                    src={APP_LOGO}
-                                    alt={`${APP_NAME} Logo`}
-                                    width={48}
-                                    height={48}
-                                    className="w-full h-full object-contain"
-                                    onError={(e) => {
-                                        e.currentTarget.src = "/placeholder.svg"
-                                    }}
-                                />
-                            </div>
-                            <span className="hidden md:inline text-lg font-bold text-primary">{APP_NAME}</span>
-                        </Link>
+        <div className='flex min-h-screen flex-col bg-background'>
+            <header
+                className={cn(
+                    'sticky top-0 z-50 border-b transition-colors',
+                    scrolled || open ? 'border-border bg-background/90 backdrop-blur-md' : 'border-transparent bg-background',
+                )}
+            >
+                <Container className='flex h-18 items-center justify-between gap-6 py-3'>
+                    <Link href='/' className='flex min-w-0 items-center gap-3'>
+                        <SchoolMark name={name} logo={site?.avatar} className='h-10 w-10 text-sm'/>
+                        <span className='truncate text-base font-semibold tracking-[-0.02em] text-foreground'>{name}</span>
+                    </Link>
 
-                        {/* Desktop Menu */}
-                        <div className="hidden md:flex items-center gap-8">
-                            <Link href="/" className="text-foreground hover:text-primary transition-colors">
-                                Home
-                            </Link>
-                            <Link href="/about" className="text-foreground hover:text-primary transition-colors">
-                                About
-                            </Link>
-                            <Link href="/events" className="text-foreground hover:text-primary transition-colors">
-                                Events
-                            </Link>
-                            <Link href="/gallery" className="text-foreground hover:text-primary transition-colors">
-                                Gallery
-                            </Link>
+                    <nav aria-label='Main' className='hidden items-center gap-1 md:flex'>
+                        {LINKS.map((link) => (
                             <Link
-                                href="/login"
-                                className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
+                                key={link.href}
+                                href={link.href}
+                                aria-current={isActive(link.href) ? 'page' : undefined}
+                                className={cn(
+                                    'rounded-full px-4 py-2 text-[15px] transition-colors',
+                                    isActive(link.href)
+                                        ? 'bg-accent font-medium text-accent-foreground'
+                                        : 'text-muted-foreground hover:text-foreground',
+                                )}
                             >
-                                Login
+                                {link.label}
                             </Link>
-                        </div>
+                        ))}
+                    </nav>
 
-                        {/* Mobile Menu Button */}
-                        <button onClick={() => setIsOpen(!isOpen)} className="md:hidden p-2 hover:bg-muted rounded-md">
-                            {isOpen ? <X size={24}/> : <Menu size={24}/>}
+                    <div className='flex items-center gap-2'>
+                        <Link
+                            href='/login'
+                            className='hidden rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 sm:inline-flex'
+                        >
+                            Portal login
+                        </Link>
+                        <button
+                            type='button'
+                            aria-label={open ? 'Close menu' : 'Open menu'}
+                            aria-expanded={open}
+                            onClick={() => setOpen(!open)}
+                            className='rounded-full p-2 hover:bg-muted md:hidden'
+                        >
+                            {open ? <X className='h-6 w-6'/> : <Menu className='h-6 w-6'/>}
                         </button>
                     </div>
+                </Container>
 
-                    {/* Mobile Menu */}
-                    {isOpen && (<div className="md:hidden pb-4 space-y-2">
-                        <Link href="/" className="block px-4 py-2 hover:bg-muted rounded-md">
-                            Home
+                {open && (
+                    <Container className='space-y-1 pb-5 md:hidden'>
+                        {LINKS.map((link) => (
+                            <Link
+                                key={link.href}
+                                href={link.href}
+                                className={cn(
+                                    'block rounded-xl px-4 py-3 text-base',
+                                    isActive(link.href) ? 'bg-accent font-medium text-accent-foreground' : 'hover:bg-muted',
+                                )}
+                            >
+                                {link.label}
+                            </Link>
+                        ))}
+                        <Link href='/login' className='mt-2 block rounded-xl bg-primary px-4 py-3 text-center font-medium text-primary-foreground'>
+                            Portal login
                         </Link>
-                        <Link href="/about" className="block px-4 py-2 hover:bg-muted rounded-md">
-                            About
-                        </Link>
-                        <Link href="/events" className="block px-4 py-2 hover:bg-muted rounded-md">
-                            Events
-                        </Link>
-                        <Link href="/gallery" className="block px-4 py-2 hover:bg-muted rounded-md">
-                            Gallery
-                        </Link>
-                        <Link href="/login" className="block px-4 py-2 bg-primary text-primary-foreground rounded-md">
-                            Login
-                        </Link>
-                    </div>)}
-                </div>
-            </nav>
-            <div>{children}</div>
-            <footer className="bg-foreground text-white py-12 px-4">
-                <div className="max-w-6xl mx-auto">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-                        {/* Contact Info */}
-                        <div id="contact" className="space-y-4">
-                            <h3 className="text-lg font-semibold">Contact</h3>
-                            <div className="space-y-3 text-gray-300">
-                                <a href={`tel:${APP_PHONE}`} className="flex items-center gap-3">
-                                    <Phone size={18}/>
-                                    <span>{APP_PHONE}</span>
-                                </a>
-                                <a href={`mailto:${APP_EMAIL}`} className="flex items-center gap-3">
-                                    <Mail size={18}/>
-                                    <span>{APP_EMAIL}</span>
-                                </a>
-                                <div className="flex items-center gap-3">
-                                    <MapPin size={18}/>
-                                    <span>{APP_ADDRESS}</span>
-                                </div>
-                            </div>
-                        </div>
+                    </Container>
+                )}
+            </header>
 
-                        {/* Quick Links */}
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-semibold">Quick Links</h3>
-                            <div className="space-y-2 text-gray-300">
-                                <Link href="/about" className="hover:text-white transition-colors block">
-                                    About Us
-                                </Link>
-                                <Link href="/events" className="hover:text-white transition-colors block">
-                                    Events
-                                </Link>
-                                <Link href="/gallery" className="hover:text-white transition-colors block">
-                                    Gallery
-                                </Link>
-                                <Link href="/login" className="hover:text-white transition-colors block">
-                                    Login
-                                </Link>
-                            </div>
-                        </div>
+            <main className='flex-1'>{children}</main>
 
-                        {/* About */}
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-semibold">About</h3>
-                            <p className="text-gray-300 text-sm">
-                                {APP_NAME} is dedicated to inspiring excellence in education and shaping
-                                future leaders.
-                            </p>
+            <footer className='bg-navy text-white'>
+                <Container className='grid gap-12 py-16 md:grid-cols-[1.4fr_1fr_1fr]'>
+                    <div className='space-y-5'>
+                        <div className='flex items-center gap-3'>
+                            <SchoolMark name={name} logo={site?.avatar} className='h-11 w-11 bg-white/10 text-sm'/>
+                            <span className='text-lg font-semibold'>{name}</span>
                         </div>
+                        {site?.subtext && <p className='max-w-sm leading-relaxed text-white/70'>{site.subtext}</p>}
+                        <Link href='/login' className='inline-flex items-center gap-2 text-sm font-medium text-white hover:underline'>
+                            Parent & staff portal <ArrowRight className='h-4 w-4'/>
+                        </Link>
                     </div>
 
-                    <div className="border-t border-gray-700 pt-8 text-center text-gray-400">
-                        <p>&copy; 2025 {APP_NAME}. All rights reserved.</p>
+                    <div className='space-y-4'>
+                        <h3 className='text-sm font-medium uppercase tracking-[0.12em] text-white/50'>Explore</h3>
+                        <ul className='space-y-2.5'>
+                            {LINKS.map((link) => (
+                                <li key={link.href}>
+                                    <Link href={link.href} className='text-white/80 transition-colors hover:text-white'>
+                                        {link.label}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
+
+                    <div className='space-y-4'>
+                        <h3 className='text-sm font-medium uppercase tracking-[0.12em] text-white/50'>Get in touch</h3>
+                        <ul className='space-y-3 text-white/80'>
+                            {phone && (
+                                <li>
+                                    <a href={`tel:${phone.replace(/\s+/g, '')}`} className='flex items-start gap-3 hover:text-white'>
+                                        <Phone className='mt-0.5 h-4 w-4 flex-shrink-0'/> {phone}
+                                    </a>
+                                </li>
+                            )}
+                            {email && (
+                                <li>
+                                    <a href={`mailto:${email}`} className='flex items-start gap-3 break-all hover:text-white'>
+                                        <Mail className='mt-0.5 h-4 w-4 flex-shrink-0'/> {email}
+                                    </a>
+                                </li>
+                            )}
+                            {address && (
+                                <li className='flex items-start gap-3'>
+                                    <MapPin className='mt-0.5 h-4 w-4 flex-shrink-0'/> {address}
+                                </li>
+                            )}
+                        </ul>
+                    </div>
+                </Container>
+                <div className='border-t border-white/10'>
+                    <Container className='flex flex-col gap-2 py-6 text-sm text-white/50 sm:flex-row sm:justify-between'>
+                        <p>&copy; {new Date().getFullYear()} {name}. All rights reserved.</p>
+                        <p>Powered by Penlumen</p>
+                    </Container>
                 </div>
             </footer>
-        </>
-    )
+        </div>
+    );
 }
-

@@ -101,6 +101,17 @@ export const useUser = () => {
     }
   };
 
+  const attach = async (uuid: string) => {
+    const response = await axiosInstance.post(`/api/v1/user/attach/${uuid}`);
+    const data = response.data;
+
+    return {
+      success: !!data.success,
+      message: data.message || 'Something went wrong',
+      data: data.data,
+    };
+  };
+
   const remove = async (uuid: string) => {
     const response = await axiosInstance.delete(`/api/v1/user/delete/${uuid}`);
 
@@ -115,6 +126,7 @@ export const useUser = () => {
     index,
     create,
     update,
+    attach,
     remove,
   };
 };

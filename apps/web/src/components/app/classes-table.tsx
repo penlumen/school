@@ -195,7 +195,7 @@ export function ClassesTable({classes, teacherNames, onEdit, fetchData}: Classes
                                                 <span className='text-xs'>{count} / {capacity}</span>
                                                 <div className='h-1.5 w-24 rounded-full bg-muted overflow-hidden'>
                                                     <div
-                                                        className={`h-full rounded-full ${atCapacity ? 'bg-destructive' : 'bg-emerald-500'}`}
+                                                        className={`h-full rounded-full ${atCapacity ? 'bg-destructive' : 'bg-success'}`}
                                                         style={{width: `${percent}%`}}
                                                     />
                                                 </div>

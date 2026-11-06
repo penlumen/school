@@ -1,74 +1,175 @@
-'use client'
-import React from "react";
+'use client';
+
+import {MapPin, Phone} from 'lucide-react';
+
+import {useSite} from '@/hooks/site';
+import {Container, EmptyState, Eyebrow, PageHero, Reveal, SectionHeading} from '@/components/guest/site-ui';
+import {cn} from '@/lib/utils';
 
 export default function AboutPage() {
+    const {site, loading, fallbackName} = useSite();
+    const name = site?.name || fallbackName;
+    const values = (site?.values || []).filter((v) => v.title);
+    const facilities = site?.facilities || [];
+    const branches = site?.branches || [];
+    const sidePhoto = site?.gallery_images[0]?.image;
+    const hasStory = !!(site?.about || site?.mission || site?.vision);
+
     return (
-        <div className="min-h-screen">
+        <>
+            <PageHero eyebrow='About us' title={`About ${name}`} description={site?.subtext}/>
 
-            <section id="about" className="py-20 px-4 bg-primary/10">
-                <div className="max-w-4xl mx-auto">
-                    <h1 className="text-5xl font-bold text-primary mb-6">About Us</h1>
-                    <p className="text-xl text-muted-foreground">
-                        Discover the mission, vision, and values that guide Demo School
-                    </p>
-                </div>
+            {/* Story */}
+            <section className='py-20 sm:py-28'>
+                <Container className='grid gap-12 lg:grid-cols-[1.3fr_1fr] lg:gap-20'>
+                    <Reveal>
+                        <Eyebrow className='mb-4'>Our story</Eyebrow>
+                        {site?.about ? (
+                            <div
+                                className='rich-text text-lg leading-relaxed text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_strong]:text-foreground'
+                                // Sanitised to a small set of formatting tags by the API before saving.
+                                dangerouslySetInnerHTML={{__html: site.about}}
+                            />
+                        ) : (
+                            !loading && <p className='text-lg text-muted-foreground'>Our story is coming soon.</p>
+                        )}
+                    </Reveal>
+                    {sidePhoto && (
+                        <Reveal delay={0.1}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={sidePhoto} alt='' className='aspect-[4/5] w-full rounded-3xl object-cover'/>
+                        </Reveal>
+                    )}
+                </Container>
             </section>
 
-            <section className="py-20 px-4">
-                <div className="max-w-4xl mx-auto space-y-12">
-                    <div>
-                        <h2 className="text-3xl font-bold text-foreground mb-4">Our Mission</h2>
-                        <p className="text-lg text-muted-foreground leading-relaxed">
-                            At Demo School, our mission is to provide a world-class education that
-                            empowers students
-                            to become confident, capable, and compassionate leaders. We believe in nurturing academic
-                            excellence,
-                            critical thinking, and character development in a supportive and inclusive environment.
-                        </p>
-                    </div>
+            {/* Mission & vision */}
+            {(site?.mission || site?.vision) && (
+                <section className='pb-20 sm:pb-28'>
+                    <Container className='grid gap-5 md:grid-cols-2'>
+                        {site?.mission && (
+                            <Reveal>
+                                <div className='h-full rounded-3xl bg-primary p-8 text-primary-foreground sm:p-12'>
+                                    <p className='text-sm font-medium uppercase tracking-[0.12em] text-primary-foreground/70'>Our mission</p>
+                                    <div
+                                        className='rich-text mt-5 text-xl leading-relaxed sm:text-2xl'
+                                        dangerouslySetInnerHTML={{__html: site.mission}}
+                                    />
+                                </div>
+                            </Reveal>
+                        )}
+                        {site?.vision && (
+                            <Reveal delay={0.08}>
+                                <div className='h-full rounded-3xl bg-accent p-8 text-accent-foreground sm:p-12'>
+                                    <p className='text-sm font-medium uppercase tracking-[0.12em] text-accent-foreground/70'>Our vision</p>
+                                    <div
+                                        className='rich-text mt-5 text-xl leading-relaxed sm:text-2xl'
+                                        dangerouslySetInnerHTML={{__html: site.vision}}
+                                    />
+                                </div>
+                            </Reveal>
+                        )}
+                    </Container>
+                </section>
+            )}
 
-                    <div>
-                        <h2 className="text-3xl font-bold text-foreground mb-4">Our Vision</h2>
-                        <p className="text-lg text-muted-foreground leading-relaxed">
-                            We envision a community of learners who are curious, innovative, and committed to making a
-                            positive
-                            impact on the world. Our students will be well-rounded individuals equipped with the skills
-                            and
-                            knowledge to thrive in a rapidly changing global society.
-                        </p>
-                    </div>
-
-                    <div>
-                        <h2 className="text-3xl font-bold text-foreground mb-4">Our Values</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {[{
-                                title: "Excellence", desc: "Striving for the highest standards in all we do"
-                            }, {
-                                title: "Integrity", desc: "Acting with honesty and strong moral principles"
-                            }, {
-                                title: "Inclusivity", desc: "Celebrating diversity and welcoming all students"
-                            }, {
-                                title: "Innovation", desc: "Embracing creative thinking and new approaches"
-                            },].map((value, i) => (
-                                <div key={i} className="bg-white rounded-lg p-6 border border-border">
-                                    <h3 className="text-xl font-semibold text-primary mb-2">{value.title}</h3>
-                                    <p className="text-muted-foreground">{value.desc}</p>
-                                </div>))}
+            {/* Values */}
+            {values.length > 0 && (
+                <section className='border-y border-border bg-muted/50 py-20 sm:py-28'>
+                    <Container>
+                        <Reveal>
+                            <SectionHeading eyebrow='What we stand for' title='Our values'/>
+                        </Reveal>
+                        <div className='grid gap-x-10 gap-y-12 sm:grid-cols-2 lg:grid-cols-4'>
+                            {values.map((value, index) => (
+                                <Reveal key={value.title} delay={index * 0.08}>
+                                    <p className='text-sm font-medium text-primary'>{String(index + 1).padStart(2, '0')}</p>
+                                    <div className='my-4 h-px bg-border'/>
+                                    <h3 className='text-xl font-medium text-foreground'>{value.title}</h3>
+                                    <p className='mt-2 leading-relaxed text-muted-foreground'>{value.description}</p>
+                                </Reveal>
+                            ))}
                         </div>
-                    </div>
+                    </Container>
+                </section>
+            )}
 
-                    <div>
-                        <h2 className="text-3xl font-bold text-foreground mb-4">Our Facilities</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {["Modern classrooms with interactive learning technology", "Well-equipped science and computer labs", "Sports facilities and recreation areas", "Library with extensive resources", "Art and music studios", "Cafeteria with nutritious meals",].map((facility, i) => (
-                                <div key={i} className="bg-secondary/10 rounded-lg p-4">
-                                    <p className="font-medium text-foreground">{facility}</p>
-                                </div>))}
+            {/* Facilities */}
+            {facilities.length > 0 && (
+                <section className='py-20 sm:py-28'>
+                    <Container>
+                        <Reveal>
+                            <SectionHeading
+                                eyebrow='Our facilities'
+                                title='Spaces to learn, play and grow'
+                                description='Where our students spend their days.'
+                            />
+                        </Reveal>
+                        <div className='space-y-16 sm:space-y-24'>
+                            {facilities.map((facility, index) => (
+                                <Reveal key={facility.uuid}>
+                                    <div className='grid items-center gap-8 md:grid-cols-2 md:gap-16'>
+                                        <div className={cn(index % 2 === 1 && 'md:order-2')}>
+                                            {facility.image ? (
+                                                // eslint-disable-next-line @next/next/no-img-element
+                                                <img src={facility.image} alt={facility.title} className='aspect-[16/11] w-full rounded-3xl object-cover'/>
+                                            ) : (
+                                                <div className='aspect-[16/11] rounded-3xl bg-accent'/>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className='text-sm font-medium text-primary'>{String(index + 1).padStart(2, '0')}</p>
+                                            <h3 className='mt-3 text-2xl font-semibold tracking-[-0.02em] sm:text-3xl'>{facility.title}</h3>
+                                            {facility.description && (
+                                                <p className='mt-4 text-lg leading-relaxed text-muted-foreground'>{facility.description}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </Reveal>
+                            ))}
                         </div>
-                    </div>
-                </div>
-            </section>
+                    </Container>
+                </section>
+            )}
 
-        </div>
+            {/* Campuses */}
+            {branches.length > 0 && (
+                <section className='pb-20 sm:pb-28'>
+                    <Container>
+                        <Reveal>
+                            <SectionHeading
+                                eyebrow='Find us'
+                                title={branches.length > 1 ? 'Our campuses' : 'Our campus'}
+                            />
+                        </Reveal>
+                        <div className='grid gap-5 sm:grid-cols-2 lg:grid-cols-3'>
+                            {branches.map((branch, index) => (
+                                <Reveal key={branch.uuid} delay={index * 0.06}>
+                                    <div className='h-full rounded-2xl border border-border p-6'>
+                                        <h3 className='text-lg font-medium'>{branch.name}</h3>
+                                        <div className='mt-4 space-y-2 text-muted-foreground'>
+                                            {branch.address && (
+                                                <p className='flex items-start gap-2'><MapPin className='mt-1 h-4 w-4 flex-shrink-0'/>{branch.address}</p>
+                                            )}
+                                            {branch.contact && (
+                                                <a href={`tel:${branch.contact.replace(/\s+/g, '')}`} className='flex items-start gap-2 hover:text-foreground'>
+                                                    <Phone className='mt-1 h-4 w-4 flex-shrink-0'/>{branch.contact}
+                                                </a>
+                                            )}
+                                        </div>
+                                    </div>
+                                </Reveal>
+                            ))}
+                        </div>
+                    </Container>
+                </section>
+            )}
+
+            {!loading && !hasStory && values.length === 0 && facilities.length === 0 && (
+                <Container className='pb-24'>
+                    <EmptyState title='More about us soon' description='We are putting the finishing touches to this page.'/>
+                </Container>
+            )}
+        </>
     );
 }

@@ -33,6 +33,16 @@ export class StaffAttendanceController {
     return this.service.faces(branchUuid, user);
   }
 
+  @Get('history/:staff_uuid')
+  history(
+    @Param('staff_uuid') staffUuid: string,
+    @Headers('x-branch-session') branchUuid: string,
+    @Query('month') month: string,
+    @CurrentUser() user: DecodedUser,
+  ) {
+    return this.service.history(staffUuid, branchUuid, month, user);
+  }
+
   @Post(':staff_uuid')
   mark(
     @Param('staff_uuid') staffUuid: string,

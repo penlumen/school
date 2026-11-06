@@ -9,6 +9,7 @@ import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
 import {Textarea} from '@/components/ui/textarea';
+import {Checkbox} from '@/components/ui/checkbox';
 import {
     Select,
     SelectContent,
@@ -34,6 +35,7 @@ export interface EventRecord {
     location: string | null;
     tag_all_staff: boolean;
     tag_all_parents: boolean;
+    is_public?: boolean;
     tags: { user_uuid: string; tag_type: string; user: { uuid: string; name: string } }[];
 }
 
@@ -69,6 +71,7 @@ export function EventFormSheet({calendarUuid, open, onOpenChange, event, default
     const [tagAllStaff, setTagAllStaff] = useState(false);
     const [parentTags, setParentTags] = useState<string[]>([]);
     const [tagAllParents, setTagAllParents] = useState(false);
+    const [isPublic, setIsPublic] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
     const isEdit = !!event;
@@ -99,12 +102,14 @@ export function EventFormSheet({calendarUuid, open, onOpenChange, event, default
                 setStaffTags(event.tags.filter((t) => t.tag_type === 'STAFF').map((t) => t.user_uuid));
                 setTagAllParents(event.tag_all_parents);
                 setParentTags(event.tags.filter((t) => t.tag_type === 'PARENT').map((t) => t.user_uuid));
+                setIsPublic(!!event.is_public);
             } else {
                 setFormData({...emptyForm, date: defaultDate || ''});
                 setTagAllStaff(false);
                 setStaffTags([]);
                 setTagAllParents(false);
                 setParentTags([]);
+                setIsPublic(false);
             }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -125,6 +130,7 @@ export function EventFormSheet({calendarUuid, open, onOpenChange, event, default
                 staff_uuids: staffTags,
                 tag_all_parents: tagAllParents,
                 parent_uuids: parentTags,
+                is_public: isPublic,
             };
             const response = isEdit
                 ? await update(event!.uuid, payload)
@@ -245,6 +251,20 @@ export function EventFormSheet({calendarUuid, open, onOpenChange, event, default
                             </SelectContent>
                         </Select>
                     </div>
+
+                    <label className='flex items-start gap-3 rounded-md border border-border p-3'>
+                        <Checkbox
+                            checked={isPublic}
+                            onCheckedChange={(checked) => setIsPublic(checked === true)}
+                            className='mt-0.5'
+                        />
+                        <span>
+                            <span className='block text-sm font-medium'>Show on website</span>
+                            <span className='block text-xs text-muted-foreground'>
+                                List this event on the school&apos;s public Events page. Tagged staff and parents are not shown.
+                            </span>
+                        </span>
+                    </label>
 
                     <Button type='submit' disabled={submitting} className='w-full'>
                         {submitting ? 'Saving...' : isEdit ? 'Save changes' : 'Add event'}

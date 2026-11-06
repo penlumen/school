@@ -1,72 +1,142 @@
-'use client'
-import React, {useState} from "react";
-import {Calendar, MapPin, Users} from "lucide-react";
+'use client';
 
+import {useMemo, useState} from 'react';
 
-interface Event {
-    id: string;
-    title: string;
-    description: string;
-    attendees: string;
-    location: string;
-    date: string;
-    time: string;
-}
+import {type SiteEvent, useSite} from '@/hooks/site';
+import {eventMonthHeading, isUpcoming, termLabel} from '@/lib/site-format';
+import {Skeleton} from '@/components/ui/skeleton';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
+import {Container, EmptyState, EventCard, PageHero, Reveal} from '@/components/guest/site-ui';
+import {cn} from '@/lib/utils';
 
-export default function EventPage() {
-    const [events] = useState<Event[]>([])
+const ALL = 'all';
+
+export default function EventsPage() {
+    const {site, events, loading, fallbackName} = useSite();
+    const name = site?.name || fallbackName;
+    const [view, setView] = useState<'upcoming' | 'past'>('upcoming');
+    const [term, setTerm] = useState(ALL);
+    const [branch, setBranch] = useState(ALL);
+
+    // Term and campus filters come from the schedules the events belong to.
+    const terms = useMemo(() => {
+        const seen = new Map<string, string>();
+        events.forEach((e) => seen.set(e.calendar.uuid, termLabel(e.calendar)));
+        return Array.from(seen, ([uuid, label]) => ({uuid, label}));
+    }, [events]);
+    const branches = useMemo(() => {
+        const seen = new Map<string, string>();
+        events.forEach((e) => seen.set(e.branch.uuid, e.branch.name));
+        return Array.from(seen, ([uuid, label]) => ({uuid, label}));
+    }, [events]);
+
+    const filtered = events.filter(
+        (e) =>
+            (view === 'upcoming' ? isUpcoming(e) : !isUpcoming(e)) &&
+            (term === ALL || e.calendar.uuid === term) &&
+            (branch === ALL || e.branch.uuid === branch),
+    );
+    // Past events read most-recent first.
+    const ordered = view === 'past' ? [...filtered].reverse() : filtered;
+
+    const groups = ordered.reduce<{ month: string; events: SiteEvent[] }[]>((acc, event) => {
+        const month = eventMonthHeading(event.date);
+        const last = acc[acc.length - 1];
+        if (last?.month === month) last.events.push(event);
+        else acc.push({month, events: [event]});
+        return acc;
+    }, []);
+
+    const upcomingCount = events.filter(isUpcoming).length;
 
     return (
-        <div className="min-h-screen">
+        <>
+            <PageHero
+                eyebrow='Events'
+                title='What’s happening at school'
+                description={`Open days, celebrations, sports and term dates at ${name}, straight from our school calendar.`}
+            />
 
-            <section id="events" className="py-20 px-4 bg-primary/10">
-                <div className="max-w-4xl mx-auto">
-                    <h1 className="text-5xl font-bold text-primary mb-6">School Events</h1>
-                    <p className="text-xl text-muted-foreground">Join us for exciting events throughout the year</p>
-                </div>
-            </section>
+            <section className='py-16 sm:py-20'>
+                <Container>
+                    <div className='mb-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
+                        <div role='tablist' aria-label='Event timeframe' className='inline-flex w-fit rounded-full bg-muted p-1'>
+                            {(['upcoming', 'past'] as const).map((value) => (
+                                <button
+                                    key={value}
+                                    role='tab'
+                                    aria-selected={view === value}
+                                    onClick={() => setView(value)}
+                                    className={cn(
+                                        'rounded-full px-5 py-2 text-sm capitalize transition-colors',
+                                        view === value ? 'bg-background font-medium text-foreground shadow-sm' : 'text-muted-foreground',
+                                    )}
+                                >
+                                    {value}
+                                    {value === 'upcoming' && upcomingCount > 0 && (
+                                        <span className='ml-2 rounded-full bg-accent px-2 py-0.5 text-xs text-accent-foreground'>{upcomingCount}</span>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
 
-            <section className="py-20 px-4">
-                <div className="max-w-6xl mx-auto">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {events.map((event: Event) => (<div
-                            key={event.id}
-                            className="bg-white rounded-lg shadow-sm border border-border hover:shadow-lg transition-shadow overflow-hidden"
-                        >
-                            <div className="bg-primary/10 h-32 flex items-center justify-center">
-                                <Calendar className="text-primary" size={48}/>
-                            </div>
-                            <div className="p-6 space-y-4">
-                                <h3 className="text-xl font-bold text-foreground">{event.title}</h3>
+                        <div className='flex flex-wrap gap-3'>
+                            {terms.length > 1 && (
+                                <Select value={term} onValueChange={setTerm}>
+                                    <SelectTrigger className='w-56 rounded-full' aria-label='Filter by term'>
+                                        <SelectValue/>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value={ALL}>All terms</SelectItem>
+                                        {terms.map((t) => <SelectItem key={t.uuid} value={t.uuid}>{t.label}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            )}
+                            {branches.length > 1 && (
+                                <Select value={branch} onValueChange={setBranch}>
+                                    <SelectTrigger className='w-48 rounded-full' aria-label='Filter by campus'>
+                                        <SelectValue/>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value={ALL}>All campuses</SelectItem>
+                                        {branches.map((b) => <SelectItem key={b.uuid} value={b.uuid}>{b.label}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            )}
+                        </div>
+                    </div>
 
-                                <div className="space-y-2 text-sm text-muted-foreground">
-                                    <div className="flex items-center gap-2">
-                                        <Calendar size={16}/>
-                                        <span>{event.date}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <MapPin size={16}/>
-                                        <span>{event.location}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Users size={16}/>
-                                        <span>{event.attendees} expected</span>
+                    {loading ? (
+                        <div className='space-y-4'>
+                            {Array.from({length: 3}).map((_, i) => <Skeleton key={i} className='h-32 rounded-2xl'/>)}
+                        </div>
+                    ) : groups.length === 0 ? (
+                        <EmptyState
+                            title={view === 'upcoming' ? 'No upcoming events' : 'No past events'}
+                            description={
+                                view === 'upcoming'
+                                    ? 'New dates are added to the school calendar throughout the term. Check back soon.'
+                                    : 'Events will appear here once they have taken place.'
+                            }
+                        />
+                    ) : (
+                        <div className='space-y-14'>
+                            {groups.map((group) => (
+                                <div key={group.month} className='grid gap-6 lg:grid-cols-[200px_1fr]'>
+                                    <h2 className='text-lg font-medium text-foreground lg:sticky lg:top-24 lg:h-fit'>{group.month}</h2>
+                                    <div className='space-y-4'>
+                                        {group.events.map((event, index) => (
+                                            <Reveal key={event.uuid} delay={index * 0.05}>
+                                                <EventCard event={event} schoolName={name}/>
+                                            </Reveal>
+                                        ))}
                                     </div>
                                 </div>
-
-                                <p className="text-foreground">{event.time}</p>
-                                <p className="text-muted-foreground text-sm">{event.description}</p>
-
-                                <button
-                                    className="w-full bg-primary text-primary-foreground py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors">
-                                    Learn More
-                                </button>
-                            </div>
-                        </div>))}
-                    </div>
-                </div>
+                            ))}
+                        </div>
+                    )}
+                </Container>
             </section>
-
-        </div>
+        </>
     );
 }

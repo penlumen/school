@@ -276,11 +276,27 @@ export default function ReportPage() {
                                 <Button onClick={() => setIsEditing(true)} variant="outline" className="gap-2">
                                     <Edit className="h-4 w-4"/> Edit report
                                 </Button>
-                                <Link href={`/report/${reportData.result.uuid}`} target="_blank">
-                                    <Button className="gap-2 bg-slate-900 text-white hover:bg-slate-800">
-                                        <Print className="h-4 w-4"/> Preview report
-                                    </Button>
-                                </Link>
+                                {result.status === 'APPROVED' ? (
+                                    <Link href={`/report/${reportData.result.uuid}`} target="_blank">
+                                        <Button className="gap-2 bg-slate-900 text-white hover:bg-slate-800">
+                                            <Print className="h-4 w-4"/> Preview report
+                                        </Button>
+                                    </Link>
+                                ) : (
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            {/* Disabled buttons swallow pointer events, so the span carries the tooltip */}
+                                            <span tabIndex={0}>
+                                                <Button disabled className="gap-2 bg-slate-900 text-white">
+                                                    <Print className="h-4 w-4"/> Preview report
+                                                </Button>
+                                            </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            The report can be previewed and printed once it has been approved.
+                                        </TooltipContent>
+                                    </Tooltip>
+                                )}
                             </>
                         ) : (
                             <>

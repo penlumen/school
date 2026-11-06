@@ -9,7 +9,6 @@ import {useResult} from '@/hooks/result';
 import {useStudentAttendance} from '@/hooks/student-attendance';
 import {useCalendar} from '@/hooks/calendar';
 import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
-import {Badge} from '@/components/ui/badge';
 import {Button} from '@/components/ui/button';
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
 import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
@@ -35,6 +34,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import type {StudentRecord} from '@/components/app/student-form-sheet';
+import {AttendanceReview} from '@/components/app/attendance-review';
 
 interface StudentDetailSheetProps {
     open: boolean;
@@ -57,7 +57,6 @@ export function StudentDetailSheet({open, onOpenChange, student}: StudentDetailS
     const {history} = useStudentAttendance();
     const {index: indexCalendars} = useCalendar();
     const [results, setResults] = useState<any[]>([]);
-    const [attendance, setAttendance] = useState<any[]>([]);
     const [calendars, setCalendars] = useState<any[]>([]);
     const [selectedCalendar, setSelectedCalendar] = useState<string>('');
     const [termPickerOpen, setTermPickerOpen] = useState(false);
@@ -69,14 +68,6 @@ export function StudentDetailSheet({open, onOpenChange, student}: StudentDetailS
         const response = await show(student.uuid);
         if (response.success) {
             setResults(response.data.results || []);
-        }
-    };
-
-    const fetchAttendance = async () => {
-        if (!student) return;
-        const response = await history(student.uuid);
-        if (response.success) {
-            setAttendance(response.data.attendance || []);
         }
     };
 
@@ -94,7 +85,6 @@ export function StudentDetailSheet({open, onOpenChange, student}: StudentDetailS
         if (open && student) {
             void Promise.resolve().then(() => Promise.all([
                 fetchResults(),
-                fetchAttendance(),
                 fetchCalendars(),
             ]));
         }
@@ -177,36 +167,11 @@ export function StudentDetailSheet({open, onOpenChange, student}: StudentDetailS
                             <Field label='Parent' value={student.parent?.name}/>
                         </TabsContent>
 
-                        <TabsContent value='attendance' className='pt-2 space-y-2'>
-                            {attendance.length === 0 ? (
-                                <p className='text-sm text-muted-foreground text-center py-6'>
-                                    No attendance records yet.
-                                </p>
-                            ) : (
-                                attendance.map((record) => (
-                                    <div
-                                        key={record.uuid}
-                                        className='flex items-center justify-between rounded-md border px-3 py-2'
-                                    >
-                                        <span className='text-sm'>
-                                            {new Date(record.date).toLocaleDateString('en-GB', {
-                                                day: 'numeric', month: 'short', year: 'numeric',
-                                            })}
-                                        </span>
-                                        <Badge
-                                            className={
-                                                record.status === 'PRESENT'
-                                                    ? 'bg-emerald-100 text-emerald-700'
-                                                    : record.status === 'ABSENT'
-                                                        ? 'bg-red-100 text-red-700'
-                                                        : 'bg-amber-100 text-amber-700'
-                                            }
-                                        >
-                                            {record.status.charAt(0) + record.status.slice(1).toLowerCase()}
-                                        </Badge>
-                                    </div>
-                                ))
-                            )}
+                        <TabsContent value='attendance' className='pt-2'>
+                            <AttendanceReview
+                                subjectKey={student.uuid}
+                                fetchHistory={(month) => history(student.uuid, month)}
+                            />
                         </TabsContent>
 
                         <TabsContent value='results' className='pt-2 space-y-3'>

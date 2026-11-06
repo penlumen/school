@@ -56,6 +56,11 @@ const POSITION_OPTIONS: Record<
   ],
 };
 
+interface ExistingMatch {
+  uuid: string;
+  message: string;
+}
+
 const emptyForm = {
   name: '',
   contact: '',
@@ -74,24 +79,14 @@ export function PersonFormSheet({
   person,
   onSaved,
 }: PersonFormSheetProps) {
-  const { create, update } = useUser();
-  const [formData, setFormData] = useState(() =>
-    person
-      ? {
-          uuid: person.uuid,
-          name: person.name || '',
-          contact: person.contact || '',
-          alt_contact: person.alt_contact || '',
-          email: person.email || '',
-          password: '',
-          position: person.position || '',
-          address: person.address || '',
-          avatar: person.avatar || '',
-        }
-      : emptyForm,
-  );
+  const { create, update, attach } = useUser();
+  const [formData, setFormData] = useState(emptyForm);
   const [faceDescriptor, setFaceDescriptor] = useState<number[] | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [existingMatch, setExistingMatch] = useState<ExistingMatch | null>(
+    null,
+  );
+  const [attaching, setAttaching] = useState(false);
 
   const isEdit = !!person;
   const [entityUuid, setEntityUuid] = useState<string | null>(
@@ -103,6 +98,8 @@ export function PersonFormSheet({
   useEffect(() => {
     if (open) {
       setFaceDescriptor(null);
+      setExistingMatch(null);
+      setEntityUuid(person?.uuid || null);
       setFormData(
         person
           ? {
@@ -144,6 +141,13 @@ export function PersonFormSheet({
         );
         onOpenChange(false);
         onSaved();
+      } else if (!isEdit && response.data?.user_uuid) {
+        // Same email + role already exists elsewhere in the school — ask
+        // before granting this branch access to the existing account.
+        setExistingMatch({
+          uuid: response.data.user_uuid,
+          message: response.message || 'This record already exists.',
+        });
       } else {
         toast.error(response.message || 'Something went wrong');
       }
@@ -151,6 +155,27 @@ export function PersonFormSheet({
       toast.error(error.message || 'Something went wrong');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleAttach = async () => {
+    if (!existingMatch) return;
+
+    setAttaching(true);
+    try {
+      const response = await attach(existingMatch.uuid);
+      if (response.success) {
+        toast.success(`${roleLabel} added to this branch`);
+        setExistingMatch(null);
+        onOpenChange(false);
+        onSaved();
+      } else {
+        toast.error(response.message);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Something went wrong');
+    } finally {
+      setAttaching(false);
     }
   };
 
@@ -167,6 +192,8 @@ export function PersonFormSheet({
           <PhotoUpload
             label={`${roleLabel} passport`}
             folder={folder}
+            entityUuid={entityUuid || undefined}
+            onEntityUuid={setEntityUuid}
             value={formData.avatar}
             fallback={formData.name}
             onChange={(url) => setFormData({ ...formData, avatar: url })}
@@ -218,9 +245,10 @@ export function PersonFormSheet({
               type='email'
               placeholder='example@email.com'
               value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
+              onChange={(e) => {
+                setFormData({ ...formData, email: e.target.value });
+                setExistingMatch(null);
+              }}
             />
           </div>
 
@@ -274,11 +302,36 @@ export function PersonFormSheet({
             />
           </div>
 
-          <Button type='submit' disabled={submitting} className='w-full'>
-            {submitting
-              ? 'Saving...'
-              : `${isEdit ? 'Save changes' : `Add ${roleLabel.toLowerCase()}`}`}
-          </Button>
+          {existingMatch ? (
+            <div className='space-y-3 rounded-md border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950/40'>
+              <p className='text-sm'>{existingMatch.message}</p>
+              <div className='flex gap-2'>
+                <Button
+                  type='button'
+                  variant='outline'
+                  className='flex-1'
+                  disabled={attaching}
+                  onClick={() => setExistingMatch(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type='button'
+                  className='flex-1'
+                  disabled={attaching}
+                  onClick={handleAttach}
+                >
+                  {attaching ? 'Adding...' : 'Add to branch'}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button type='submit' disabled={submitting} className='w-full'>
+              {submitting
+                ? 'Saving...'
+                : `${isEdit ? 'Save changes' : `Add ${roleLabel.toLowerCase()}`}`}
+            </Button>
+          )}
         </form>
       </SheetContent>
     </Sheet>

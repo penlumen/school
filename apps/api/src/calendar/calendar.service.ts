@@ -6,11 +6,38 @@ import {
 } from '@nestjs/common';
 import { CalendarStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 
 @Injectable()
 export class CalendarService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
+
+  /** Lets everyone on the branch know a term has just become the active one. */
+  private async notifyTermActivated(
+    calendar: {
+      branch_uuid: string;
+      session: string;
+      term: string | null;
+      close_date: Date | null;
+    },
+    decoded: DecodedUser,
+  ) {
+    const closes = calendar.close_date
+      ? ` It runs until ${new Date(calendar.close_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}.`
+      : '';
+    await this.notifications.notifyBranchRoles(
+      calendar.branch_uuid,
+      ['ROOT', 'ADMIN', 'STAFF', 'PARENT'],
+      'TERM_ACTIVATED',
+      'New term started',
+      `${calendar.term ?? 'A new term'} of the ${calendar.session} session is now active.${closes}`,
+      { excludeUuid: decoded.uuid },
+    );
+  }
 
   async index(branchUuid: string | undefined) {
     if (!branchUuid) {
@@ -102,6 +129,10 @@ export class CalendarService {
       });
     });
 
+    if (result.status === 'ACTIVE') {
+      await this.notifyTermActivated(result, decoded);
+    }
+
     return {
       status: 201,
       success: true,
@@ -179,6 +210,10 @@ export class CalendarService {
         },
       });
     });
+
+    if (result.status === 'ACTIVE' && existingCalendar.status !== 'ACTIVE') {
+      await this.notifyTermActivated(result, decoded);
+    }
 
     return {
       status: 200,

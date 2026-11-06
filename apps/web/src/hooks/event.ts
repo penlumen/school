@@ -11,6 +11,7 @@ export interface EventPayload {
     tag_all_parents?: boolean;
     staff_uuids?: string[];
     parent_uuids?: string[];
+    is_public?: boolean;
 }
 
 export const useEvent = () => {

@@ -4,79 +4,97 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-    --background: oklch(0.99 0 0);
-    --foreground: oklch(0.15 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.15 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.15 0 0);
-    --primary: oklch(0.35 0.15 250);
-    --primary-foreground: oklch(0.98 0 0);
-    --secondary: oklch(0.65 0.18 60);
-    --secondary-foreground: oklch(0.15 0 0);
-    --muted: oklch(0.93 0 0);
-    --muted-foreground: oklch(0.5 0 0);
-    --accent: oklch(0.35 0.15 250);
-    --accent-foreground: oklch(0.98 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.577 0.245 27.325);
-    --border: oklch(0.9 0 0);
-    --input: oklch(0.95 0 0);
-    --ring: oklch(0.35 0.15 250);
-    --chart-1: oklch(0.35 0.15 250);
-    --chart-2: oklch(0.65 0.18 60);
-    --chart-3: oklch(0.5 0.08 200);
-    --chart-4: oklch(0.6 0.12 40);
-    --chart-5: oklch(0.7 0.1 30);
+    /* Values mirror the Penlumen Figma variables (Primary/Blue, Grey, Neutral, Success, Error). */
+    --background: #ffffff;
+    --foreground: #212121;
+    --card: #ffffff;
+    --card-foreground: #212121;
+    --popover: #ffffff;
+    --popover-foreground: #212121;
+    --primary: #003884;
+    --primary-foreground: #ffffff;
+    --secondary: #f0f1f3;
+    --secondary-foreground: #212121;
+    --muted: #f0f1f3;
+    --muted-foreground: #6c6c6c;
+    --accent: #e6ebf3;
+    --accent-foreground: #003378;
+    --destructive: #d42620;
+    --destructive-foreground: #d42620;
+    --destructive-muted: #fbe9e9;
+    --success: #0f973d;
+    --success-foreground: #0e8938;
+    --success-muted: #e7f5ec;
+    --warning: #dd900d;
+    --warning-foreground: #ad6f07;
+    --warning-muted: #fef6e7;
+    --border: #e7e7e7;
+    --input: #e7e7e7;
+    --ring: #003884;
+    --chart-1: #003884;
+    --chart-2: #0f973d;
+    --chart-3: #5b7fb3;
+    --chart-4: #d42620;
+    --chart-5: #6c6c6c;
     --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.35 0.15 250);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.15 0 0);
-    --sidebar-border: oklch(0.9 0 0);
-    --sidebar-ring: oklch(0.35 0.15 250);
+    --sidebar: #f9f9f9;
+    --sidebar-foreground: #505050;
+    --sidebar-primary: #003884;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #f2f5f9;
+    --sidebar-accent-foreground: #003378;
+    --sidebar-border: #e7e7e7;
+    --sidebar-ring: #003884;
+    /* Deep brand navy for the public site footer and dark bands. */
+    --navy: #071a3d;
 }
 
 .dark {
-    --background: oklch(0.15 0 0);
-    --foreground: oklch(0.95 0 0);
-    --card: oklch(0.2 0 0);
-    --card-foreground: oklch(0.95 0 0);
-    --popover: oklch(0.15 0 0);
-    --popover-foreground: oklch(0.95 0 0);
-    --primary: oklch(0.55 0.15 250);
-    --primary-foreground: oklch(0.15 0 0);
-    --secondary: oklch(0.65 0.18 60);
-    --secondary-foreground: oklch(0.15 0 0);
-    --muted: oklch(0.3 0 0);
-    --muted-foreground: oklch(0.7 0 0);
-    --accent: oklch(0.6 0.15 250);
-    --accent-foreground: oklch(0.15 0 0);
-    --destructive: oklch(0.396 0.141 25.723);
-    --destructive-foreground: oklch(0.637 0.237 25.331);
-    --border: oklch(0.3 0 0);
-    --input: oklch(0.25 0 0);
-    --ring: oklch(0.55 0.15 250);
-    --chart-1: oklch(0.55 0.15 250);
-    --chart-2: oklch(0.65 0.18 60);
-    --chart-3: oklch(0.6 0.1 200);
-    --chart-4: oklch(0.65 0.12 40);
-    --chart-5: oklch(0.7 0.1 30);
-    --sidebar: oklch(0.2 0 0);
-    --sidebar-foreground: oklch(0.95 0 0);
-    --sidebar-primary: oklch(0.55 0.15 250);
-    --sidebar-primary-foreground: oklch(0.95 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.15 0 0);
-    --sidebar-border: oklch(0.3 0 0);
-    --sidebar-ring: oklch(0.55 0.15 250);
+    --background: #0f1320;
+    --foreground: #f0f1f3;
+    --card: #161b2b;
+    --card-foreground: #f0f1f3;
+    --popover: #161b2b;
+    --popover-foreground: #f0f1f3;
+    --primary: #6f9be0;
+    --primary-foreground: #0f1320;
+    --secondary: #232a3d;
+    --secondary-foreground: #f0f1f3;
+    --muted: #232a3d;
+    --muted-foreground: #a3a9b8;
+    --accent: #1d2a47;
+    --accent-foreground: #c7d6ef;
+    --destructive: #e5534d;
+    --destructive-foreground: #f08a86;
+    --destructive-muted: #3a1d1f;
+    --success: #34b864;
+    --success-foreground: #5fd38a;
+    --success-muted: #143322;
+    --warning: #f2b23b;
+    --warning-foreground: #f6c86f;
+    --warning-muted: #3a2a0c;
+    --border: #2a3145;
+    --input: #2a3145;
+    --ring: #6f9be0;
+    --chart-1: #6f9be0;
+    --chart-2: #34b864;
+    --chart-3: #9db6dd;
+    --chart-4: #e5534d;
+    --chart-5: #a3a9b8;
+    --sidebar: #161b2b;
+    --sidebar-foreground: #c3c8d4;
+    --sidebar-primary: #6f9be0;
+    --sidebar-primary-foreground: #0f1320;
+    --sidebar-accent: #1d2a47;
+    --sidebar-accent-foreground: #c7d6ef;
+    --sidebar-border: #2a3145;
+    --sidebar-ring: #6f9be0;
+    --navy: #0a1430;
 }
 
 @theme inline {
-    --font-sans: "Geist", "Geist Fallback";
-    --font-mono: "Geist Mono", "Geist Mono Fallback";
+    --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+    --font-mono: var(--font-geist-mono), ui-monospace, monospace;
     --color-background: var(--background);
     --color-foreground: var(--foreground);
     --color-card: var(--card);
@@ -93,6 +111,13 @@
     --color-accent-foreground: var(--accent-foreground);
     --color-destructive: var(--destructive);
     --color-destructive-foreground: var(--destructive-foreground);
+    --color-destructive-muted: var(--destructive-muted);
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-success-muted: var(--success-muted);
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-warning-muted: var(--warning-muted);
     --color-border: var(--border);
     --color-input: var(--input);
     --color-ring: var(--ring);
@@ -113,6 +138,7 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+    --color-navy: var(--navy);
 }
 
 @layer base {
@@ -120,6 +146,45 @@
         @apply border-border outline-ring/50;
     }
     body {
-        @apply bg-background text-foreground;
+        @apply bg-background text-foreground font-sans antialiased;
+        /* Figma type styles all use -2% letter spacing. */
+        letter-spacing: -0.02em;
+    }
+}
+
+/* Formatting for website copy written in the rich-text editor and shown on the public site. */
+@layer components {
+    .rich-text h2 {
+        @apply mt-4 mb-2 text-xl font-medium first:mt-0;
+    }
+    .rich-text h3 {
+        @apply mt-3 mb-1.5 text-lg font-medium first:mt-0;
+    }
+    .rich-text p {
+        @apply mb-3 last:mb-0;
+    }
+    .rich-text ul {
+        @apply mb-3 list-disc pl-5;
+    }
+    .rich-text ol {
+        @apply mb-3 list-decimal pl-5;
+    }
+    .rich-text li {
+        @apply mb-1;
+    }
+}
+
+/* Invoices print on a single A4 page without browser margins. */
+@media print {
+    @page {
+        size: A4;
+        margin: 0;
+    }
+    .invoice-document {
+        height: 297mm;
+        width: 210mm;
+        aspect-ratio: auto;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 }

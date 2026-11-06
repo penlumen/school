@@ -50,6 +50,7 @@ interface ResultData {
         class_name: string;
         teacher_remark: string;
         principal_remark: string;
+        status: 'APPROVED' | 'PENDING' | 'REJECTED';
     };
     summary: ResultSummary;
     assessments: AssessmentObject[];
@@ -120,6 +121,18 @@ export default function TraditionalResultSheet() {
 
     if (loading) return <LoadingPage/>;
     if (!resultData) return <div className='p-6 text-center'>No result data available</div>;
+    if (resultData.result.status !== 'APPROVED') {
+        return (
+            <div className='min-h-screen bg-gray-100 flex items-center justify-center p-6'>
+                <div className='max-w-md rounded-lg border bg-white p-6 text-center shadow-sm'>
+                    <h1 className='text-lg font-semibold'>Report not yet approved</h1>
+                    <p className='mt-2 text-sm text-muted-foreground'>
+                        This report card can be previewed and printed once an administrator has approved it.
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className='min-h-screen bg-gray-100 pb-10'>

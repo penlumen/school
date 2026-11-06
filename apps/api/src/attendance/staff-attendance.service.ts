@@ -6,12 +6,40 @@ import {
 } from '@nestjs/common';
 import { AttendanceStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 
 function startOfDay(dateStr?: string): Date {
   const date = dateStr ? new Date(dateStr) : new Date();
   date.setHours(0, 0, 0, 0);
   return date;
+}
+
+function formatDate(date: Date) {
+  return date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+/** Parses `YYYY-MM` into a [start, end) date range, or returns undefined when absent. */
+function monthRange(month?: string): { gte: Date; lt: Date } | undefined {
+  if (!month) return undefined;
+  const match = /^(\d{4})-(\d{2})$/.exec(month);
+  if (!match) {
+    throw new BadRequestException({
+      status: 400,
+      success: false,
+      message: 'Month must be in YYYY-MM format',
+    });
+  }
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  return {
+    gte: new Date(Date.UTC(year, monthIndex, 1)),
+    lt: new Date(Date.UTC(year, monthIndex + 1, 1)),
+  };
 }
 
 function assertIsAdmin(decoded: DecodedUser) {
@@ -26,7 +54,30 @@ function assertIsAdmin(decoded: DecodedUser) {
 
 @Injectable()
 export class StaffAttendanceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
+
+  /** Tells a staff member when they've been marked absent (only on the transition, not repeats). */
+  private async notifyIfAbsent(
+    previousStatus: AttendanceStatus | undefined,
+    record: {
+      staff_uuid: string;
+      branch_uuid: string;
+      status: AttendanceStatus;
+      date: Date;
+    },
+  ) {
+    if (record.status !== 'ABSENT' || previousStatus === 'ABSENT') return;
+    await this.notifications.notifyUsers(
+      [record.staff_uuid],
+      record.branch_uuid,
+      'ATTENDANCE_STAFF_ABSENT',
+      'Absence recorded',
+      `You were marked absent on ${formatDate(record.date)}. Contact an administrator if this is incorrect.`,
+    );
+  }
 
   async index(
     branchUuid: string | undefined,
@@ -108,6 +159,40 @@ export class StaffAttendanceService {
     };
   }
 
+  /** Attendance history for one staff member in this branch — all dates, or a single month (YYYY-MM). */
+  async history(
+    staffUuid: string,
+    branchUuid: string | undefined,
+    month: string | undefined,
+    decoded: DecodedUser,
+  ) {
+    assertIsAdmin(decoded);
+    if (!branchUuid) {
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized branch',
+      });
+    }
+    const dateRange = monthRange(month);
+
+    const records = await this.prisma.staffAttendance.findMany({
+      where: {
+        staff_uuid: staffUuid,
+        branch_uuid: branchUuid,
+        date: dateRange,
+      },
+      orderBy: { date: 'desc' },
+    });
+
+    return {
+      status: 200,
+      success: true,
+      message: 'Attendance history',
+      data: { attendance: records },
+    };
+  }
+
   async mark(
     staffUuid: string,
     branchUuid: string | undefined,
@@ -137,6 +222,9 @@ export class StaffAttendanceService {
     const date = startOfDay(body?.date);
     const status: AttendanceStatus = body?.status || 'PRESENT';
 
+    const previous = await this.prisma.staffAttendance.findUnique({
+      where: { staff_uuid_date: { staff_uuid: staffUuid, date } },
+    });
     const record = await this.prisma.staffAttendance.upsert({
       where: { staff_uuid_date: { staff_uuid: staffUuid, date } },
       create: {
@@ -148,6 +236,8 @@ export class StaffAttendanceService {
       },
       update: { status, marked_by_uuid: decoded.uuid },
     });
+
+    await this.notifyIfAbsent(previous?.status, record);
 
     return {
       status: 201,
@@ -175,6 +265,8 @@ export class StaffAttendanceService {
       where: { uuid },
       data: { status: body?.status, marked_by_uuid: decoded.uuid },
     });
+
+    await this.notifyIfAbsent(existing.status, record);
 
     return {
       status: 200,

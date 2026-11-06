@@ -7,12 +7,14 @@ import {
 import { PrismaService } from '../prisma/prisma.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { StorageService } from '../storage/storage.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 
 @Injectable()
 export class BranchesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async index(decoded: DecodedUser) {
@@ -128,7 +130,7 @@ export class BranchesService {
   }
 
   async update(uuid: string, decoded: DecodedUser, body: any) {
-    const { name, email, contact, address } = body;
+    const { name, email, contact, address, avatar } = body;
 
     if (decoded.role !== 'ADMIN') {
       throw new BadRequestException({
@@ -138,9 +140,20 @@ export class BranchesService {
       });
     }
 
+    const owned = await this.prisma.branch.findFirst({
+      where: { uuid, school_uuid: decoded.school_uuid },
+    });
+    if (!owned) {
+      throw new NotFoundException({
+        status: 404,
+        success: false,
+        message: 'Branch not found',
+      });
+    }
+
     const branch = await this.prisma.branch.update({
       where: { uuid },
-      data: { name, email, contact, address },
+      data: { name, email, contact, address, avatar },
     });
 
     if (!branch) {
@@ -217,6 +230,14 @@ export class BranchesService {
         school_uuid: user.school_uuid,
       },
     });
+
+    await this.notifications.notifyBranchAdmins(
+      branchUuid,
+      `${user.role}_CREATED`,
+      'New team member added',
+      `${user.name} was successfully added as a ${user.role.toLowerCase()}.`,
+    );
+    await this.notifications.notifyBranchAccessGranted(user.uuid, branchUuid);
 
     return { status: 201, success: true, message: 'Access created' };
   }

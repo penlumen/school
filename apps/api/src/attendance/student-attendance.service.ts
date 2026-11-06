@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { AttendanceStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 
 function startOfDay(dateStr?: string): Date {
@@ -14,9 +15,55 @@ function startOfDay(dateStr?: string): Date {
   return date;
 }
 
+function formatDate(date: Date) {
+  return date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+/** Parses `YYYY-MM` into a [start, end) date range, or returns undefined when absent. */
+function monthRange(month?: string): { gte: Date; lt: Date } | undefined {
+  if (!month) return undefined;
+  const match = /^(\d{4})-(\d{2})$/.exec(month);
+  if (!match) {
+    throw new BadRequestException({
+      status: 400,
+      success: false,
+      message: 'Month must be in YYYY-MM format',
+    });
+  }
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  return {
+    gte: new Date(Date.UTC(year, monthIndex, 1)),
+    lt: new Date(Date.UTC(year, monthIndex + 1, 1)),
+  };
+}
+
 @Injectable()
 export class StudentAttendanceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
+
+  /** Tells a student's parent when they've been marked absent (only on the transition, not repeats). */
+  private async notifyIfAbsent(
+    student: { name: string; parent_uuid: string; branch_uuid: string },
+    previousStatus: AttendanceStatus | undefined,
+    record: { status: AttendanceStatus; date: Date },
+  ) {
+    if (record.status !== 'ABSENT' || previousStatus === 'ABSENT') return;
+    await this.notifications.notifyUsers(
+      [student.parent_uuid],
+      student.branch_uuid,
+      'ATTENDANCE_STUDENT_ABSENT',
+      'Absence recorded',
+      `${student.name} was marked absent on ${formatDate(record.date)}.`,
+    );
+  }
 
   private async assertCanMarkClass(classUuid: string, decoded: DecodedUser) {
     const classData = await this.prisma.class.findUnique({
@@ -137,6 +184,9 @@ export class StudentAttendanceService {
     const date = startOfDay(body?.date);
     const status: AttendanceStatus = body?.status || 'PRESENT';
 
+    const previous = await this.prisma.studentAttendance.findUnique({
+      where: { student_uuid_date: { student_uuid: studentUuid, date } },
+    });
     const record = await this.prisma.studentAttendance.upsert({
       where: { student_uuid_date: { student_uuid: studentUuid, date } },
       create: {
@@ -150,6 +200,8 @@ export class StudentAttendanceService {
       update: { status, marked_by_uuid: decoded.uuid },
     });
 
+    await this.notifyIfAbsent(student, previous?.status, record);
+
     return {
       status: 201,
       success: true,
@@ -161,6 +213,7 @@ export class StudentAttendanceService {
   async update(uuid: string, decoded: DecodedUser, body: any) {
     const existing = await this.prisma.studentAttendance.findUnique({
       where: { uuid },
+      include: { student: true },
     });
     if (!existing) {
       throw new NotFoundException({
@@ -177,6 +230,8 @@ export class StudentAttendanceService {
       data: { status: body?.status, marked_by_uuid: decoded.uuid },
     });
 
+    await this.notifyIfAbsent(existing.student, existing.status, record);
+
     return {
       status: 200,
       success: true,
@@ -185,8 +240,13 @@ export class StudentAttendanceService {
     };
   }
 
-  /** Full attendance history for one student (across all dates), for their profile's Attendance tab. */
-  async history(studentUuid: string, decoded: DecodedUser) {
+  /** Attendance history for one student — all dates, or a single month when `month` (YYYY-MM) is given. */
+  async history(
+    studentUuid: string,
+    month: string | undefined,
+    decoded: DecodedUser,
+  ) {
+    const dateRange = monthRange(month);
     const student = await this.prisma.student.findUnique({
       where: { uuid: studentUuid },
     });
@@ -201,7 +261,7 @@ export class StudentAttendanceService {
     await this.assertCanMarkClass(student.class_uuid, decoded);
 
     const records = await this.prisma.studentAttendance.findMany({
-      where: { student_uuid: studentUuid },
+      where: { student_uuid: studentUuid, date: dateRange },
       orderBy: { date: 'desc' },
     });
 

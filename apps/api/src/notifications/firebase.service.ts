@@ -41,23 +41,26 @@ export class FirebaseService {
   ): Promise<string[]> {
     if (!this.enabled || tokens.length === 0) return [];
 
-    try {
-      const response = await getMessaging().sendEachForMulticast({
-        tokens,
-        notification: { title, body },
-      });
+    // FCM caps a multicast at 500 tokens, so larger audiences go out in batches.
+    const staleTokens: string[] = [];
+    for (let start = 0; start < tokens.length; start += 500) {
+      const batch = tokens.slice(start, start + 500);
+      try {
+        const response = await getMessaging().sendEachForMulticast({
+          tokens: batch,
+          notification: { title, body },
+        });
 
-      const staleTokens: string[] = [];
-      response.responses.forEach((result, i) => {
-        if (!result.success && this.isTokenInvalid(result.error?.code)) {
-          staleTokens.push(tokens[i]);
-        }
-      });
-      return staleTokens;
-    } catch (error: any) {
-      this.logger.warn(`FCM send failed: ${error.message}`);
-      return [];
+        response.responses.forEach((result, i) => {
+          if (!result.success && this.isTokenInvalid(result.error?.code)) {
+            staleTokens.push(batch[i]);
+          }
+        });
+      } catch (error: any) {
+        this.logger.warn(`FCM send failed: ${error.message}`);
+      }
     }
+    return staleTokens;
   }
 
   private isTokenInvalid(code?: string) {

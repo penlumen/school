@@ -37,12 +37,16 @@ export class EventsController {
   }
 
   @Patch('update/:uuid')
-  update(@Param('uuid') uuid: string, @Body() body: any) {
-    return this.eventsService.update(uuid, body);
+  update(
+    @Param('uuid') uuid: string,
+    @CurrentUser() user: DecodedUser,
+    @Body() body: any,
+  ) {
+    return this.eventsService.update(uuid, user, body);
   }
 
   @Delete('delete/:uuid')
-  remove(@Param('uuid') uuid: string) {
-    return this.eventsService.remove(uuid);
+  remove(@Param('uuid') uuid: string, @CurrentUser() user: DecodedUser) {
+    return this.eventsService.remove(uuid, user);
   }
 }

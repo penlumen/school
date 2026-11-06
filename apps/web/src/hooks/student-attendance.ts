@@ -36,8 +36,11 @@ export const useStudentAttendance = () => {
             : {success: false, message: data.message || 'Something went wrong'};
     };
 
-    const history = async (studentUuid: string) => {
-        const response = await axiosInstance.get(`/api/v1/attendance/student/history/${studentUuid}`);
+    const history = async (studentUuid: string, month?: string) => {
+        const response = await axiosInstance.get(
+            `/api/v1/attendance/student/history/${studentUuid}`,
+            {params: month ? {month} : {}}
+        );
         const data = response.data;
         return data.success
             ? {success: true, data: data.data}
