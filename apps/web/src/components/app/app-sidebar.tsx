@@ -10,6 +10,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { BranchSwitcher } from '@/components/app/branch-switcher';
 import { NotificationBell } from '@/components/app/notification-bell';
+import { OnlineStaff } from '@/components/app/online-staff';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -360,6 +361,7 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
             <SidebarTrigger className='text-foreground outline-0' />
 
             <div className='flex items-center gap-2'>
+              {profile?.role !== 'PARENT' && <OnlineStaff />}
               <HelpTourButton navGroups={navGroups} />
               {profile?.role !== 'PARENT' && <NotificationBell />}
             </div>
