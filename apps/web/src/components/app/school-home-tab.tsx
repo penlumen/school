@@ -8,6 +8,7 @@ import {type ContentItem, type SchoolSettings, useSchool} from '@/hooks/school';
 import {SITE_ICONS, siteIcon} from '@/lib/site-icons';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
+import {PhoneInput} from '@/components/ui/phone-input';
 import {Label} from '@/components/ui/label';
 import {Textarea} from '@/components/ui/textarea';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
@@ -98,7 +99,7 @@ export function SchoolHomeTab({school, onSaved}: { school: SchoolSettings; onSav
                         </div>
                         <div className='space-y-2'>
                             <Label htmlFor='school-phone'>Phone Number</Label>
-                            <Input id='school-phone' value={info.contact} onChange={(e) => setInfo({...info, contact: e.target.value})}/>
+                            <PhoneInput id='school-phone' value={info.contact} onChange={(contact) => setInfo({...info, contact})}/>
                         </div>
                         <div className='space-y-2'>
                             <Label htmlFor='school-email'>Email Address</Label>

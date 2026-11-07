@@ -7,6 +7,7 @@ import {toast} from 'sonner';
 import {useBranch} from '@/hooks/branch';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
+import {PhoneInput} from '@/components/ui/phone-input';
 import {Label} from '@/components/ui/label';
 import {Skeleton} from '@/components/ui/skeleton';
 import {SettingsSection} from '@/components/app/settings-shell';
@@ -116,11 +117,10 @@ export function BranchGeneralTab() {
                     </div>
                     <div className='space-y-2'>
                         <Label htmlFor='branch-contact'>Contact</Label>
-                        <Input
+                        <PhoneInput
                             id='branch-contact'
                             value={form.contact}
-                            placeholder='+234 800 000 0000'
-                            onChange={(e) => setForm({...form, contact: e.target.value})}
+                            onChange={(contact) => setForm({...form, contact})}
                         />
                     </div>
                 </div>

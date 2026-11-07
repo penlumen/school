@@ -7,6 +7,7 @@ import { useUser } from '@/hooks/user';
 import { PhotoUpload } from '@/components/app/photo-upload';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -213,26 +214,22 @@ export function PersonFormSheet({
             />
           </div>
 
-          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+          <div className='grid grid-cols-1 gap-4'>
             <div className='space-y-2'>
               <Label htmlFor='contact'>Contact</Label>
-              <Input
+              <PhoneInput
                 id='contact'
-                placeholder='Enter contact'
                 value={formData.contact}
-                onChange={(e) =>
-                  setFormData({ ...formData, contact: e.target.value })
-                }
+                onChange={(contact) => setFormData({ ...formData, contact })}
               />
             </div>
             <div className='space-y-2'>
               <Label htmlFor='alt_contact'>Alt contact</Label>
-              <Input
+              <PhoneInput
                 id='alt_contact'
-                placeholder='Enter alt contact'
                 value={formData.alt_contact}
-                onChange={(e) =>
-                  setFormData({ ...formData, alt_contact: e.target.value })
+                onChange={(alt_contact) =>
+                  setFormData({ ...formData, alt_contact })
                 }
               />
             </div>

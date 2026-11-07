@@ -39,7 +39,7 @@ interface CalendarFormSheetProps {
   onSaved: () => void;
 }
 
-const TERM_OPTIONS = ['1st term', '2nd term', '3rd term'];
+const TERM_OPTIONS = ['First Term', 'Second Term', 'Third Term'];
 
 const emptyForm = {
   session: '',

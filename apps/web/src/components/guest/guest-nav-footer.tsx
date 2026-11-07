@@ -7,6 +7,7 @@ import {ArrowRight, Mail, MapPin, Menu, Phone, X} from 'lucide-react';
 
 import {useSite} from '@/hooks/site';
 import {cn} from '@/lib/utils';
+import {formatPhone, phoneHref} from '@/lib/phone';
 import {Container, SchoolMark} from '@/components/guest/site-ui';
 
 const LINKS = [
@@ -149,8 +150,8 @@ export default function GuestNavFooter({children}: { children: ReactNode }) {
                         <ul className='space-y-3 text-white/80'>
                             {phone && (
                                 <li>
-                                    <a href={`tel:${phone.replace(/\s+/g, '')}`} className='flex items-start gap-3 hover:text-white'>
-                                        <Phone className='mt-0.5 h-4 w-4 flex-shrink-0'/> {phone}
+                                    <a href={phoneHref(phone)} className='flex items-start gap-3 hover:text-white'>
+                                        <Phone className='mt-0.5 h-4 w-4 flex-shrink-0'/> {formatPhone(phone)}
                                     </a>
                                 </li>
                             )}
