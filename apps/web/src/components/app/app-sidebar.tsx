@@ -98,11 +98,13 @@ function HelpTourButton({ navGroups }: { navGroups: NavGroup[] }) {
       },
     ];
 
+    const visibleSteps = steps.filter((step) => document.querySelector(step.element));
+
     driver({
       showProgress: true,
       allowClose: true,
       overlayColor: 'black',
-      steps,
+      steps: visibleSteps,
     }).drive();
   };
 
@@ -230,10 +232,38 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
       label: 'Overview',
       items: [
         {
-          title: 'Wards',
+          title: 'Home',
           icon: LayoutDashboard,
-          href: '/parent/wards',
-          description: 'View your children/wards, their attendance, and their results.',
+          href: '/parent/dashboard',
+          description: "Your children at a glance: today's attendance, latest results, fees owed and what's coming up.",
+        },
+        {
+          title: 'Calendar',
+          icon: Calendar,
+          href: '/parent/calendar',
+          description: 'Term dates and school events for your children.',
+        },
+      ],
+    },
+    {
+      label: 'School',
+      items: [
+        {
+          title: 'Fees',
+          icon: CreditCard,
+          href: '/parent/fees',
+          description: 'Invoices for all your children, what has been paid and what is still owed.',
+        },
+      ],
+    },
+    {
+      label: 'Settings',
+      items: [
+        {
+          title: 'Account',
+          icon: User,
+          href: '/parent/account',
+          description: 'Your contact details and password.',
         },
       ],
     },
@@ -274,7 +304,7 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
               <BranchSwitcher />
             ) : (
               <div className='flex items-center gap-2 p-2'>
-                <span className='text-sm font-semibold'>Wards</span>
+                <span className='text-sm font-semibold'>Parent portal</span>
               </div>
             )}
           </SidebarHeader>
@@ -363,7 +393,7 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
             <div className='flex items-center gap-2'>
               {profile?.role !== 'PARENT' && <OnlineStaff />}
               <HelpTourButton navGroups={navGroups} />
-              {profile?.role !== 'PARENT' && <NotificationBell />}
+              <NotificationBell />
             </div>
           </header>
 

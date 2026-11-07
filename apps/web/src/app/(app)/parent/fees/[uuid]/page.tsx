@@ -1,0 +1,102 @@
+'use client';
+
+import {useEffect, useState} from 'react';
+import Link from 'next/link';
+import {useParams} from 'next/navigation';
+import {ArrowLeft, Printer} from 'lucide-react';
+
+import {INVOICE_STATUS_LABEL, type InvoiceDetail, naira, toNumber} from '@/hooks/billing';
+import {useParent} from '@/hooks/parent';
+import {Button} from '@/components/ui/button';
+import {Skeleton} from '@/components/ui/skeleton';
+import {InvoiceStatusBadge} from '@/components/app/billing-ui';
+import {InvoiceDocument} from '@/components/app/invoice-document';
+
+export default function ParentInvoicePage() {
+    const {uuid} = useParams<{ uuid: string }>();
+    const {invoice: fetchInvoice} = useParent();
+    const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
+    const [missing, setMissing] = useState(false);
+
+    useEffect(() => {
+        fetchInvoice(uuid).then((r) => (r.success ? setInvoice(r.data.invoice) : setMissing(true)));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [uuid]);
+
+    if (missing) {
+        return (
+            <div className='py-20 text-center'>
+                <p className='font-medium'>Invoice not found</p>
+                <Link href='/parent/fees' className='mt-2 inline-block text-sm text-primary hover:underline'>Back to fees</Link>
+            </div>
+        );
+    }
+
+    if (!invoice) {
+        return <Skeleton className='mx-auto aspect-[210/297] w-full max-w-[794px]'/>;
+    }
+
+    const closed = invoice.status === 'CANCELLED' || invoice.status === 'REFUNDED';
+    const balance = closed ? 0 : Math.max(0, toNumber(invoice.total) - toNumber(invoice.paid));
+    // Parents see payments and refunds, not internal notes about the invoice being issued.
+    const payments = invoice.history.filter((h) => toNumber(h.amount) > 0);
+
+    return (
+        <div className='space-y-6'>
+            <div className='flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between'>
+                <div>
+                    <Link href='/parent/fees' className='mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground'>
+                        <ArrowLeft className='h-4 w-4'/> Fees
+                    </Link>
+                    <h1 className='text-xl font-medium'>{invoice.number}</h1>
+                    <p className='mt-1 text-muted-foreground'>{invoice.student.name}{invoice.student.class ? ` · ${invoice.student.class.name}` : ''}</p>
+                </div>
+                <Button onClick={() => window.open(`/print/invoice/${invoice.uuid}`, '_blank')}>
+                    <Printer className='h-4 w-4'/>
+                    Print or save as PDF
+                </Button>
+            </div>
+
+            <div className='grid gap-6 xl:grid-cols-[minmax(0,794px)_1fr]'>
+                <InvoiceDocument invoice={invoice}/>
+                <aside className='h-fit space-y-5 rounded-[10px] border border-border p-5'>
+                    <div className='flex items-center justify-between'>
+                        <h2 className='font-medium'>Payment</h2>
+                        <InvoiceStatusBadge status={invoice.status}/>
+                    </div>
+                    <dl className='space-y-1.5 text-sm'>
+                        {[
+                            ['Total', naira(invoice.total)],
+                            ['Paid', naira(invoice.paid)],
+                            ['Balance', naira(balance)],
+                        ].map(([label, value]) => (
+                            <div key={label} className='flex justify-between gap-3'>
+                                <dt className='text-muted-foreground'>{label}</dt>
+                                <dd className='font-medium'>{value}</dd>
+                            </div>
+                        ))}
+                    </dl>
+                    <div>
+                        <h3 className='mb-2 text-sm font-medium'>Payments received</h3>
+                        {payments.length === 0 ? (
+                            <p className='text-sm text-muted-foreground'>No payments recorded yet.</p>
+                        ) : (
+                            <ul className='space-y-3'>
+                                {payments.map((p) => (
+                                    <li key={p.uuid} className='text-sm'>
+                                        <p className='font-medium'>
+                                            {p.status === 'REFUNDED' ? 'Refund' : 'Payment'} · {naira(p.amount)}
+                                        </p>
+                                        <p className='text-xs text-muted-foreground'>
+                                            {new Date(p.created_at).toLocaleDateString('en-GB', {dateStyle: 'medium'})} · {INVOICE_STATUS_LABEL[p.status]}
+                                        </p>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                </aside>
+            </div>
+        </div>
+    );
+}
