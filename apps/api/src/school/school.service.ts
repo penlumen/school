@@ -10,6 +10,7 @@ import { normalizePhone } from '../common/phone.js';
 import { StorageService } from '../storage/storage.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { sanitizeHtml } from '../common/sanitize-html.js';
+import { parseTheme } from '../common/theme.js';
 
 // Never expose the school token, which identifies the school to the API.
 const SCHOOL_PROFILE = {
@@ -26,6 +27,7 @@ const SCHOOL_PROFILE = {
   vision: true,
   features: true,
   values: true,
+  theme: true,
 };
 
 interface ContentItem {
@@ -148,6 +150,7 @@ export class SchoolService {
     if ('features' in body)
       data.features = this.contentItems(body.features, true);
     if ('values' in body) data.values = this.contentItems(body.values, false);
+    if ('theme' in body) data.theme = parseTheme(body.theme);
 
     try {
       const school = await this.prisma.school.update({
@@ -457,6 +460,21 @@ export class SchoolService {
     });
 
     return { status: 200, success: true, message: 'Website', data: { school } };
+  }
+
+  /** Just the brand colours, loaded by every page of the web app. */
+  async publicTheme(token: string | undefined) {
+    const schoolUuid = await this.schoolByToken(token);
+    const school = await this.prisma.school.findUnique({
+      where: { uuid: schoolUuid },
+      select: { theme: true },
+    });
+    return {
+      status: 200,
+      success: true,
+      message: 'Theme',
+      data: { theme: school?.theme ?? null },
+    };
   }
 
   /** Only events an admin has explicitly marked "Show on website". */

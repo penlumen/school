@@ -43,6 +43,7 @@ import {
   ChevronDown,
   ClipboardList,
   CreditCard,
+  Wallet,
   FileText,
   GraduationCap,
   Compass,
@@ -257,6 +258,13 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
           href: '/staff/invoices',
           description:
             'Issue invoices to parents from a template, record payments and print invoices.',
+        },
+        {
+          title: 'Payments',
+          icon: Wallet,
+          href: '/staff/payments',
+          description:
+            'Payments parents made online with Paystack, and the ones waiting for you to confirm.',
         },
       ],
     },

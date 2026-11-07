@@ -9,6 +9,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { parseRecordStatus } from '../common/record-status.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { StorageService } from '../storage/storage.service.js';
+import { WebhooksService } from '../integrations/webhooks.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 
 @Injectable()
@@ -17,6 +18,7 @@ export class StudentsService {
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
     private readonly storage: StorageService,
+    private readonly webhooks: WebhooksService,
   ) {}
 
   async index(branchUuid: string | undefined, decoded: DecodedUser) {
@@ -158,6 +160,18 @@ export class StudentsService {
       'Student enrolled',
       `${result.name} has been enrolled in ${result.class?.name || 'a class'}.`,
     );
+    this.webhooks.emit(
+      decoded.school_uuid,
+      result.branch_uuid,
+      'student.created',
+      {
+        uuid: result.uuid,
+        name: result.name,
+        reg_number: result.reg_number,
+        status: result.status,
+        class: { uuid: result.class_uuid, name: result.class?.name ?? null },
+      },
+    );
 
     return {
       status: 201,
@@ -258,6 +272,19 @@ export class StudentsService {
       );
     }
 
+    this.webhooks.emit(
+      decoded.school_uuid,
+      result.branch_uuid,
+      'student.updated',
+      {
+        uuid: result.uuid,
+        name: result.name,
+        reg_number: result.reg_number,
+        status: result.status,
+        class: { uuid: result.class_uuid, name: result.class?.name ?? null },
+      },
+    );
+
     if (previousStudent?.avatar && previousStudent.avatar !== result.avatar) {
       const oldKey = this.storage.keyFromUrl(previousStudent.avatar);
       if (oldKey) await this.storage.delete(oldKey);
@@ -312,6 +339,14 @@ export class StudentsService {
       const legacyKey = this.storage.keyFromUrl(student.avatar);
       if (legacyKey) await this.storage.delete(legacyKey);
       await this.prisma.student.delete({ where: { uuid } });
+      this.webhooks.emit(
+        decoded.school_uuid,
+        student.branch_uuid,
+        'student.deleted',
+        {
+          uuid: student.uuid,
+        },
+      );
 
       return { status: 200, success: true, message: 'Student deleted' };
     } catch (error) {

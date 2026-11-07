@@ -1,12 +1,14 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import jwt from 'jsonwebtoken';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
+import { STUDENT_ROUTE_KEY } from '../decorators/student-route.decorator.js';
 
 const UNAUTHENTICATED_RESPONSE = {
   status: 401,
@@ -52,9 +54,24 @@ export class JwtAuthGuard implements CanActivate {
         throw new UnauthorizedException(UNAUTHENTICATED_RESPONSE);
       }
       request.user = decoded;
-      return true;
     } catch (error) {
       throw new UnauthorizedException(UNAUTHENTICATED_RESPONSE);
     }
+
+    // Students only reach routes built for them.
+    if ((request.user as { role?: string }).role === 'STUDENT') {
+      const allowed = this.reflector.getAllAndOverride<boolean>(
+        STUDENT_ROUTE_KEY,
+        [context.getHandler(), context.getClass()],
+      );
+      if (!allowed) {
+        throw new ForbiddenException({
+          status: 403,
+          success: false,
+          message: 'Not available to students',
+        });
+      }
+    }
+    return true;
   }
 }

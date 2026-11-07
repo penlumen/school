@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { FirebaseService } from './firebase.service.js';
+import { MailService } from '../mail/mail.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 
 interface NotifyOptions {
@@ -16,11 +17,13 @@ export class NotificationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly firebase: FirebaseService,
+    private readonly mail: MailService,
   ) {}
 
   /**
-   * Creates an in-app notification for each user, and pushes the same message
-   * via FCM to any device tokens they've registered. Both channels always fire
+   * Creates an in-app notification for each user, pushes the same message
+   * via FCM to any device tokens they've registered, and emails it when the
+   * school has that kind of email switched on. The channels always fire
    * together - this is the single place any other service should call to
    * notify someone of something happening.
    *
@@ -51,6 +54,9 @@ export class NotificationsService {
           message,
         })),
       });
+
+      // Email goes out in the background, if the school has it switched on.
+      this.mail.notifyUsers(recipients, branchUuid, type, title, message);
 
       const tokens = await this.prisma.deviceToken.findMany({
         where: { user_uuid: { in: recipients } },

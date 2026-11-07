@@ -15,14 +15,21 @@ import {toast} from 'sonner';
 import {motion} from 'framer-motion';
 import {useAuth} from '@/hooks/auth';
 import {useBranch} from '@/hooks/branch';
+import {homeFor, useStudentPortal} from '@/hooks/student-portal';
 
 const APP_SLUG = process.env.NEXT_PUBLIC_APP_SLUG_NAME || 'Penlumen';
 const APP_LOGO = process.env.NEXT_PUBLIC_APP_LOGO || '/placeholder.svg';
 
 type LoginTab = 'student' | 'staff' | 'parent';
 
+/** Where to go after logging in: back to an app sign-in in progress, else the portal home. */
+const nextPath = (role: string) => {
+    const next = new URLSearchParams(window.location.search).get('next');
+    return next && next.startsWith('/oauth/authorize?') ? next : homeFor(role);
+};
+
 const TABS: { value: LoginTab; label: string; idLabel: string }[] = [
-    {value: 'student', label: 'Student', idLabel: 'Student ID'},
+    {value: 'student', label: 'Student', idLabel: 'Registration number'},
     {value: 'staff', label: 'Staff', idLabel: 'Staff ID'},
     {value: 'parent', label: 'Parent', idLabel: 'Parent ID'},
 ];
@@ -47,6 +54,7 @@ function SuppliesStrip() {
 export default function LoginPage() {
     const router = useRouter();
     const {login} = useAuth();
+    const {login: studentLogin} = useStudentPortal();
     const {index: branchIndex} = useBranch();
     const [tab, setTab] = useState<LoginTab>('staff');
     const [email, setEmail] = useState('');
@@ -54,11 +62,19 @@ export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
+    // Coming back from a set-password link: open the right tab with the email filled in.
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const role = params.get('role');
+        if (role === 'parent' || role === 'staff' || role === 'student') setTab(role);
+        if (params.get('email')) setEmail(params.get('email')!);
+    }, []);
+
     useEffect(() => {
         const userString = Cookies.get('user');
         const user = userString ? JSON.parse(userString) : null;
         if (user) {
-            router.push(user.role === 'PARENT' ? '/parent/dashboard' : '/staff/dashboard');
+            router.push(nextPath(user.role));
         }
     }, [router]);
 
@@ -68,7 +84,18 @@ export default function LoginPage() {
         e.preventDefault();
 
         if (tab === 'student') {
-            toast.error('Student accounts aren\'t set up yet - please contact your school administrator.');
+            setIsLoading(true);
+            try {
+                const response = await studentLogin(email.trim(), password.trim());
+                if (!response.success) return toast.error(response.message);
+                Cookies.set('token', response.data.token, {expires: 1});
+                Cookies.set('user', JSON.stringify(response.data.user), {expires: 1});
+                router.push(nextPath('STUDENT'));
+            } catch (error: any) {
+                toast.error(error.message || 'Login failed. Please try again.');
+            } finally {
+                setIsLoading(false);
+            }
             return;
         }
 
@@ -89,7 +116,7 @@ export default function LoginPage() {
                     Cookies.set('branch', branchResponse.data.active_branch_uuid, {expires: 7});
                 }
 
-                router.push(response.data.user.role === 'PARENT' ? '/parent/dashboard' : '/staff/dashboard');
+                router.push(nextPath(response.data.user.role));
             }
         } catch (error: any) {
             toast.error(error.message || 'Login failed. Please try again.');
@@ -150,13 +177,23 @@ export default function LoginPage() {
                                     type='text'
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder='Enter ID'
+                                    placeholder={tab === 'student' ? 'e.g. SO-002' : 'Enter your email'}
                                     required
                                 />
                             </div>
 
                             <div className='space-y-2'>
-                                <Label htmlFor='password'>Password</Label>
+                                <div className='flex items-center justify-between'>
+                                    <Label htmlFor='password'>{tab === 'student' ? 'PIN' : 'Password'}</Label>
+                                    {tab !== 'student' && (
+                                        <Link
+                                            href={`/forgot-password?role=${tab}`}
+                                            className='text-xs text-primary hover:underline'
+                                        >
+                                            Forgot password?
+                                        </Link>
+                                    )}
+                                </div>
                                 <div className='relative'>
                                     <Input
                                         id='password'
@@ -164,7 +201,8 @@ export default function LoginPage() {
                                         required
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        placeholder='Enter your password'
+                                        placeholder={tab === 'student' ? 'The 6-digit PIN from your school' : 'Enter your password'}
+                                        inputMode={tab === 'student' ? 'numeric' : undefined}
                                         className='pr-10'
                                     />
                                     <button

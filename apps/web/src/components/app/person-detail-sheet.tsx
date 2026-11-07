@@ -1,12 +1,16 @@
 'use client';
 
-import {Copy, ShieldCheck} from 'lucide-react';
+import {useState} from 'react';
+import Cookies from 'js-cookie';
+import {Copy, Send, ShieldCheck} from 'lucide-react';
 import {toast} from 'sonner';
 
 import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
 import {Badge} from '@/components/ui/badge';
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
 import {useStaffAttendance} from '@/hooks/staff-attendance';
+import {usePasswordLinks} from '@/hooks/email';
+import {Button} from '@/components/ui/button';
 import {
     Sheet,
     SheetContent,
@@ -44,8 +48,26 @@ function Field({label, value}: { label: string; value?: React.ReactNode }) {
 
 export function PersonDetailSheet({role, open, onOpenChange, person, showAttendance}: PersonDetailSheetProps) {
     const {history} = useStaffAttendance();
+    const {resendInvite} = usePasswordLinks();
+    const [sending, setSending] = useState(false);
 
     if (!person) return null;
+
+    const viewer = JSON.parse(Cookies.get('user') || 'null');
+    const canInvite = ['ROOT', 'ADMIN'].includes(viewer?.role) || viewer?.position === 'ADMINISTRATIVE';
+
+    const sendLink = async () => {
+        setSending(true);
+        try {
+            const r = await resendInvite(person.uuid);
+            if (r.success) toast.success(r.message);
+            else toast.error(r.message);
+        } catch (e: any) {
+            toast.error(e.message || 'Something went wrong');
+        } finally {
+            setSending(false);
+        }
+    };
 
     const roleLabel = role === 'STAFF' ? 'Staff' : 'Parent';
 
@@ -64,6 +86,17 @@ export function PersonDetailSheet({role, open, onOpenChange, person, showAttenda
                 }
             />
             <Field label='Address' value={person.address}/>
+            {canInvite && person.email && (
+                <div className='pt-4'>
+                    <Button variant='outline' className='w-full' disabled={sending} onClick={sendLink}>
+                        <Send className='h-4 w-4'/>
+                        {sending ? 'Sending...' : 'Email a set-password link'}
+                    </Button>
+                    <p className='mt-2 text-center text-xs text-muted-foreground'>
+                        For a new account, or when they can&apos;t sign in. The link works for 7 days.
+                    </p>
+                </div>
+            )}
         </>
     );
 

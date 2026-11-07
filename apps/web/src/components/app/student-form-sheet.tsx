@@ -8,6 +8,7 @@ import {useClass} from '@/hooks/class';
 import {useUser} from '@/hooks/user';
 import {PhotoUpload} from '@/components/app/photo-upload';
 import {RecordStatusField} from '@/components/app/record-status-field';
+import {StudentPinField} from '@/components/app/student-pin-field';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
@@ -234,6 +235,11 @@ export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, 
                         {submitting ? 'Saving...' : isEdit ? 'Save changes' : 'Add student'}
                     </Button>
                 </form>
+                {isEdit && (
+                    <div className='px-4 pb-6'>
+                        <StudentPinField studentUuid={student!.uuid} regNumber={student!.reg_number}/>
+                    </div>
+                )}
             </SheetContent>
         </Sheet>
     );

@@ -1,4 +1,5 @@
 import {axiosInstance} from '@/lib/axios';
+import type {SchoolTheme} from '@/lib/theme';
 
 export interface ContentItem {
     icon?: string;
@@ -20,6 +21,7 @@ export interface SchoolProfile {
     vision: string | null;
     features: ContentItem[] | null;
     values: ContentItem[] | null;
+    theme: SchoolTheme | null;
 }
 
 export interface Facility {

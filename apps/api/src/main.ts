@@ -4,7 +4,11 @@ import { AppModule } from './app.module.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { cors: true });
+  // rawBody lets the Paystack webhook check its signature against the exact bytes sent.
+  const app = await NestFactory.create(AppModule, {
+    cors: true,
+    rawBody: true,
+  });
 
   app.setGlobalPrefix('api/v1');
   app.useGlobalFilters(new HttpExceptionFilter());

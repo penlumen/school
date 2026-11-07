@@ -11,6 +11,8 @@ import { normalizePhone } from '../common/phone.js';
 import { HashingService } from '../common/hashing.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { StorageService } from '../storage/storage.service.js';
+import { PasswordService } from '../mail/password.service.js';
+import { WebhooksService } from '../integrations/webhooks.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 
 @Injectable()
@@ -20,6 +22,8 @@ export class UsersService {
     private readonly hashing: HashingService,
     private readonly notifications: NotificationsService,
     private readonly storage: StorageService,
+    private readonly passwords: PasswordService,
+    private readonly webhooks: WebhooksService,
   ) {}
 
   async index(
@@ -130,9 +134,8 @@ export class UsersService {
     const contact = normalizePhone(rawContact, 'Contact');
     const alt_contact = normalizePhone(rawAltContact, 'Alt contact');
     // The Add Staff/Add Parent forms don't collect a password (matches the
-    // design) — generate one server-side. There's no invite/reset-password
-    // flow yet, so this account's password isn't known to anyone until that
-    // exists; it's still safely hashed and stored either way.
+    // design) — generate one server-side and email the person an invite
+    // link to choose their own.
     const password = body.password || randomBytes(12).toString('base64url');
 
     const currentUser = await this.prisma.user.findUnique({
@@ -243,6 +246,23 @@ export class UsersService {
 
       return created;
     });
+
+    if (!body.password) {
+      void this.passwords.sendInvite(newUser.uuid).catch(() => undefined);
+    }
+    if (formatRole === 'STAFF') {
+      this.webhooks.emit(
+        currentUser.school_uuid!,
+        branchUuid,
+        'staff.created',
+        {
+          uuid: newUser.uuid,
+          name: newUser.name,
+          email: newUser.email,
+          position: newUser.position,
+        },
+      );
+    }
 
     const roleLabel = role.toLowerCase();
     await this.notifications.notifyBranchAdmins(
