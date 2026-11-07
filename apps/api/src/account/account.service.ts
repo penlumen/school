@@ -21,6 +21,7 @@ export class AccountService {
     avatar: true,
     role: true,
     position: true,
+    walkthrough_seen_at: true,
   };
 
   async account(decoded: DecodedUser) {
@@ -85,5 +86,20 @@ export class AccountService {
       data: { password: await this.hashing.createHash(next) },
     });
     return { status: 200, success: true, message: 'Password changed' };
+  }
+
+  /** Marks the portal walkthrough as watched (or skipped) so it stops opening automatically. */
+  async markWalkthroughSeen(decoded: DecodedUser) {
+    const user = await this.prisma.user.update({
+      where: { uuid: decoded.uuid },
+      data: { walkthrough_seen_at: new Date() },
+      select: { walkthrough_seen_at: true },
+    });
+    return {
+      status: 200,
+      success: true,
+      message: 'Walkthrough marked as seen',
+      data: user,
+    };
   }
 }

@@ -10,6 +10,7 @@ export interface Account {
     avatar: string | null;
     role: string;
     position: string;
+    walkthrough_seen_at: string | null;
 }
 
 const unwrap = (data: any) =>
@@ -24,4 +25,5 @@ export const useAccount = () => ({
         unwrap((await axiosInstance.patch('/api/v1/account/update', payload)).data),
     changePassword: async (payload: { current_password: string; new_password: string }) =>
         unwrap((await axiosInstance.patch('/api/v1/account/password', payload)).data),
+    markWalkthroughSeen: async () => unwrap((await axiosInstance.post('/api/v1/account/walkthrough-seen')).data),
 });
