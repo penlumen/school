@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post } from '@nestjs/common';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { AccountService } from './account.service.js';
@@ -20,5 +20,10 @@ export class AccountController {
   @Patch('password')
   changePassword(@CurrentUser() user: DecodedUser, @Body() body: any) {
     return this.accountService.changePassword(user, body);
+  }
+
+  @Post('walkthrough-seen')
+  walkthroughSeen(@CurrentUser() user: DecodedUser) {
+    return this.accountService.markWalkthroughSeen(user);
   }
 }
