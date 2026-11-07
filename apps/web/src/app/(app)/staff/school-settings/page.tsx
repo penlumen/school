@@ -11,6 +11,7 @@ import {SchoolHomeTab} from '@/components/app/school-home-tab';
 import {SchoolAboutTab} from '@/components/app/school-about-tab';
 import {SchoolGalleryTab} from '@/components/app/school-gallery-tab';
 import {SchoolThemeTab} from '@/components/app/school-theme-tab';
+import {SchoolPaymentsTab} from '@/components/app/school-payments-tab';
 
 export default function SchoolSettingsPage() {
     const {show} = useSchool();
@@ -52,6 +53,7 @@ export default function SchoolSettingsPage() {
                 {value: 'about', label: 'About', content: <SchoolAboutTab school={school} onSaved={merge}/>},
                 {value: 'gallery', label: 'Gallery', content: <SchoolGalleryTab school={school} onSaved={merge}/>},
                 {value: 'theme', label: 'Theme', content: <SchoolThemeTab school={school} onSaved={merge}/>},
+                {value: 'payments', label: 'Payments', content: <SchoolPaymentsTab/>},
             ]}
         />
     );

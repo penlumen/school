@@ -3,23 +3,37 @@
 import {useEffect, useState} from 'react';
 import Link from 'next/link';
 import {useParams} from 'next/navigation';
-import {ArrowLeft, Printer} from 'lucide-react';
+import {ArrowLeft, Clock3, CreditCard, Printer, XCircle} from 'lucide-react';
 
 import {INVOICE_STATUS_LABEL, type InvoiceDetail, naira, toNumber} from '@/hooks/billing';
 import {useParent} from '@/hooks/parent';
+import {type OnlinePayment, usePayments} from '@/hooks/payments';
 import {Button} from '@/components/ui/button';
 import {Skeleton} from '@/components/ui/skeleton';
 import {InvoiceStatusBadge} from '@/components/app/billing-ui';
 import {InvoiceDocument} from '@/components/app/invoice-document';
+import {PayInvoiceDialog} from '@/components/app/pay-invoice-dialog';
 
 export default function ParentInvoicePage() {
     const {uuid} = useParams<{ uuid: string }>();
     const {invoice: fetchInvoice} = useParent();
+    const {options: fetchOptions} = usePayments();
     const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
+    const [online, setOnline] = useState<OnlinePayment[]>([]);
     const [missing, setMissing] = useState(false);
+    const [options, setOptions] = useState<{ enabled: boolean; allow_part_payment: boolean } | null>(null);
+    const [payOpen, setPayOpen] = useState(false);
+
+    const load = () =>
+        fetchInvoice(uuid).then((r) => {
+            if (!r.success) return setMissing(true);
+            setInvoice(r.data.invoice);
+            setOnline(r.data.online_payments || []);
+        });
 
     useEffect(() => {
-        fetchInvoice(uuid).then((r) => (r.success ? setInvoice(r.data.invoice) : setMissing(true)));
+        load();
+        fetchOptions().then((r) => r.success && setOptions(r.data)).catch(() => undefined);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [uuid]);
 
@@ -40,6 +54,11 @@ export default function ParentInvoicePage() {
     const balance = closed ? 0 : Math.max(0, toNumber(invoice.total) - toNumber(invoice.paid));
     // Parents see payments and refunds, not internal notes about the invoice being issued.
     const payments = invoice.history.filter((h) => toNumber(h.amount) > 0);
+    const awaiting = online
+        .filter((p) => p.status === 'AWAITING_CONFIRMATION')
+        .reduce((sum, p) => sum + toNumber(p.amount), 0);
+    const payable = Math.max(0, balance - awaiting);
+    const canPay = !!options?.enabled && payable > 0 && (invoice.status === 'PENDING' || invoice.status === 'PART_PAYMENT');
 
     return (
         <div className='space-y-6'>
@@ -51,10 +70,21 @@ export default function ParentInvoicePage() {
                     <h1 className='text-xl font-medium'>{invoice.number}</h1>
                     <p className='mt-1 text-muted-foreground'>{invoice.student.name}{invoice.student.class ? ` · ${invoice.student.class.name}` : ''}</p>
                 </div>
-                <Button onClick={() => window.open(`/print/invoice/${invoice.uuid}`, '_blank')}>
-                    <Printer className='h-4 w-4'/>
-                    Print or save as PDF
-                </Button>
+                <div className='flex flex-wrap gap-2'>
+                    <Button
+                        variant={canPay ? 'outline' : 'default'}
+                        onClick={() => window.open(`/print/invoice/${invoice.uuid}`, '_blank')}
+                    >
+                        <Printer className='h-4 w-4'/>
+                        Print or save as PDF
+                    </Button>
+                    {canPay && (
+                        <Button onClick={() => setPayOpen(true)}>
+                            <CreditCard className='h-4 w-4'/>
+                            Pay now
+                        </Button>
+                    )}
+                </div>
             </div>
 
             <div className='grid gap-6 xl:grid-cols-[minmax(0,794px)_1fr]'>
@@ -76,6 +106,35 @@ export default function ParentInvoicePage() {
                             </div>
                         ))}
                     </dl>
+                    {canPay && (
+                        <Button className='w-full' onClick={() => setPayOpen(true)}>
+                            <CreditCard className='h-4 w-4'/>
+                            Pay {naira(payable)} online
+                        </Button>
+                    )}
+                    {online.length > 0 && (
+                        <ul className='space-y-2'>
+                            {online.map((p) => (
+                                <li
+                                    key={p.uuid}
+                                    className={
+                                        p.status === 'REJECTED'
+                                            ? 'rounded-md bg-destructive-muted p-3 text-sm'
+                                            : 'rounded-md bg-warning-muted p-3 text-sm'
+                                    }
+                                >
+                                    <p className='flex items-center gap-1.5 font-medium'>
+                                        {p.status === 'REJECTED' ? <XCircle className='h-4 w-4 text-destructive'/> : <Clock3 className='h-4 w-4 text-warning-foreground'/>}
+                                        {naira(p.amount)} · {p.status === 'REJECTED' ? 'Not confirmed' : 'Waiting for the school to confirm'}
+                                    </p>
+                                    <p className='mt-0.5 text-xs text-muted-foreground'>
+                                        Ref {p.reference}
+                                        {p.status === 'REJECTED' && p.note ? ` · ${p.note}` : ''}
+                                    </p>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                     <div>
                         <h3 className='mb-2 text-sm font-medium'>Payments received</h3>
                         {payments.length === 0 ? (
@@ -97,6 +156,17 @@ export default function ParentInvoicePage() {
                     </div>
                 </aside>
             </div>
+
+            {options && (
+                <PayInvoiceDialog
+                    open={payOpen}
+                    onOpenChange={setPayOpen}
+                    invoiceUuid={invoice.uuid}
+                    balance={payable}
+                    allowPart={options.allow_part_payment}
+                    onFinished={load}
+                />
+            )}
         </div>
     );
 }
