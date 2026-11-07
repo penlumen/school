@@ -59,16 +59,6 @@ export interface TermDates {
     branch: { name: string };
 }
 
-export interface ParentAccount {
-    uuid: string;
-    name: string | null;
-    email: string;
-    contact: string | null;
-    alt_contact: string | null;
-    address: string | null;
-    avatar: string | null;
-}
-
 export type {SiteEvent as ParentEvent};
 
 const unwrap = (data: any) =>
@@ -87,11 +77,6 @@ export const useParent = () => ({
     invoices: (studentUuid?: string) => get(`invoices${studentUuid ? `?student_uuid=${studentUuid}` : ''}`),
     invoice: (uuid: string) => get(`invoice/${uuid}`),
     calendar: () => get('calendar'),
-    account: () => get('account'),
-    updateAccount: async (payload: Pick<ParentAccount, 'contact' | 'alt_contact' | 'address'>) =>
-        unwrap((await axiosInstance.patch('/api/v1/parent/account', payload)).data),
-    changePassword: async (payload: { current_password: string; new_password: string }) =>
-        unwrap((await axiosInstance.patch('/api/v1/parent/account/password', payload)).data),
 });
 
 /** Role from the session cookie, read on the client. */
