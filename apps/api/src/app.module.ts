@@ -27,6 +27,7 @@ import { AccountModule } from './account/account.module.js';
 import { AffectiveModule } from './affective/affective.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
 import { MailModule } from './mail/mail.module.js';
+import { StudentPortalModule } from './student-portal/student-portal.module.js';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { MailModule } from './mail/mail.module.js';
     AccountModule,
     AffectiveModule,
     PaymentsModule,
+    StudentPortalModule,
   ],
   controllers: [AppController],
   providers: [

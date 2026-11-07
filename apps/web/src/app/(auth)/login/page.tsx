@@ -15,6 +15,7 @@ import {toast} from 'sonner';
 import {motion} from 'framer-motion';
 import {useAuth} from '@/hooks/auth';
 import {useBranch} from '@/hooks/branch';
+import {homeFor, useStudentPortal} from '@/hooks/student-portal';
 
 const APP_SLUG = process.env.NEXT_PUBLIC_APP_SLUG_NAME || 'Penlumen';
 const APP_LOGO = process.env.NEXT_PUBLIC_APP_LOGO || '/placeholder.svg';
@@ -22,7 +23,7 @@ const APP_LOGO = process.env.NEXT_PUBLIC_APP_LOGO || '/placeholder.svg';
 type LoginTab = 'student' | 'staff' | 'parent';
 
 const TABS: { value: LoginTab; label: string; idLabel: string }[] = [
-    {value: 'student', label: 'Student', idLabel: 'Student ID'},
+    {value: 'student', label: 'Student', idLabel: 'Registration number'},
     {value: 'staff', label: 'Staff', idLabel: 'Staff ID'},
     {value: 'parent', label: 'Parent', idLabel: 'Parent ID'},
 ];
@@ -47,6 +48,7 @@ function SuppliesStrip() {
 export default function LoginPage() {
     const router = useRouter();
     const {login} = useAuth();
+    const {login: studentLogin} = useStudentPortal();
     const {index: branchIndex} = useBranch();
     const [tab, setTab] = useState<LoginTab>('staff');
     const [email, setEmail] = useState('');
@@ -58,7 +60,7 @@ export default function LoginPage() {
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const role = params.get('role');
-        if (role === 'parent' || role === 'staff') setTab(role);
+        if (role === 'parent' || role === 'staff' || role === 'student') setTab(role);
         if (params.get('email')) setEmail(params.get('email')!);
     }, []);
 
@@ -66,7 +68,7 @@ export default function LoginPage() {
         const userString = Cookies.get('user');
         const user = userString ? JSON.parse(userString) : null;
         if (user) {
-            router.push(user.role === 'PARENT' ? '/parent/dashboard' : '/staff/dashboard');
+            router.push(homeFor(user.role));
         }
     }, [router]);
 
@@ -76,7 +78,18 @@ export default function LoginPage() {
         e.preventDefault();
 
         if (tab === 'student') {
-            toast.error('Student accounts aren\'t set up yet - please contact your school administrator.');
+            setIsLoading(true);
+            try {
+                const response = await studentLogin(email.trim(), password.trim());
+                if (!response.success) return toast.error(response.message);
+                Cookies.set('token', response.data.token, {expires: 1});
+                Cookies.set('user', JSON.stringify(response.data.user), {expires: 1});
+                router.push('/student/dashboard');
+            } catch (error: any) {
+                toast.error(error.message || 'Login failed. Please try again.');
+            } finally {
+                setIsLoading(false);
+            }
             return;
         }
 
@@ -158,14 +171,14 @@ export default function LoginPage() {
                                     type='text'
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder='Enter ID'
+                                    placeholder={tab === 'student' ? 'e.g. SO-002' : 'Enter your email'}
                                     required
                                 />
                             </div>
 
                             <div className='space-y-2'>
                                 <div className='flex items-center justify-between'>
-                                    <Label htmlFor='password'>Password</Label>
+                                    <Label htmlFor='password'>{tab === 'student' ? 'PIN' : 'Password'}</Label>
                                     {tab !== 'student' && (
                                         <Link
                                             href={`/forgot-password?role=${tab}`}
@@ -182,7 +195,8 @@ export default function LoginPage() {
                                         required
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        placeholder='Enter your password'
+                                        placeholder={tab === 'student' ? 'The 6-digit PIN from your school' : 'Enter your password'}
+                                        inputMode={tab === 'student' ? 'numeric' : undefined}
                                         className='pr-10'
                                     />
                                     <button

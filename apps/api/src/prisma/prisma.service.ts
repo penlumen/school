@@ -18,7 +18,9 @@ export class PrismaService
     const adapter = new PrismaPg({
       connectionString: process.env.DATABASE_URL!,
     });
-    super({ adapter });
+    // Never return a student's PIN hash unless a query selects it on purpose
+    // (only student portal sign-in does).
+    super({ adapter, omit: { student: { pin_hash: true } } });
   }
 
   async onModuleInit() {

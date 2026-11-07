@@ -264,19 +264,23 @@ model Calendar {
 
 // ========== STUDENT ==========
 model Student {
-  id              Int      @id @default(autoincrement())
-  uuid            String   @unique @default(uuid())
-  parent_uuid     String
-  branch_uuid     String
-  class_uuid      String
-  reg_number      String
-  name            String
-  gender          String?
-  avatar          String?
-  face_descriptor Float[]
-  status          String   @default("active")
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  id               Int       @id @default(autoincrement())
+  uuid             String    @unique @default(uuid())
+  parent_uuid      String
+  branch_uuid      String
+  class_uuid       String
+  reg_number       String
+  name             String
+  gender           String?
+  avatar           String?
+  face_descriptor  Float[]
+  status           String    @default("active")
+  // Student portal sign-in: registration number + a PIN staff set (hashed).
+  pin_hash         String?
+  pin_failed       Int       @default(0)
+  pin_locked_until DateTime?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
 
   parent     User                @relation(fields: [parent_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
   branch     Branch              @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
