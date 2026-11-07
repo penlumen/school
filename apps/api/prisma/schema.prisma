@@ -115,6 +115,9 @@ model School {
   features   Json?
   values     Json?
 
+  // Brand colours for the portals, public site and printouts: { preset, primary }.
+  theme      Json?
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
