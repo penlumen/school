@@ -43,6 +43,7 @@ import {
   FileText,
   GraduationCap,
   HelpCircle,
+  IdCard,
   LayoutDashboard,
   LogOut,
   Settings,
@@ -80,7 +81,8 @@ function HelpTourButton({ navGroups }: { navGroups: NavGroup[] }) {
         element: '[data-tour="sidebar-branch"]',
         popover: {
           title: 'Switch branch',
-          description: "Jump between your school's branches, or add a new one, without leaving the page you're on.",
+          description:
+            "Jump between your school's branches, or add a new one, without leaving the page you're on.",
         },
       },
       ...navGroups.flatMap((group) =>
@@ -98,7 +100,9 @@ function HelpTourButton({ navGroups }: { navGroups: NavGroup[] }) {
       },
     ];
 
-    const visibleSteps = steps.filter((step) => document.querySelector(step.element));
+    const visibleSteps = steps.filter((step) =>
+      document.querySelector(step.element),
+    );
 
     driver({
       showProgress: true,
@@ -152,13 +156,15 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
           title: 'Dashboard',
           icon: LayoutDashboard,
           href: '/staff/dashboard',
-          description: 'A quick summary of how your school is performing - parents, staff, students, classes, and attendance trends.',
+          description:
+            'A quick summary of how your school is performing - parents, staff, students, classes, and attendance trends.',
         },
         {
           title: 'Schedule',
           icon: Calendar,
           href: '/staff/schedules',
-          description: 'Manage school terms/sessions and the events calendar for each one.',
+          description:
+            'Manage school terms/sessions and the events calendar for each one.',
         },
       ],
     },
@@ -166,20 +172,22 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
       label: 'School',
       items: [
         {
-          title: 'Staff',
-          icon: GraduationCap,
+          title: 'Staffs',
+          icon: IdCard,
           href: '/staff/staffs',
-          description: 'Manage staff accounts, and mark staff attendance if you\'re an administrator.',
+          description:
+            "Manage staff accounts, and mark staff attendance if you're an administrator.",
         },
         {
           title: 'Parents',
           icon: Users,
           href: '/staff/parents',
-          description: 'Manage parent/guardian accounts and their contact information.',
+          description:
+            'Manage parent/guardian accounts and their contact information.',
         },
         {
           title: 'Students',
-          icon: Users,
+          icon: GraduationCap,
           href: '/staff/students',
           description: 'Manage student records, attendance, and results.',
         },
@@ -187,7 +195,8 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
           title: 'Classes',
           icon: BookOpen,
           href: '/staff/classes',
-          description: 'Manage classes, their students, subjects, and attendance.',
+          description:
+            'Manage classes, their students, subjects, and attendance.',
         },
       ],
     },
@@ -198,13 +207,15 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
           title: 'Billing Templates',
           icon: FileText,
           href: '/staff/templates',
-          description: 'Reusable fee lists, such as school fees for a group of classes, used to issue invoices.',
+          description:
+            'Reusable fee lists, such as school fees for a group of classes, used to issue invoices.',
         },
         {
           title: 'Invoices',
           icon: CreditCard,
           href: '/staff/invoices',
-          description: 'Issue invoices to parents from a template, record payments and print invoices.',
+          description:
+            'Issue invoices to parents from a template, record payments and print invoices.',
         },
       ],
     },
@@ -215,13 +226,21 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
           title: 'Branch Settings',
           icon: SlidersHorizontal,
           href: '/staff/branch-settings',
-          description: 'Details, logo and grade scale for the branch you currently have selected.',
+          description:
+            'Details, logo and grade scale for the branch you currently have selected.',
         },
         {
           title: 'School Settings',
           icon: Settings,
           href: '/staff/school-settings',
-          description: 'School-wide details and the content of your public website: home page, about page and gallery.',
+          description:
+            'School-wide details and the content of your public website: home page, about page and gallery.',
+        },
+        {
+          title: 'Account',
+          icon: User,
+          href: '/staff/account',
+          description: 'Your contact details and password.',
         },
       ],
     },
@@ -235,7 +254,8 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
           title: 'Home',
           icon: LayoutDashboard,
           href: '/parent/dashboard',
-          description: "Your children at a glance: today's attendance, latest results, fees owed and what's coming up.",
+          description:
+            "Your children at a glance: today's attendance, latest results, fees owed and what's coming up.",
         },
         {
           title: 'Calendar',
@@ -252,7 +272,8 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
           title: 'Fees',
           icon: CreditCard,
           href: '/parent/fees',
-          description: 'Invoices for all your children, what has been paid and what is still owed.',
+          description:
+            'Invoices for all your children, what has been paid and what is still owed.',
         },
       ],
     },
@@ -365,7 +386,10 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
               </span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button data-tour='sidebar-account' className='outline-0 flex-shrink-0'>
+                  <button
+                    data-tour='sidebar-account'
+                    className='outline-0 flex-shrink-0'
+                  >
                     <ChevronDown className='h-4 w-4 opacity-50' />
                   </button>
                 </DropdownMenuTrigger>

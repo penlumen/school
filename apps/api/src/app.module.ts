@@ -23,6 +23,7 @@ import { SchoolModule } from './school/school.module.js';
 import { BillingModule } from './billing/billing.module.js';
 import { PresenceModule } from './presence/presence.module.js';
 import { ParentModule } from './parent/parent.module.js';
+import { AccountModule } from './account/account.module.js';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { ParentModule } from './parent/parent.module.js';
     BillingModule,
     PresenceModule,
     ParentModule,
+    AccountModule,
   ],
   controllers: [AppController],
   providers: [

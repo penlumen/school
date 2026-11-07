@@ -2,10 +2,8 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-  UnprocessableEntityException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { HashingService } from '../common/hashing.service.js';
 import { ResultsService } from '../results/results.service.js';
 import { BillingService } from '../billing/billing.service.js';
 import { DecodedUser } from '../common/types/auth.js';
@@ -19,7 +17,6 @@ import { DecodedUser } from '../common/types/auth.js';
 export class ParentService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly hashing: HashingService,
     private readonly results: ResultsService,
     private readonly billing: BillingService,
   ) {}
@@ -385,83 +382,5 @@ export class ParentService {
       message: 'Calendar',
       data: { events, terms },
     };
-  }
-
-  // ---------- Account ----------
-
-  private accountSelect = {
-    uuid: true,
-    name: true,
-    email: true,
-    contact: true,
-    alt_contact: true,
-    address: true,
-    avatar: true,
-    role: true,
-    position: true,
-  };
-
-  /** Parents may update how the school reaches them; name and email stay with the school. */
-  async updateAccount(decoded: DecodedUser, body: any) {
-    this.assertParent(decoded);
-    const clean = (value: unknown, max: number) =>
-      typeof value === 'string'
-        ? value.trim().slice(0, max) || null
-        : undefined;
-    const user = await this.prisma.user.update({
-      where: { uuid: decoded.uuid },
-      data: {
-        contact: clean(body?.contact, 40),
-        alt_contact: clean(body?.alt_contact, 40),
-        address: clean(body?.address, 300),
-      },
-      select: this.accountSelect,
-    });
-    return {
-      status: 200,
-      success: true,
-      message: 'Contact details saved',
-      data: { user },
-    };
-  }
-
-  async account(decoded: DecodedUser) {
-    this.assertParent(decoded);
-    const user = await this.prisma.user.findUnique({
-      where: { uuid: decoded.uuid },
-      select: this.accountSelect,
-    });
-    return { status: 200, success: true, message: 'Account', data: { user } };
-  }
-
-  async changePassword(decoded: DecodedUser, body: any) {
-    this.assertParent(decoded);
-    const current =
-      typeof body?.current_password === 'string' ? body.current_password : '';
-    const next =
-      typeof body?.new_password === 'string' ? body.new_password : '';
-    if (next.length < 8) {
-      throw new UnprocessableEntityException({
-        status: 422,
-        success: false,
-        message: 'New password must be at least 8 characters',
-      });
-    }
-    const user = await this.prisma.user.findUnique({
-      where: { uuid: decoded.uuid },
-      select: { password: true },
-    });
-    if (!user || !(await this.hashing.compareHash(current, user.password))) {
-      throw new UnprocessableEntityException({
-        status: 422,
-        success: false,
-        message: 'Current password is incorrect',
-      });
-    }
-    await this.prisma.user.update({
-      where: { uuid: decoded.uuid },
-      data: { password: await this.hashing.createHash(next) },
-    });
-    return { status: 200, success: true, message: 'Password changed' };
   }
 }

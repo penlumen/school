@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { ParentService } from './parent.service.js';
@@ -52,20 +52,5 @@ export class ParentController {
   @Get('calendar')
   calendar(@CurrentUser() user: DecodedUser) {
     return this.parentService.calendar(user);
-  }
-
-  @Get('account')
-  account(@CurrentUser() user: DecodedUser) {
-    return this.parentService.account(user);
-  }
-
-  @Patch('account')
-  updateAccount(@CurrentUser() user: DecodedUser, @Body() body: any) {
-    return this.parentService.updateAccount(user, body);
-  }
-
-  @Patch('account/password')
-  changePassword(@CurrentUser() user: DecodedUser, @Body() body: any) {
-    return this.parentService.changePassword(user, body);
   }
 }
