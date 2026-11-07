@@ -6,5 +6,6 @@ import { ReportGateway } from './report.gateway.js';
 @Module({
   controllers: [ResultsController],
   providers: [ResultsService, ReportGateway],
+  exports: [ResultsService],
 })
 export class ResultsModule {}

@@ -58,7 +58,7 @@ export default function LoginPage() {
         const userString = Cookies.get('user');
         const user = userString ? JSON.parse(userString) : null;
         if (user) {
-            router.push(user.role === 'PARENT' ? '/parent/wards' : '/staff/dashboard');
+            router.push(user.role === 'PARENT' ? '/parent/dashboard' : '/staff/dashboard');
         }
     }, [router]);
 
@@ -89,7 +89,7 @@ export default function LoginPage() {
                     Cookies.set('branch', branchResponse.data.active_branch_uuid, {expires: 7});
                 }
 
-                router.push(response.data.user.role === 'PARENT' ? '/parent/wards' : '/staff/dashboard');
+                router.push(response.data.user.role === 'PARENT' ? '/parent/dashboard' : '/staff/dashboard');
             }
         } catch (error: any) {
             toast.error(error.message || 'Login failed. Please try again.');

@@ -5,6 +5,7 @@ import {Printer as Print, User} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import LoadingPage from '@/components/loading-page';
 import {useResult} from '@/hooks/result';
+import {isParentSession, useParent} from '@/hooks/parent';
 import {useParams} from 'next/navigation';
 
 // ... (Interfaces and Constants remain the same as your original code)
@@ -23,8 +24,9 @@ interface StudentData {
 
 interface AssessmentObject {
     subject: string;
-    assignment: number;
-    assessment: number;
+    // First and second continuous assessments (formerly assignment/assessment).
+    ca_one: number;
+    ca_two: number;
     examination: number;
     overall: number;
     grade?: string;
@@ -88,6 +90,7 @@ export default function TraditionalResultSheet() {
     const [shouldPrint, setShouldPrint] = useState(false);
     const [loading, setLoading] = useState(true);
     const {view} = useResult();
+    const {result: parentResult} = useParent();
     const {uuid} = useParams();
 
     const totalScores = assessments.reduce((sum, subject) => sum + subject.overall, 0);
@@ -101,7 +104,8 @@ export default function TraditionalResultSheet() {
 
     const fetchData = async () => {
         try {
-            const response = await view(uuid as string);
+            // Parents may only open their own children's approved reports.
+            const response = isParentSession() ? await parentResult(uuid as string) : await view(uuid as string);
             if (response.success) {
                 setResultData(response.data);
                 setAssessments(response.data.assessments || []);
@@ -220,8 +224,8 @@ export default function TraditionalResultSheet() {
                                 {assessments.map((assessment, index) => (
                                     <tr key={index} className="h-7">
                                         <td className='border border-black px-2 font-bold text-xs uppercase'>{assessment.subject}</td>
-                                        <td className='border border-black text-center text-xs'>{assessment.assignment}</td>
-                                        <td className='border border-black text-center text-xs'>{assessment.assessment}</td>
+                                        <td className='border border-black text-center text-xs'>{assessment.ca_one}</td>
+                                        <td className='border border-black text-center text-xs'>{assessment.ca_two}</td>
                                         <td className='border border-black text-center text-xs'>{assessment.examination}</td>
                                         <td className='border border-black text-center font-bold text-xs'>{assessment.overall}</td>
                                         <td className='border border-black text-center font-bold text-xs'>
