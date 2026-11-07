@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { normalizePhone } from '../common/phone.js';
+import { DEFAULT_AFFECTIVE_TRAITS } from '../affective/affective.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { StorageService } from '../storage/storage.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
@@ -94,6 +95,13 @@ export class BranchesService {
           contact,
           address,
           school_uuid: decoded.school_uuid,
+          // Start with the standard report-card traits; editable in Branch Settings.
+          affective_traits: {
+            create: DEFAULT_AFFECTIVE_TRAITS.map((trait, position) => ({
+              name: trait,
+              position,
+            })),
+          },
         },
       });
 

@@ -194,6 +194,7 @@ model Branch {
   notifications Notification[]
   billing_templates BillingTemplate[]
   invoices Invoice[]
+  affective_traits AffectiveTrait[]
   school   School          @relation(fields: [school_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
 }
 
@@ -331,6 +332,7 @@ model Result {
   updated_at       DateTime     @updatedAt
 
   assessments Assessments[]
+  affective   AffectiveRating[]
 
   calendar Calendar? @relation(fields: [calendar_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
   student  Student?  @relation(fields: [student_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
@@ -559,4 +561,37 @@ model InvoiceStatusChange {
   created_at      DateTime      @default(now())
 
   invoice Invoice @relation(fields: [invoice_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+}
+
+// ========== AFFECTIVE DOMAIN ==========
+// Behaviour traits rated on report cards (Punctuality, Neatness, ...), set per branch.
+model AffectiveTrait {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(uuid())
+  branch_uuid String
+  name        String
+  position    Int      @default(0)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  branch  Branch            @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  ratings AffectiveRating[]
+}
+
+// A trait's rating (1-5) on one report. trait_name is copied so the report card
+// still reads correctly after the trait is renamed or removed.
+model AffectiveRating {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(uuid())
+  result_uuid String
+  trait_uuid  String?
+  trait_name  String
+  rating      Int
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  result Result          @relation(fields: [result_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  trait  AffectiveTrait? @relation(fields: [trait_uuid], references: [uuid], onUpdate: Cascade, onDelete: SetNull)
+
+  @@unique([result_uuid, trait_uuid])
 }

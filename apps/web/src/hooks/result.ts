@@ -106,13 +106,16 @@ export const useResult = () => {
     const update = async (
         result_uuid: string,
         resultData: ResultData,
-        assessmentData: AssessmentObject[]
+        assessmentData: AssessmentObject[],
+        /** Affective domain ratings; null clears a rating. Omit to leave them unchanged. */
+        affective?: { trait_uuid: string; rating: number | null }[]
     ) => {
         const response = await axiosInstance.patch(
             `/api/v1/result/update/${result_uuid}`,
             {
                 result: resultData,
                 assessments: assessmentData,
+                ...(affective && {affective}),
             }
         );
         const data = response.data;

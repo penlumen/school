@@ -8,6 +8,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { DecodedUser } from '../common/types/auth.js';
+import { AFFECTIVE_SCALE } from '../affective/affective.service.js';
 
 @Injectable()
 export class ResultsService {
@@ -325,6 +326,11 @@ export class ResultsService {
           total_students: totalStudents,
           average: average.toFixed(1),
         },
+        affective: await this.affectiveRows(
+          result.uuid,
+          result.student?.branch_uuid,
+        ),
+        affective_scale: AFFECTIVE_SCALE,
         grading_system: grading.map((g) => ({
           grade: g.grade,
           score: g.score,
@@ -449,7 +455,7 @@ export class ResultsService {
   async update(
     resultUuid: string,
     decoded: DecodedUser,
-    body: { result?: any; assessments?: any[] },
+    body: { result?: any; assessments?: any[]; affective?: any[] },
   ) {
     const { result, assessments } = body;
 
@@ -525,6 +531,13 @@ export class ResultsService {
     const total = computedAssessments.reduce((sum, a) => sum + a.overall, 0);
 
     await this.prisma.$transaction(updates);
+    if (Array.isArray(body.affective)) {
+      await this.saveAffective(
+        resultUuid,
+        existing.student?.branch_uuid,
+        body.affective,
+      );
+    }
 
     const updated = await this.prisma.result.update({
       where: { uuid: resultUuid },
@@ -680,5 +693,85 @@ export class ResultsService {
         message: 'Failed to delete result',
       });
     }
+  }
+
+  /**
+   * Saves 1-5 ratings for the branch's affective traits. A null or empty
+   * rating clears it. Traits from another branch are ignored.
+   */
+  private async saveAffective(
+    resultUuid: string,
+    branchUuid: string | undefined,
+    input: any[],
+  ) {
+    const traits = await this.prisma.affectiveTrait.findMany({
+      where: { branch_uuid: branchUuid ?? '' },
+      select: { uuid: true, name: true },
+    });
+    const byUuid = new Map(traits.map((t) => [t.uuid, t.name]));
+    const entries = input
+      .filter(
+        (e) => typeof e?.trait_uuid === 'string' && byUuid.has(e.trait_uuid),
+      )
+      .map((e) => ({
+        trait_uuid: e.trait_uuid as string,
+        rating: Number(e.rating),
+      }));
+    const toSave = entries.filter(
+      (e) => Number.isInteger(e.rating) && e.rating >= 1 && e.rating <= 5,
+    );
+
+    await this.prisma.$transaction([
+      this.prisma.affectiveRating.deleteMany({
+        where: {
+          result_uuid: resultUuid,
+          trait_uuid: { in: entries.map((e) => e.trait_uuid) },
+        },
+      }),
+      this.prisma.affectiveRating.createMany({
+        data: toSave.map((e) => ({
+          result_uuid: resultUuid,
+          trait_uuid: e.trait_uuid,
+          trait_name: byUuid.get(e.trait_uuid)!,
+          rating: e.rating,
+        })),
+      }),
+    ]);
+  }
+
+  /**
+   * The branch's current traits in order with this report's ratings, followed
+   * by ratings for traits that have since been removed (kept by name).
+   */
+  private async affectiveRows(
+    resultUuid: string,
+    branchUuid: string | undefined,
+  ) {
+    const [traits, ratings] = await Promise.all([
+      this.prisma.affectiveTrait.findMany({
+        where: { branch_uuid: branchUuid ?? '' },
+        orderBy: { position: 'asc' },
+        select: { uuid: true, name: true },
+      }),
+      this.prisma.affectiveRating.findMany({
+        where: { result_uuid: resultUuid },
+        select: { trait_uuid: true, trait_name: true, rating: true },
+      }),
+    ]);
+    const rated = new Map(ratings.map((r) => [r.trait_uuid, r.rating]));
+    return [
+      ...traits.map((t) => ({
+        trait_uuid: t.uuid,
+        name: t.name,
+        rating: rated.get(t.uuid) ?? null,
+      })),
+      ...ratings
+        .filter((r) => !r.trait_uuid)
+        .map((r) => ({
+          trait_uuid: null,
+          name: r.trait_name,
+          rating: r.rating,
+        })),
+    ];
   }
 }

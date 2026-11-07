@@ -24,6 +24,7 @@ import { BillingModule } from './billing/billing.module.js';
 import { PresenceModule } from './presence/presence.module.js';
 import { ParentModule } from './parent/parent.module.js';
 import { AccountModule } from './account/account.module.js';
+import { AffectiveModule } from './affective/affective.module.js';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { AccountModule } from './account/account.module.js';
     PresenceModule,
     ParentModule,
     AccountModule,
+    AffectiveModule,
   ],
   controllers: [AppController],
   providers: [
