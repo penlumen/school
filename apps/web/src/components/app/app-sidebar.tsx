@@ -41,6 +41,7 @@ import {
   BookOpen,
   Calendar,
   ChevronDown,
+  ClipboardList,
   CreditCard,
   FileText,
   GraduationCap,
@@ -193,11 +194,18 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
             'A quick summary of how your school is performing - parents, staff, students, classes, and attendance trends.',
         },
         {
-          title: 'Schedule',
+          title: 'Schedules',
           icon: Calendar,
           href: '/staff/schedules',
           description:
             'Manage school terms/sessions and the events calendar for each one.',
+        },
+        {
+          title: 'Reports',
+          icon: ClipboardList,
+          href: '/staff/reports',
+          description:
+            "Students' results and report cards, filtered by class and status. Staff see the classes they teach.",
         },
       ],
     },

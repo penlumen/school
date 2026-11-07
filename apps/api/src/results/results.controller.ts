@@ -23,7 +23,9 @@ export class ResultsController {
     @CurrentUser() user: DecodedUser,
     @Query()
     query: {
-      status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+      status?: string;
+      class_uuid?: string;
+      calendar_uuid?: string;
       search?: string;
       page?: string;
       limit?: string;
@@ -34,15 +36,18 @@ export class ResultsController {
 
   @Get('view/:result_uuid')
   view(
-    @Headers('x-branch-session') branchUuid: string,
     @Param('result_uuid') resultUuid: string,
+    @CurrentUser() user: DecodedUser,
   ) {
-    return this.resultsService.view(branchUuid, resultUuid);
+    return this.resultsService.view(resultUuid, user);
   }
 
   @Get('show/:student_uuid')
-  show(@Param('student_uuid') studentUuid: string) {
-    return this.resultsService.show(studentUuid);
+  show(
+    @Param('student_uuid') studentUuid: string,
+    @CurrentUser() user: DecodedUser,
+  ) {
+    return this.resultsService.show(studentUuid, user);
   }
 
   @Post('create/:student_uuid')

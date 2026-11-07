@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { TagMultiSelect } from '@/components/app/tag-multi-select';
+import { RecordStatusField } from '@/components/app/record-status-field';
 import {
   Select,
   SelectContent,
@@ -45,6 +46,7 @@ const emptyForm = {
   teacher_uuid: '',
   teachers_uuid: [] as string[],
   capacity: '',
+  status: 'active',
 };
 
 export function ClassFormSheet({
@@ -80,6 +82,7 @@ export function ClassFormSheet({
               teacher_uuid: classItem.teacher_uuid || '',
               teachers_uuid: classItem.teachers_uuid || [],
               capacity: classItem.capacity ? String(classItem.capacity) : '',
+              status: classItem.status || 'active',
             }
           : emptyForm,
       );
@@ -106,6 +109,7 @@ export function ClassFormSheet({
           ]),
         ),
         capacity: formData.capacity ? Number(formData.capacity) : 0,
+        ...(isEdit && { status: formData.status }),
       };
 
       const response = isEdit
@@ -195,6 +199,15 @@ export function ClassFormSheet({
               }
             />
           </div>
+
+          {isEdit && (
+            <RecordStatusField
+              id='class-status'
+              value={formData.status}
+              onChange={(status) => setFormData({ ...formData, status })}
+              hint='Inactive classes stay on record but are marked as no longer running.'
+            />
+          )}
 
           <Button type='submit' disabled={submitting} className='w-full'>
             {submitting ? 'Saving...' : isEdit ? 'Save changes' : 'Add class'}

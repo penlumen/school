@@ -69,6 +69,7 @@ export const useClass = () => {
       capacity: classData.capacity,
       teacher_uuid: classData.teacher_uuid,
       teachers_uuid: classData.teachers_uuid,
+      status: classData.status,
     });
     const data = response.data;
 

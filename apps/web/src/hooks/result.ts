@@ -17,17 +17,19 @@ type AssessmentObject = {
 };
 
 export const useResult = () => {
-    const index = async (page: number, searchQuery: string, statusFilter: string) => {
-        let response;
-        if (searchQuery.length >= 3) {
-            response = await axiosInstance.get(
-                `/api/v1/result/index?page=${page}&search=${searchQuery}`
-            );
-        } else {
-            response = await axiosInstance.get(
-                `/api/v1/result/index?page=${page}&status=${statusFilter}`
-            );
-        }
+    /** Reports list, already limited by the API to the classes this user can see. */
+    const index = async (filters: {
+        page?: number;
+        status?: string;
+        class_uuid?: string;
+        calendar_uuid?: string;
+        search?: string;
+    }) => {
+        const params = new URLSearchParams();
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value !== undefined && value !== '' && value !== 'all') params.set(key, String(value));
+        });
+        const response = await axiosInstance.get(`/api/v1/result/index?${params}`);
         const data = response.data;
 
         if (!data.success || !data.data) {
@@ -104,13 +106,16 @@ export const useResult = () => {
     const update = async (
         result_uuid: string,
         resultData: ResultData,
-        assessmentData: AssessmentObject[]
+        assessmentData: AssessmentObject[],
+        /** Affective domain ratings; null clears a rating. Omit to leave them unchanged. */
+        affective?: { trait_uuid: string; rating: number | null }[]
     ) => {
         const response = await axiosInstance.patch(
             `/api/v1/result/update/${result_uuid}`,
             {
                 result: resultData,
                 assessments: assessmentData,
+                ...(affective && {affective}),
             }
         );
         const data = response.data;

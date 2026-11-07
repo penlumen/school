@@ -6,6 +6,7 @@ import {Button} from '@/components/ui/button';
 import LoadingPage from '@/components/loading-page';
 import {useResult} from '@/hooks/result';
 import {isParentSession, useParent} from '@/hooks/parent';
+import type {AffectiveRow, AffectiveScaleItem} from '@/hooks/affective';
 import {useParams} from 'next/navigation';
 
 // ... (Interfaces and Constants remain the same as your original code)
@@ -57,6 +58,8 @@ interface ResultData {
     summary: ResultSummary;
     assessments: AssessmentObject[];
     grading_system?: GradingScale[];
+    affective?: AffectiveRow[];
+    affective_scale?: AffectiveScaleItem[];
 }
 
 const DEFAULT_GRADING_SYSTEM: GradingScale[] = [
@@ -261,21 +264,28 @@ export default function TraditionalResultSheet() {
                         </div>
 
                         <div className='grid grid-cols-2 gap-4 mb-1'>
-                            {/* Affective Skills */}
-                            <div>
-                                <h3 className='font-bold text-xs mb-1 uppercase bg-gray-200 px-1 border border-black'>Affective
-                                    Domain</h3>
-                                <table className='w-full border-collapse border border-black text-[10px]'>
-                                    <tbody>
-                                    {['Punctuality', 'Neatness', 'Politeness', 'Honesty', 'Leadership'].map(skill => (
-                                        <tr key={skill}>
-                                            <td className='border border-black px-1 font-bold uppercase'>{skill}</td>
-                                            <td className='border border-black w-10 text-center'>{' '}</td>
-                                        </tr>
-                                    ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                            {/* Affective domain: the branch's traits (Branch Settings), rated 1-5 per report */}
+                            {(resultData.affective?.length ?? 0) > 0 && (
+                                <div>
+                                    <h3 className='font-bold text-xs mb-1 uppercase bg-gray-200 px-1 border border-black'>Affective
+                                        Domain</h3>
+                                    <table className='w-full border-collapse border border-black text-[10px]'>
+                                        <tbody>
+                                        {resultData.affective!.map(row => (
+                                            <tr key={row.trait_uuid ?? row.name}>
+                                                <td className='border border-black px-1 font-bold uppercase'>{row.name}</td>
+                                                <td className='border border-black w-10 text-center font-bold'>{row.rating ?? ' '}</td>
+                                            </tr>
+                                        ))}
+                                        </tbody>
+                                    </table>
+                                    {resultData.affective_scale && (
+                                        <p className='mt-1 text-[9px] uppercase'>
+                                            {resultData.affective_scale.map(s => `${s.rating}: ${s.label}`).join(' · ')}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Grading Key */}
                             <div>
