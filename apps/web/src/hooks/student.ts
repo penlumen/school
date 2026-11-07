@@ -71,6 +71,7 @@ export const useStudent = () => {
         gender: studentData.gender,
         avatar: studentData.avatar,
         face_descriptor: studentData.face_descriptor,
+        status: studentData.status,
       }
     );
     const data = response.data;

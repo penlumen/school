@@ -15,6 +15,7 @@ import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/c
 import {Tooltip, TooltipContent, TooltipTrigger} from '@/components/ui/tooltip';
 import Link from 'next/link';
 import {useResult} from '@/hooks/result';
+import type {AffectiveRow, AffectiveScaleItem} from '@/hooks/affective';
 import {useReportSocket} from '@/hooks/report-socket';
 import {useParams, useRouter} from 'next/navigation';
 import LoadingPage from '@/components/loading-page';
@@ -71,6 +72,8 @@ interface ResultData {
     summary: ResultSummary;
     assessments: AssessmentObject[];
     grading_system?: GradingScale[];
+    affective?: AffectiveRow[];
+    affective_scale?: AffectiveScaleItem[];
 }
 
 const EDITABLE_FIELDS = ['ca_one', 'ca_two', 'examination'] as const;
@@ -87,6 +90,7 @@ export default function ReportPage() {
     const [approved, setApproved] = useState(false);
     const [requestApproval, setRequestApproval] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
+    const [affective, setAffective] = useState<AffectiveRow[]>([]);
 
     useEffect(() => {
         const userString = Cookies.get('user');
@@ -100,6 +104,7 @@ export default function ReportPage() {
             if (response.success) {
                 setReportData(response.data);
                 setAssessments(response.data.assessments || []);
+                setAffective(response.data.affective || []);
                 setApproved(response.data.result.status === 'APPROVED');
                 setRequestApproval(!!response.data.result.approval_requested);
             }
@@ -128,6 +133,10 @@ export default function ReportPage() {
                         return updated;
                     }),
                 );
+            } else if (event.field.startsWith('affective:')) {
+                const traitUuid = event.field.split(':')[1];
+                const rating = event.value === '' ? null : Number(event.value);
+                setAffective((prev) => prev.map((row) => (row.trait_uuid === traitUuid ? {...row, rating} : row)));
             } else if (event.field === 'remark:teacher_remark' || event.field === 'remark:principal_remark') {
                 const key = event.field.split(':')[1] as 'teacher_remark' | 'principal_remark';
                 setReportData((prev) => (prev ? {...prev, result: {...prev.result, [key]: event.value}} : prev));
@@ -173,6 +182,14 @@ export default function ReportPage() {
     };
 
     // --- Handlers ---
+    /** Picking the current rating again clears it. */
+    const setRating = (traitUuid: string, rating: number) => {
+        const current = affective.find((row) => row.trait_uuid === traitUuid)?.rating ?? null;
+        const next = current === rating ? null : rating;
+        setAffective((prev) => prev.map((row) => (row.trait_uuid === traitUuid ? {...row, rating: next} : row)));
+        emitFieldChange(`affective:${traitUuid}`, next ?? '');
+    };
+
     const updateAssessment = (assessmentUuid: string, field: string, value: number) => {
         setAssessments(prev => prev.map(item => {
             if (item.uuid === assessmentUuid) {
@@ -205,7 +222,10 @@ export default function ReportPage() {
                     status: approved ? 'APPROVED' : 'PENDING',
                     approval_requested: isAdmin ? requestApproval : requestApproval,
                 },
-                assessments
+                assessments,
+                affective
+                    .filter((row) => row.trait_uuid)
+                    .map((row) => ({trait_uuid: row.trait_uuid as string, rating: row.rating})),
             );
             if (response.success) {
                 setIsEditing(false);
@@ -440,6 +460,57 @@ export default function ReportPage() {
                         </div>
                     )}
                 </div>
+            )}
+
+            {/* AFFECTIVE DOMAIN - behaviour traits set in Branch Settings, rated 1-5 */}
+            {affective.length > 0 && (
+                <Card className="shadow-sm border-slate-200">
+                    <CardHeader className="pb-2 bg-slate-50/50 border-b mb-4">
+                        <CardTitle className="text-xs font-black uppercase text-slate-500 tracking-widest">
+                            Affective domain
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        {affective.map((row) => {
+                            const label = reportData.affective_scale?.find((s) => s.rating === row.rating)?.label;
+                            return (
+                                <div key={row.trait_uuid ?? row.name} className="flex flex-wrap items-center justify-between gap-3">
+                                    <span className="text-sm font-medium">{row.name}</span>
+                                    {isEditing && row.trait_uuid ? (
+                                        <div className="flex gap-1" role="radiogroup" aria-label={`${row.name} rating`}>
+                                            {[1, 2, 3, 4, 5].map((n) => (
+                                                <button
+                                                    key={n}
+                                                    type="button"
+                                                    role="radio"
+                                                    aria-checked={row.rating === n}
+                                                    title={reportData.affective_scale?.find((s) => s.rating === n)?.label}
+                                                    onClick={() => setRating(row.trait_uuid as string, n)}
+                                                    className={`h-8 w-8 rounded-md border text-sm font-medium transition-colors ${
+                                                        row.rating === n
+                                                            ? 'border-primary bg-primary text-primary-foreground'
+                                                            : 'border-border hover:bg-muted'
+                                                    }`}
+                                                >
+                                                    {n}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <span className="text-sm text-muted-foreground">
+                                            {row.rating ? `${row.rating} · ${label}` : 'Not rated'}
+                                        </span>
+                                    )}
+                                </div>
+                            );
+                        })}
+                        {isEditing && reportData.affective_scale && (
+                            <p className="pt-1 text-xs text-muted-foreground">
+                                {reportData.affective_scale.map((s) => `${s.rating} ${s.label}`).join(' · ')}. Click a rating again to clear it.
+                            </p>
+                        )}
+                    </CardContent>
+                </Card>
             )}
 
             {/* REMARKS SECTION - stacked top (teacher) then bottom (principal) */}
