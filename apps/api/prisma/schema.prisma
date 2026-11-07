@@ -51,6 +51,8 @@ model User {
   status          String   @default("active")
   last_branch_uuid String?
   face_descriptor Float[]
+  // When the user finished or skipped the portal walkthrough video; null = show it on next visit.
+  walkthrough_seen_at DateTime?
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 

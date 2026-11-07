@@ -11,6 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { BranchSwitcher } from '@/components/app/branch-switcher';
 import { NotificationBell } from '@/components/app/notification-bell';
 import { OnlineStaff } from '@/components/app/online-staff';
+import { WalkthroughPlayer } from '@/components/app/walkthrough-player';
+import { useAccount } from '@/hooks/account';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,7 +44,9 @@ import {
   CreditCard,
   FileText,
   GraduationCap,
+  Compass,
   HelpCircle,
+  PlayCircle,
   IdCard,
   LayoutDashboard,
   LogOut,
@@ -72,7 +76,13 @@ interface NavGroup {
 
 // Pulled out of AppSidebar so it can use useSidebar() (only valid inside
 // SidebarProvider, which wraps this component further down).
-function HelpTourButton({ navGroups }: { navGroups: NavGroup[] }) {
+function HelpTourButton({
+  navGroups,
+  onWatchVideo,
+}: {
+  navGroups: NavGroup[];
+  onWatchVideo: () => void;
+}) {
   const { isMobile, openMobile, setOpenMobile } = useSidebar();
 
   const startTour = () => {
@@ -124,13 +134,34 @@ function HelpTourButton({ navGroups }: { navGroups: NavGroup[] }) {
   };
 
   return (
-    <button
-      onClick={handleClick}
-      className='hidden sm:flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground px-2 py-1.5 rounded-md hover:bg-muted'
-    >
-      <HelpCircle className='h-4 w-4' />
-      Help
-    </button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className='flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground px-2 py-1.5 rounded-md hover:bg-muted outline-0'>
+          <HelpCircle className='h-4 w-4' />
+          <span className='hidden sm:inline'>Help</span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align='end' className='w-60'>
+        {/* Open after the menu has closed, or its focus handling closes the dialog straight away. */}
+        <DropdownMenuItem
+          onSelect={() => setTimeout(onWatchVideo, 0)}
+          className='cursor-pointer'
+        >
+          <PlayCircle className='h-4 w-4' />
+          <span>
+            <span className='block'>Watch the walkthrough</span>
+            <span className='block text-xs text-muted-foreground'>A two-minute video tour</span>
+          </span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={handleClick} className='cursor-pointer'>
+          <Compass className='h-4 w-4' />
+          <span>
+            <span className='block'>Take the guided tour</span>
+            <span className='block text-xs text-muted-foreground'>Step through the menu on this page</span>
+          </span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -140,6 +171,8 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile>();
   const [navGroups, setNavGroups] = useState<NavGroup[]>([]);
   const [mounted, setMounted] = useState(false);
+  const [walkthroughOpen, setWalkthroughOpen] = useState(false);
+  const { show: showAccount, markWalkthroughSeen } = useAccount();
 
   const logoutAccount = () => {
     Cookies.remove('branch');
@@ -223,6 +256,12 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
       label: 'Settings',
       items: [
         {
+          title: 'Account',
+          icon: User,
+          href: '/staff/account',
+          description: 'Your contact details and password.',
+        },
+        {
           title: 'Branch Settings',
           icon: SlidersHorizontal,
           href: '/staff/branch-settings',
@@ -235,12 +274,6 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
           href: '/staff/school-settings',
           description:
             'School-wide details and the content of your public website: home page, about page and gallery.',
-        },
-        {
-          title: 'Account',
-          icon: User,
-          href: '/staff/account',
-          description: 'Your contact details and password.',
         },
       ],
     },
@@ -310,6 +343,31 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
+
+  // Open the walkthrough video automatically the first time someone signs in.
+  // The account record (not the cookie) is the source of truth, so it shows
+  // once per person on any device.
+  useEffect(() => {
+    if (!Cookies.get('token')) return;
+    try {
+      // Set by the screenshot capture script so the video stays out of its own screenshots.
+      if (localStorage.getItem('walkthrough:capture')) return;
+    } catch {
+      /* storage unavailable; carry on */
+    }
+    showAccount().then((response) => {
+      if (response.success && response.data.user && !response.data.user.walkthrough_seen_at) {
+        setWalkthroughOpen(true);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleWalkthroughChange = (open: boolean) => {
+    setWalkthroughOpen(open);
+    // Finishing or skipping both count as seen; it stays available from Help.
+    if (!open) markWalkthroughSeen().catch(() => undefined);
+  };
 
   if (!mounted) {
     return null;
@@ -416,7 +474,10 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
 
             <div className='flex items-center gap-2'>
               {profile?.role !== 'PARENT' && <OnlineStaff />}
-              <HelpTourButton navGroups={navGroups} />
+              <HelpTourButton
+                navGroups={navGroups}
+                onWatchVideo={() => setWalkthroughOpen(true)}
+              />
               <NotificationBell />
             </div>
           </header>
@@ -426,6 +487,11 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
           </main>
         </div>
       </div>
+      <WalkthroughPlayer
+        role={profile?.role === 'PARENT' ? 'parent' : 'staff'}
+        open={walkthroughOpen}
+        onOpenChange={handleWalkthroughChange}
+      />
     </SidebarProvider>
   );
 }
