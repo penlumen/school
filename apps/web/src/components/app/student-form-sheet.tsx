@@ -7,6 +7,7 @@ import {useStudent} from '@/hooks/student';
 import {useClass} from '@/hooks/class';
 import {useUser} from '@/hooks/user';
 import {PhotoUpload} from '@/components/app/photo-upload';
+import {RecordStatusField} from '@/components/app/record-status-field';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
@@ -46,7 +47,7 @@ interface StudentFormSheetProps {
     onSaved: () => void;
 }
 
-const emptyForm = {name: '', reg_number: '', gender: '', parent_uuid: '', class_uuid: '', avatar: ''};
+const emptyForm = {name: '', reg_number: '', gender: '', parent_uuid: '', class_uuid: '', avatar: '', status: 'active'};
 
 export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, onSaved}: StudentFormSheetProps) {
     const {create, update} = useStudent();
@@ -65,6 +66,7 @@ export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, 
                 parent_uuid: student.parent_uuid || '',
                 class_uuid: student.class_uuid || '',
                 avatar: student.avatar || '',
+                status: student.status || 'active',
             }
             : {...emptyForm, class_uuid: lockedClassUuid || ''}
     );
@@ -218,6 +220,15 @@ export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, 
                             </SelectContent>
                         </Select>
                     </div>
+
+                    {isEdit && (
+                        <RecordStatusField
+                            id='student-status'
+                            value={formData.status}
+                            onChange={(status) => setFormData({...formData, status})}
+                            hint='Use Inactive for students who have left or are no longer attending.'
+                        />
+                    )}
 
                     <Button type='submit' disabled={submitting} className='w-full'>
                         {submitting ? 'Saving...' : isEdit ? 'Save changes' : 'Add student'}

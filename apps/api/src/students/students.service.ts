@@ -6,6 +6,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { parseRecordStatus } from '../common/record-status.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { StorageService } from '../storage/storage.service.js';
 import { DecodedUser } from '../common/types/auth.js';
@@ -220,6 +221,7 @@ export class StudentsService {
       });
     }
 
+    const status = parseRecordStatus(body.status);
     const previousStudent = await this.prisma.student.findUnique({
       where: { uuid },
     });
@@ -232,6 +234,7 @@ export class StudentsService {
         class_uuid,
         gender,
         avatar,
+        status,
         ...(face_descriptor ? { face_descriptor } : {}),
       },
       include: { class: true },

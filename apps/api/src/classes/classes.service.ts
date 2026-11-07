@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { parseRecordStatus } from '../common/record-status.js';
 import { CacheService } from '../cache/cache.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { DecodedUser } from '../common/types/auth.js';
@@ -198,13 +199,14 @@ export class ClassesService {
       });
     }
 
+    const status = parseRecordStatus(body.status);
     const previousClass = await this.prisma.class.findUnique({
       where: { uuid },
     });
 
     const updatedClass = await this.prisma.class.update({
       where: { uuid },
-      data: { name, capacity, teacher_uuid, teachers_uuid },
+      data: { name, capacity, teacher_uuid, teachers_uuid, status },
     });
 
     if (!updatedClass) {
