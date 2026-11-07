@@ -23,7 +23,9 @@ export class ResultsController {
     @CurrentUser() user: DecodedUser,
     @Query()
     query: {
-      status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+      status?: string;
+      class_uuid?: string;
+      calendar_uuid?: string;
       search?: string;
       page?: string;
       limit?: string;

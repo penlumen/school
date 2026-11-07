@@ -30,22 +30,24 @@ export class ResultsService {
     };
   }
 
+  /**
+   * Report list for the Reports page. Administrators (ADMIN/ROOT role or an
+   * administrative position) see every class in the branch; other staff only
+   * the classes they teach (class teacher or one of its teachers). Filters:
+   * class, status, term and a name / reg. number search.
+   */
   async index(
     branchUuid: string | undefined,
     decoded: DecodedUser,
     query: {
-      status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+      status?: string;
+      class_uuid?: string;
+      calendar_uuid?: string;
       search?: string;
       page?: string;
       limit?: string;
     },
   ) {
-    const status = query.status;
-    const search = query.search;
-    const page = Number(query.page) || 1;
-    const limit = Number(query.limit) || 30;
-    const skip = (page - 1) * limit;
-
     if (!branchUuid) {
       throw new BadRequestException({
         success: false,
@@ -53,81 +55,114 @@ export class ResultsService {
       });
     }
 
-    try {
-      let results;
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(query.limit) || 20));
+    const status = ['PENDING', 'APPROVED', 'REJECTED'].includes(
+      query.status || '',
+    )
+      ? (query.status as 'PENDING' | 'APPROVED' | 'REJECTED')
+      : undefined;
+    const search = query.search?.trim();
 
-      if (decoded.position === 'ADMINISTRATIVE') {
-        results = await this.prisma.result.findMany({
-          where: {
-            ...(status && { status }),
-            student: {
-              branch_uuid: branchUuid,
-              ...(search && {
-                OR: [
-                  { name: { contains: search, mode: 'insensitive' } },
-                  { reg_number: { contains: search, mode: 'insensitive' } },
-                ],
-              }),
-            },
-          },
-          include: { student: true, assessments: true },
-          orderBy: { created_at: 'desc' },
-          take: limit,
-          skip,
-        });
-      } else {
-        const classes = await this.prisma.class.findMany({
-          where: {
-            branch_uuid: branchUuid,
-            OR: [
-              { teacher_uuid: decoded.uuid },
-              { teachers_uuid: { has: decoded.uuid } },
-            ],
-          },
-          select: { name: true },
-        });
-        const classes_names = classes.map((c) => c.name);
+    const isAdmin =
+      ['ROOT', 'ADMIN'].includes(decoded.role) ||
+      decoded.position === 'ADMINISTRATIVE';
 
-        results = await this.prisma.result.findMany({
-          where: {
-            ...(status && { status }),
-            class_name: { in: classes_names },
-            student: {
-              branch_uuid: branchUuid,
-              ...(search && {
-                OR: [
-                  { name: { contains: search, mode: 'insensitive' } },
-                  { reg_number: { contains: search, mode: 'insensitive' } },
-                ],
-              }),
-            },
-          },
-          include: { student: true, assessments: true },
-          orderBy: { created_at: 'desc' },
-          take: limit,
-          skip,
-        });
-      }
+    // The classes this user may see; also offered as the class filter.
+    const classes = await this.prisma.class.findMany({
+      where: {
+        branch_uuid: branchUuid,
+        ...(isAdmin
+          ? {}
+          : {
+              OR: [
+                { teacher_uuid: decoded.uuid },
+                { teachers_uuid: { has: decoded.uuid } },
+              ],
+            }),
+      },
+      select: { uuid: true, name: true },
+      orderBy: { name: 'asc' },
+    });
+    const allowed = classes.map((c) => c.uuid);
+    // A class outside the user's access simply matches nothing.
+    const classFilter = query.class_uuid
+      ? allowed.includes(query.class_uuid)
+        ? [query.class_uuid]
+        : []
+      : allowed;
 
-      return {
-        success: true,
-        data: {
-          results: results.map((r: any) => ({
-            ...r,
-            assessments: r.assessments.map((a: any) =>
-              this.toPlainAssessment(a),
-            ),
-          })),
-          page,
-          hasMore: results.length === limit,
+    const where = {
+      class_uuid: { in: classFilter },
+      ...(status && { status }),
+      ...(query.calendar_uuid && { calendar_uuid: query.calendar_uuid }),
+      student: {
+        branch_uuid: branchUuid,
+        ...(search && {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' as const } },
+            { reg_number: { contains: search, mode: 'insensitive' as const } },
+          ],
+        }),
+      },
+    };
+
+    const [results, total, counts, terms] = await Promise.all([
+      this.prisma.result.findMany({
+        where,
+        select: {
+          uuid: true,
+          class_uuid: true,
+          class_name: true,
+          overall: true,
+          status: true,
+          approval_requested: true,
+          updated_at: true,
+          student: {
+            select: { uuid: true, name: true, reg_number: true, avatar: true },
+          },
+          calendar: { select: { uuid: true, session: true, term: true } },
+          _count: { select: { assessments: true } },
         },
-      };
-    } catch (error) {
-      throw new InternalServerErrorException({
-        success: false,
-        message: 'Failed to fetch results',
-      });
-    }
+        orderBy: { updated_at: 'desc' },
+        take: limit,
+        skip: (page - 1) * limit,
+      }),
+      this.prisma.result.count({ where }),
+      // Per-status totals for the summary chips, ignoring the status filter.
+      this.prisma.result.groupBy({
+        by: ['status'],
+        where: { ...where, status: undefined },
+        _count: { _all: true },
+      }),
+      this.prisma.calendar.findMany({
+        where: { branch_uuid: branchUuid },
+        select: { uuid: true, session: true, term: true, status: true },
+        orderBy: { created_at: 'desc' },
+      }),
+    ]);
+
+    return {
+      status: 200,
+      success: true,
+      message: 'Results',
+      data: {
+        results: results.map(({ _count, ...r }) => ({
+          ...r,
+          subjects: _count.assessments,
+          average: _count.assessments
+            ? Math.round((r.overall / _count.assessments) * 10) / 10
+            : null,
+        })),
+        page,
+        limit,
+        total,
+        counts: Object.fromEntries(
+          counts.map((c) => [c.status, c._count._all]),
+        ),
+        filters: { classes, terms, all_classes: isAdmin },
+      },
+    };
   }
 
   async show(studentUuid: string) {
