@@ -28,6 +28,7 @@ import { AffectiveModule } from './affective/affective.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
 import { MailModule } from './mail/mail.module.js';
 import { StudentPortalModule } from './student-portal/student-portal.module.js';
+import { IntegrationsModule } from './integrations/integrations.module.js';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { StudentPortalModule } from './student-portal/student-portal.module.js';
     CacheModule,
     StorageModule,
     MailModule,
+    IntegrationsModule,
     NotificationsModule,
     AuthModule,
     UsersModule,

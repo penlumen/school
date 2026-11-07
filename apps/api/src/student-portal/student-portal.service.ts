@@ -10,7 +10,7 @@ import jwt from 'jsonwebtoken';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { HashingService } from '../common/hashing.service.js';
 import { DecodedUser } from '../common/types/auth.js';
-import { APP_CATALOG } from '../integrations/app-catalog.js';
+import { IntegrationsService } from '../integrations/integrations.service.js';
 
 const MAX_ATTEMPTS = 5;
 const LOCK_MS = 15 * 60 * 1000;
@@ -26,6 +26,7 @@ export class StudentPortalService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly hashing: HashingService,
+    private readonly integrations: IntegrationsService,
   ) {}
 
   private invalidLogin(): never {
@@ -159,6 +160,7 @@ export class StudentPortalService {
         name: true,
         avatar: true,
         reg_number: true,
+        branch_uuid: true,
         class: { select: { name: true } },
         branch: {
           select: {
@@ -182,12 +184,10 @@ export class StudentPortalService {
       message: 'Student overview',
       data: {
         student,
-        // Every app is "coming soon" until the school connects it.
-        apps: APP_CATALOG.map((app) => ({
-          ...app,
-          status: 'coming_soon' as const,
-          launch_url: null,
-        })),
+        apps: await this.integrations.appsFor(
+          decoded.school_uuid,
+          student.branch_uuid,
+        ),
       },
     };
   }

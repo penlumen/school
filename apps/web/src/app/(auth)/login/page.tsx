@@ -22,6 +22,12 @@ const APP_LOGO = process.env.NEXT_PUBLIC_APP_LOGO || '/placeholder.svg';
 
 type LoginTab = 'student' | 'staff' | 'parent';
 
+/** Where to go after logging in: back to an app sign-in in progress, else the portal home. */
+const nextPath = (role: string) => {
+    const next = new URLSearchParams(window.location.search).get('next');
+    return next && next.startsWith('/oauth/authorize?') ? next : homeFor(role);
+};
+
 const TABS: { value: LoginTab; label: string; idLabel: string }[] = [
     {value: 'student', label: 'Student', idLabel: 'Registration number'},
     {value: 'staff', label: 'Staff', idLabel: 'Staff ID'},
@@ -68,7 +74,7 @@ export default function LoginPage() {
         const userString = Cookies.get('user');
         const user = userString ? JSON.parse(userString) : null;
         if (user) {
-            router.push(homeFor(user.role));
+            router.push(nextPath(user.role));
         }
     }, [router]);
 
@@ -84,7 +90,7 @@ export default function LoginPage() {
                 if (!response.success) return toast.error(response.message);
                 Cookies.set('token', response.data.token, {expires: 1});
                 Cookies.set('user', JSON.stringify(response.data.user), {expires: 1});
-                router.push('/student/dashboard');
+                router.push(nextPath('STUDENT'));
             } catch (error: any) {
                 toast.error(error.message || 'Login failed. Please try again.');
             } finally {
@@ -110,7 +116,7 @@ export default function LoginPage() {
                     Cookies.set('branch', branchResponse.data.active_branch_uuid, {expires: 7});
                 }
 
-                router.push(response.data.user.role === 'PARENT' ? '/parent/dashboard' : '/staff/dashboard');
+                router.push(nextPath(response.data.user.role));
             }
         } catch (error: any) {
             toast.error(error.message || 'Login failed. Please try again.');

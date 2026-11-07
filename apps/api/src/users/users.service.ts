@@ -12,6 +12,7 @@ import { HashingService } from '../common/hashing.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { StorageService } from '../storage/storage.service.js';
 import { PasswordService } from '../mail/password.service.js';
+import { WebhooksService } from '../integrations/webhooks.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 
 @Injectable()
@@ -22,6 +23,7 @@ export class UsersService {
     private readonly notifications: NotificationsService,
     private readonly storage: StorageService,
     private readonly passwords: PasswordService,
+    private readonly webhooks: WebhooksService,
   ) {}
 
   async index(
@@ -247,6 +249,19 @@ export class UsersService {
 
     if (!body.password) {
       void this.passwords.sendInvite(newUser.uuid).catch(() => undefined);
+    }
+    if (formatRole === 'STAFF') {
+      this.webhooks.emit(
+        currentUser.school_uuid!,
+        branchUuid,
+        'staff.created',
+        {
+          uuid: newUser.uuid,
+          name: newUser.name,
+          email: newUser.email,
+          position: newUser.position,
+        },
+      );
     }
 
     const roleLabel = role.toLowerCase();

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
+import { WebhooksService } from '../integrations/webhooks.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { AFFECTIVE_SCALE } from '../affective/affective.service.js';
 
@@ -15,6 +16,7 @@ export class ResultsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly webhooks: WebhooksService,
   ) {}
 
   // Assessments' score columns are Prisma.Decimal now (Assessments.ca_one/ca_two/
@@ -569,6 +571,22 @@ export class ResultsService {
     });
 
     await this.notifyResultChange(existing, updated, decoded);
+    if (
+      updated.status === 'APPROVED' &&
+      existing.status !== 'APPROVED' &&
+      updated.student
+    ) {
+      this.webhooks.emit(
+        decoded.school_uuid,
+        updated.student.branch_uuid,
+        'result.published',
+        {
+          uuid: updated.uuid,
+          student_uuid: updated.student.uuid,
+          class_name: existing.class_name,
+        },
+      );
+    }
 
     return {
       status: 200,

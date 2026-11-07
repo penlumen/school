@@ -146,6 +146,7 @@ model School {
   gallery_images     GalleryImage[]
   online_payments    OnlinePayment[]
   email_logs         EmailLog[]
+  integration_apps   IntegrationApp[]
 }
 
 // ========== WEBSITE ==========
@@ -670,6 +671,110 @@ model PasswordToken {
   user User @relation(fields: [user_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
 
   @@index([user_uuid])
+}
+
+/// A separate Penlumen app (LMS, VLS, EMS) connected to a school. This
+/// system is its sign-in provider (OpenID Connect), data API and webhook
+/// source; see docs/integrations.md.
+model IntegrationApp {
+  id                    Int      @id @default(autoincrement())
+  uuid                  String   @unique @default(uuid())
+  school_uuid           String
+  /// Catalog key: lms, vls or ems.
+  key                   String
+  enabled               Boolean  @default(false)
+  /// Where students and staff open the app.
+  app_url               String?
+  /// Allowed OpenID Connect redirect URIs (exact match).
+  redirect_uris         String[]
+  client_id             String   @unique
+  /// SHA-256 of the client secret; the secret is shown once.
+  client_secret_hash    String?
+  client_secret_hint    String?
+  webhook_url           String?
+  /// Encrypted; used to sign webhook bodies.
+  webhook_secret        String?
+  webhook_events        String[]
+  /// Branches where the school switched this app off.
+  disabled_branch_uuids String[]
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  school     School            @relation(fields: [school_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  codes      OidcCode[]
+  tokens     OidcToken[]
+  deliveries WebhookDelivery[]
+
+  @@unique([school_uuid, key])
+}
+
+/// Single-use authorization code from the OpenID Connect sign-in flow.
+model OidcCode {
+  id             Int       @id @default(autoincrement())
+  code_hash      String    @unique
+  app_uuid       String
+  /// User uuid for staff and parents, student uuid for students.
+  subject_uuid   String
+  subject_type   String
+  redirect_uri   String
+  scope          String
+  nonce          String?
+  code_challenge String?
+  expires_at     DateTime
+  used_at        DateTime?
+  created_at     DateTime  @default(now())
+
+  app IntegrationApp @relation(fields: [app_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+}
+
+/// Opaque access token: a signed-in person (userinfo) or the app itself
+/// (client credentials, for the data API).
+model OidcToken {
+  id           Int      @id @default(autoincrement())
+  token_hash   String   @unique
+  app_uuid     String
+  subject_uuid String?
+  subject_type String?
+  scope        String
+  expires_at   DateTime
+  created_at   DateTime @default(now())
+
+  app IntegrationApp @relation(fields: [app_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+
+  @@index([app_uuid])
+}
+
+/// RSA key that signs ID tokens; the public half is served as JWKS.
+model OidcKey {
+  id          Int      @id @default(autoincrement())
+  kid         String   @unique
+  private_key String
+  public_jwk  Json
+  created_at  DateTime @default(now())
+}
+
+enum WebhookStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model WebhookDelivery {
+  id              Int           @id @default(autoincrement())
+  uuid            String        @unique @default(uuid())
+  app_uuid        String
+  event           String
+  payload         Json
+  status          WebhookStatus @default(PENDING)
+  attempts        Int           @default(0)
+  response_status Int?
+  error           String?
+  delivered_at    DateTime?
+  created_at      DateTime      @default(now())
+
+  app IntegrationApp @relation(fields: [app_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+
+  @@index([app_uuid, created_at])
 }
 
 model AffectiveTrait {
