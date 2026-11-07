@@ -94,6 +94,14 @@ export const WALKTHROUGHS: Record<WalkthroughRole, { title: string; intro: strin
                 duration: 8,
             },
             {
+                id: 'account',
+                chapter: 'Settings',
+                title: 'Your account',
+                caption: 'Settings starts with your own account: keep your phone number and address up to date, and change your password.',
+                focus: {x: 21.9, y: 31, w: 59.4, h: 45},
+                duration: 6,
+            },
+            {
                 id: 'grading',
                 chapter: 'Settings',
                 title: 'Branch settings and grading',
