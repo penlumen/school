@@ -193,7 +193,7 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
             'A quick summary of how your school is performing - parents, staff, students, classes, and attendance trends.',
         },
         {
-          title: 'Schedule',
+          title: 'Schedules',
           icon: Calendar,
           href: '/staff/schedules',
           description:
