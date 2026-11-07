@@ -2,6 +2,7 @@ import './globals.css';
 import type {Metadata} from 'next';
 import {Toaster} from '@/components/ui/sonner';
 import {DM_Sans, Geist_Mono} from 'next/font/google';
+import {fetchTheme, themeCss, THEME_STYLE_ID} from '@/lib/theme';
 
 const dmSans = DM_Sans({
     variable: '--font-dm-sans',
@@ -29,9 +30,14 @@ export const metadata: Metadata = {
     },
 };
 
-export default function RootLayout({children}: { children: React.ReactNode }) {
+export default async function RootLayout({children}: { children: React.ReactNode }) {
+    // The school's brand colours, rendered on the server so pages never flash the default blue.
+    const theme = await fetchTheme();
     return (
         <html lang="en" suppressHydrationWarning>
+            <head>
+                <style id={THEME_STYLE_ID} dangerouslySetInnerHTML={{__html: themeCss(theme)}}/>
+            </head>
             <body className={`${dmSans.variable} ${geistMono.variable}`}>
                 <main>{children}</main>
                 <Toaster/>

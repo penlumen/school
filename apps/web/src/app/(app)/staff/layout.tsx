@@ -14,5 +14,8 @@ export default function DashboardLayout({
   if (user?.role == 'PARENT') {
     redirect('/parent/dashboard');
   }
+  if (user?.role == 'STUDENT') {
+    redirect('/student/dashboard');
+  }
   return <AppSidebar>{children}</AppSidebar>;
 }

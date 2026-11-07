@@ -25,12 +25,18 @@ import { PresenceModule } from './presence/presence.module.js';
 import { ParentModule } from './parent/parent.module.js';
 import { AccountModule } from './account/account.module.js';
 import { AffectiveModule } from './affective/affective.module.js';
+import { PaymentsModule } from './payments/payments.module.js';
+import { MailModule } from './mail/mail.module.js';
+import { StudentPortalModule } from './student-portal/student-portal.module.js';
+import { IntegrationsModule } from './integrations/integrations.module.js';
 
 @Module({
   imports: [
     PrismaModule,
     CacheModule,
     StorageModule,
+    MailModule,
+    IntegrationsModule,
     NotificationsModule,
     AuthModule,
     UsersModule,
@@ -50,6 +56,8 @@ import { AffectiveModule } from './affective/affective.module.js';
     ParentModule,
     AccountModule,
     AffectiveModule,
+    PaymentsModule,
+    StudentPortalModule,
   ],
   controllers: [AppController],
   providers: [

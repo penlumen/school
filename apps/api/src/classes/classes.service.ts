@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { parseRecordStatus } from '../common/record-status.js';
 import { CacheService } from '../cache/cache.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
+import { WebhooksService } from '../integrations/webhooks.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 
 @Injectable()
@@ -15,6 +16,7 @@ export class ClassesService {
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
     private readonly notifications: NotificationsService,
+    private readonly webhooks: WebhooksService,
   ) {}
 
   private teachersOf(cls: {
@@ -144,6 +146,18 @@ export class ClassesService {
     });
     await this.cache.delByPrefix(`classes:index:${branchUuid}:`);
     await this.notifyNewTeachers(result, [], decoded);
+    this.webhooks.emit(
+      decoded.school_uuid,
+      result.branch_uuid,
+      'class.created',
+      {
+        uuid: result.uuid,
+        name: result.name,
+        status: result.status,
+        teacher_uuid: result.teacher_uuid,
+        teachers_uuid: result.teachers_uuid,
+      },
+    );
 
     return {
       status: 201,
@@ -221,6 +235,18 @@ export class ClassesService {
       updatedClass,
       previousClass ? this.teachersOf(previousClass) : [],
       decoded,
+    );
+    this.webhooks.emit(
+      decoded.school_uuid,
+      updatedClass.branch_uuid,
+      'class.updated',
+      {
+        uuid: updatedClass.uuid,
+        name: updatedClass.name,
+        status: updatedClass.status,
+        teacher_uuid: updatedClass.teacher_uuid,
+        teachers_uuid: updatedClass.teachers_uuid,
+      },
     );
 
     return {

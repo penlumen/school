@@ -4,7 +4,7 @@ export type TemplateStatus = 'ACTIVE' | 'INACTIVE';
 export type InvoiceStatus = 'PENDING' | 'PART_PAYMENT' | 'FULL_PAYMENT' | 'CANCELLED' | 'REFUNDED';
 
 // Prisma Decimal columns arrive as strings.
-type Money = string | number;
+export type Money = string | number;
 
 export interface TemplateItem {
     uuid?: string;

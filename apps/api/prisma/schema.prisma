@@ -36,40 +36,42 @@ enum ResultStatus {
 
 // ========== USER ==========
 model User {
-  id              Int      @id @default(autoincrement())
-  uuid            String   @unique @default(uuid())
-  school_uuid     String?
-  name            String?
-  email           String
-  password        String
-  contact         String?
-  alt_contact     String?
-  avatar          String?
-  address         String?
-  role            Role     @default(ADMIN)
-  position        Position @default(GUARDIAN)
-  status          String   @default("active")
-  last_branch_uuid String?
-  face_descriptor Float[]
+  id                  Int       @id @default(autoincrement())
+  uuid                String    @unique @default(uuid())
+  school_uuid         String?
+  name                String?
+  email               String
+  password            String
+  contact             String?
+  alt_contact         String?
+  avatar              String?
+  address             String?
+  role                Role      @default(ADMIN)
+  position            Position  @default(GUARDIAN)
+  status              String    @default("active")
+  last_branch_uuid    String?
+  face_descriptor     Float[]
   // When the user finished or skipped the portal walkthrough video; null = show it on next visit.
   walkthrough_seen_at DateTime?
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
 
-  school      School?  @relation(fields: [school_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
-  last_branch Branch?  @relation("UserLastBranch", fields: [last_branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: SetNull)
+  school      School? @relation(fields: [school_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  last_branch Branch? @relation("UserLastBranch", fields: [last_branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: SetNull)
 
-  heading  Class[]
-  students Student[]
-  access   BranchAccess[]
-  control  AccessControl[]
-  staff_attendance         StaffAttendance[]   @relation("StaffAttendanceStaff")
-  staff_attendance_marked  StaffAttendance[]   @relation("StaffAttendanceMarkedBy")
+  heading                   Class[]
+  students                  Student[]
+  access                    BranchAccess[]
+  control                   AccessControl[]
+  staff_attendance          StaffAttendance[]   @relation("StaffAttendanceStaff")
+  staff_attendance_marked   StaffAttendance[]   @relation("StaffAttendanceMarkedBy")
   student_attendance_marked StudentAttendance[] @relation("StudentAttendanceMarkedBy")
-  events_created  Event[]    @relation("EventCreatedBy")
-  event_tags      EventTag[]
-  notifications   Notification[]
-  device_tokens   DeviceToken[]
+  events_created            Event[]             @relation("EventCreatedBy")
+  event_tags                EventTag[]
+  notifications             Notification[]
+  device_tokens             DeviceToken[]
+  online_payments           OnlinePayment[]
+  password_tokens           PasswordToken[]
 
   @@unique([school_uuid, email, role])
 }
@@ -93,27 +95,45 @@ model AccessControl {
 
 // ========== SCHOOL ==========
 model School {
-  id         Int      @id @default(autoincrement())
-  uuid       String   @unique @default(uuid())
-  token      String   @unique @default(uuid())
-  email      String   @unique
-  slug       String   @unique
-  name       String
-  contact    String?
-  avatar     String?
-  address    String?
-  city       String?
-  state      String?
-  country    String?
-  zip        String?
+  id      Int     @id @default(autoincrement())
+  uuid    String  @unique @default(uuid())
+  token   String  @unique @default(uuid())
+  email   String  @unique
+  slug    String  @unique
+  name    String
+  contact String?
+  avatar  String?
+  address String?
+  city    String?
+  state   String?
+  country String?
+  zip     String?
 
   // Public website content, edited from School Settings.
-  subtext    String?
-  about      String?
-  mission    String?
-  vision     String?
-  features   Json?
-  values     Json?
+  subtext  String?
+  about    String?
+  mission  String?
+  vision   String?
+  features Json?
+  values   Json?
+
+  // Brand colours for the portals, public site and printouts: { preset, primary }.
+  theme Json?
+
+  // Online payments (School Settings › Payments). The secret key is stored
+  // encrypted and is optional: without it payments need staff confirmation.
+  payments_enabled    Boolean @default(false)
+  paystack_public_key String?
+  paystack_secret_key String?
+  allow_part_payment  Boolean @default(true)
+  parent_pays_fees    Boolean @default(false)
+
+  // Email (School Settings › Email). smtp holds the school's own server, with
+  // the password encrypted; without it the platform's SMTP (env) is used.
+  email_enabled Boolean @default(true)
+  smtp          Json?
+  // Category -> false for email types the school switched off.
+  email_types   Json?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -124,6 +144,9 @@ model School {
   facilities         SchoolFacility[]
   gallery_categories GalleryCategory[]
   gallery_images     GalleryImage[]
+  online_payments    OnlinePayment[]
+  email_logs         EmailLog[]
+  integration_apps   IntegrationApp[]
 }
 
 // ========== WEBSITE ==========
@@ -181,21 +204,22 @@ model Branch {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
-  grades   Grade[]
-  classes  Class[]
-  students Student[]
-  control  AccessControl[]
-  access   BranchAccess[]
-  calendar Calendar[]
-  last_used_by User[] @relation("UserLastBranch")
+  grades             Grade[]
+  classes            Class[]
+  students           Student[]
+  control            AccessControl[]
+  access             BranchAccess[]
+  calendar           Calendar[]
+  last_used_by       User[]              @relation("UserLastBranch")
   student_attendance StudentAttendance[]
   staff_attendance   StaffAttendance[]
-  events   Event[]
-  notifications Notification[]
-  billing_templates BillingTemplate[]
-  invoices Invoice[]
-  affective_traits AffectiveTrait[]
-  school   School          @relation(fields: [school_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  events             Event[]
+  notifications      Notification[]
+  billing_templates  BillingTemplate[]
+  invoices           Invoice[]
+  affective_traits   AffectiveTrait[]
+  school             School              @relation(fields: [school_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  online_payments    OnlinePayment[]
 }
 
 model BranchAccess {
@@ -220,19 +244,19 @@ enum CalendarStatus {
 }
 
 model Calendar {
-  id          Int      @id @default(autoincrement())
-  uuid        String   @unique @default(uuid())
+  id          Int     @id @default(autoincrement())
+  uuid        String  @unique @default(uuid())
   branch_uuid String
   session     String
   term        String?
 
-  open_date   DateTime?
-  close_date  DateTime?
+  open_date                 DateTime?
+  close_date                DateTime?
   next_term_resumption_date DateTime?
-  
-  status      CalendarStatus @default(INACTIVE)
-  created_at  DateTime @default(now())
-  updated_at  DateTime @default(now()) @updatedAt
+
+  status     CalendarStatus @default(INACTIVE)
+  created_at DateTime       @default(now())
+  updated_at DateTime       @default(now()) @updatedAt
 
   results Result[]
   events  Event[]
@@ -241,47 +265,51 @@ model Calendar {
 
 // ========== STUDENT ==========
 model Student {
-  id          Int      @id @default(autoincrement())
-  uuid        String   @unique @default(uuid())
-  parent_uuid String
-  branch_uuid String
-  class_uuid  String
-  reg_number  String
-  name        String
-  gender      String?
-  avatar      String?
-  face_descriptor Float[]
-  status      String   @default("active")
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  id               Int       @id @default(autoincrement())
+  uuid             String    @unique @default(uuid())
+  parent_uuid      String
+  branch_uuid      String
+  class_uuid       String
+  reg_number       String
+  name             String
+  gender           String?
+  avatar           String?
+  face_descriptor  Float[]
+  status           String    @default("active")
+  // Student portal sign-in: registration number + a PIN staff set (hashed).
+  pin_hash         String?
+  pin_failed       Int       @default(0)
+  pin_locked_until DateTime?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
 
-  parent  User     @relation(fields: [parent_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
-  branch  Branch   @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
-  class   Class    @relation(fields: [class_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
-  results Result[]
+  parent     User                @relation(fields: [parent_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  branch     Branch              @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  class      Class               @relation(fields: [class_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  results    Result[]
   attendance StudentAttendance[]
-  invoices Invoice[]
+  invoices   Invoice[]
 
   @@unique([branch_uuid, reg_number])
 }
 
 // ========== CLASS ==========
 model Class {
-  id           Int      @id @default(autoincrement())
-  uuid         String   @unique @default(uuid())
-  branch_uuid  String
-  teacher_uuid String?
+  id            Int      @id @default(autoincrement())
+  uuid          String   @unique @default(uuid())
+  branch_uuid   String
+  teacher_uuid  String?
   teachers_uuid String[] @default([])
-  name         String
-  capacity     Int?     @default(0)
-  status       String   @default("active")
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+  name          String
+  capacity      Int?     @default(0)
+  status        String   @default("active")
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
 
-  branch   Branch?   @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
-  teacher  User?     @relation(fields: [teacher_uuid], references: [uuid], onDelete: SetNull, onUpdate: Cascade)
-  subjects Subject[]
-  students Student[]
+  branch     Branch?             @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  teacher    User?               @relation(fields: [teacher_uuid], references: [uuid], onDelete: SetNull, onUpdate: Cascade)
+  subjects   Subject[]
+  students   Student[]
   attendance StudentAttendance[]
 }
 
@@ -317,19 +345,19 @@ model Grade {
 
 // ========== RESULT ==========
 model Result {
-  id               Int          @id @default(autoincrement())
-  uuid             String       @unique @default(uuid())
-  student_uuid     String
-  calendar_uuid    String
-  class_uuid       String
-  class_name       String
-  overall          Float        @default(0)
-  status           ResultStatus @default(PENDING)
+  id                 Int          @id @default(autoincrement())
+  uuid               String       @unique @default(uuid())
+  student_uuid       String
+  calendar_uuid      String
+  class_uuid         String
+  class_name         String
+  overall            Float        @default(0)
+  status             ResultStatus @default(PENDING)
   approval_requested Boolean      @default(false)
-  teacher_remark   String?
-  principal_remark String?
-  created_at       DateTime     @default(now())
-  updated_at       DateTime     @updatedAt
+  teacher_remark     String?
+  principal_remark   String?
+  created_at         DateTime     @default(now())
+  updated_at         DateTime     @updatedAt
 
   assessments Assessments[]
   affective   AffectiveRating[]
@@ -369,21 +397,21 @@ enum AttendanceStatus {
 }
 
 model StudentAttendance {
-  id              Int              @id @default(autoincrement())
-  uuid            String           @unique @default(uuid())
-  student_uuid    String
-  branch_uuid     String
-  class_uuid      String
-  date            DateTime         @db.Date
-  status          AttendanceStatus @default(PRESENT)
-  marked_by_uuid  String?
-  created_at      DateTime         @default(now())
-  updated_at      DateTime         @updatedAt
+  id             Int              @id @default(autoincrement())
+  uuid           String           @unique @default(uuid())
+  student_uuid   String
+  branch_uuid    String
+  class_uuid     String
+  date           DateTime         @db.Date
+  status         AttendanceStatus @default(PRESENT)
+  marked_by_uuid String?
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @updatedAt
 
-  student   Student  @relation(fields: [student_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
-  branch    Branch   @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
-  class     Class    @relation(fields: [class_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
-  marked_by User?    @relation("StudentAttendanceMarkedBy", fields: [marked_by_uuid], references: [uuid], onUpdate: Cascade, onDelete: SetNull)
+  student   Student @relation(fields: [student_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  branch    Branch  @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  class     Class   @relation(fields: [class_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  marked_by User?   @relation("StudentAttendanceMarkedBy", fields: [marked_by_uuid], references: [uuid], onUpdate: Cascade, onDelete: SetNull)
 
   @@unique([student_uuid, date])
 }
@@ -446,15 +474,15 @@ model EventTag {
 
 // ========== NOTIFICATIONS ==========
 model Notification {
-  id         Int      @id @default(autoincrement())
-  uuid       String   @unique @default(uuid())
-  user_uuid  String
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(uuid())
+  user_uuid   String
   branch_uuid String
-  type       String
-  title      String
-  message    String
-  is_read    Boolean  @default(false)
-  created_at DateTime @default(now())
+  type        String
+  title       String
+  message     String
+  is_read     Boolean  @default(false)
+  created_at  DateTime @default(now())
 
   user   User   @relation(fields: [user_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
   branch Branch @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
@@ -530,11 +558,12 @@ model Invoice {
   created_at    DateTime      @default(now())
   updated_at    DateTime      @updatedAt
 
-  branch   Branch           @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
-  student  Student          @relation(fields: [student_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
-  template BillingTemplate? @relation(fields: [template_uuid], references: [uuid], onUpdate: Cascade, onDelete: SetNull)
+  branch   Branch                @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  student  Student               @relation(fields: [student_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  template BillingTemplate?      @relation(fields: [template_uuid], references: [uuid], onUpdate: Cascade, onDelete: SetNull)
   items    InvoiceItem[]
   history  InvoiceStatusChange[]
+  payments OnlinePayment[]
 }
 
 // Line items are copied from the template, so later template edits never change issued invoices.
@@ -565,6 +594,189 @@ model InvoiceStatusChange {
 
 // ========== AFFECTIVE DOMAIN ==========
 // Behaviour traits rated on report cards (Punctuality, Neatness, ...), set per branch.
+enum OnlinePaymentStatus {
+  PENDING
+  AWAITING_CONFIRMATION
+  SUCCESS
+  FAILED
+  REJECTED
+}
+
+/// A parent's Paystack payment towards an invoice. `amount` is what goes
+/// against the invoice; `fee` is the Paystack fee added when parents pay it.
+model OnlinePayment {
+  id                Int                 @id @default(autoincrement())
+  uuid              String              @unique @default(uuid())
+  reference         String              @unique
+  school_uuid       String
+  branch_uuid       String
+  invoice_uuid      String
+  user_uuid         String?
+  amount            Decimal             @db.Decimal(12, 2)
+  fee               Decimal             @default(0) @db.Decimal(12, 2)
+  status            OnlinePaymentStatus @default(PENDING)
+  /// True when Paystack itself confirmed the payment (secret key set).
+  verified          Boolean             @default(false)
+  channel           String?
+  note              String?
+  confirmed_by_uuid String?
+  paid_at           DateTime?
+  created_at        DateTime            @default(now())
+  updated_at        DateTime            @updatedAt
+
+  school  School  @relation(fields: [school_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  branch  Branch  @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoice_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  user    User?   @relation(fields: [user_uuid], references: [uuid], onUpdate: Cascade, onDelete: SetNull)
+
+  @@index([branch_uuid, status])
+}
+
+enum EmailStatus {
+  SENT
+  FAILED
+}
+
+/// One email the system tried to send, for School Settings › Email.
+model EmailLog {
+  id          Int         @id @default(autoincrement())
+  uuid        String      @unique @default(uuid())
+  school_uuid String
+  to          String
+  subject     String
+  category    String
+  status      EmailStatus
+  /// "school" (its own SMTP) or "platform".
+  via         String
+  error       String?
+  created_at  DateTime    @default(now())
+
+  school School @relation(fields: [school_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+
+  @@index([school_uuid, created_at])
+}
+
+/// Single-use link for setting a password: account invites and resets.
+model PasswordToken {
+  id         Int       @id @default(autoincrement())
+  uuid       String    @unique @default(uuid())
+  user_uuid  String
+  /// SHA-256 of the token; the token itself only exists in the email.
+  token_hash String    @unique
+  purpose    String
+  expires_at DateTime
+  used_at    DateTime?
+  created_at DateTime  @default(now())
+
+  user User @relation(fields: [user_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+
+  @@index([user_uuid])
+}
+
+/// A separate Penlumen app (LMS, VLS, EMS) connected to a school. This
+/// system is its sign-in provider (OpenID Connect), data API and webhook
+/// source; see docs/integrations.md.
+model IntegrationApp {
+  id                    Int      @id @default(autoincrement())
+  uuid                  String   @unique @default(uuid())
+  school_uuid           String
+  /// Catalog key: lms, vls or ems.
+  key                   String
+  enabled               Boolean  @default(false)
+  /// Where students and staff open the app.
+  app_url               String?
+  /// Allowed OpenID Connect redirect URIs (exact match).
+  redirect_uris         String[]
+  client_id             String   @unique
+  /// SHA-256 of the client secret; the secret is shown once.
+  client_secret_hash    String?
+  client_secret_hint    String?
+  webhook_url           String?
+  /// Encrypted; used to sign webhook bodies.
+  webhook_secret        String?
+  webhook_events        String[]
+  /// Branches where the school switched this app off.
+  disabled_branch_uuids String[]
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  school     School            @relation(fields: [school_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  codes      OidcCode[]
+  tokens     OidcToken[]
+  deliveries WebhookDelivery[]
+
+  @@unique([school_uuid, key])
+}
+
+/// Single-use authorization code from the OpenID Connect sign-in flow.
+model OidcCode {
+  id             Int       @id @default(autoincrement())
+  code_hash      String    @unique
+  app_uuid       String
+  /// User uuid for staff and parents, student uuid for students.
+  subject_uuid   String
+  subject_type   String
+  redirect_uri   String
+  scope          String
+  nonce          String?
+  code_challenge String?
+  expires_at     DateTime
+  used_at        DateTime?
+  created_at     DateTime  @default(now())
+
+  app IntegrationApp @relation(fields: [app_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+}
+
+/// Opaque access token: a signed-in person (userinfo) or the app itself
+/// (client credentials, for the data API).
+model OidcToken {
+  id           Int      @id @default(autoincrement())
+  token_hash   String   @unique
+  app_uuid     String
+  subject_uuid String?
+  subject_type String?
+  scope        String
+  expires_at   DateTime
+  created_at   DateTime @default(now())
+
+  app IntegrationApp @relation(fields: [app_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+
+  @@index([app_uuid])
+}
+
+/// RSA key that signs ID tokens; the public half is served as JWKS.
+model OidcKey {
+  id          Int      @id @default(autoincrement())
+  kid         String   @unique
+  private_key String
+  public_jwk  Json
+  created_at  DateTime @default(now())
+}
+
+enum WebhookStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model WebhookDelivery {
+  id              Int           @id @default(autoincrement())
+  uuid            String        @unique @default(uuid())
+  app_uuid        String
+  event           String
+  payload         Json
+  status          WebhookStatus @default(PENDING)
+  attempts        Int           @default(0)
+  response_status Int?
+  error           String?
+  delivered_at    DateTime?
+  created_at      DateTime      @default(now())
+
+  app IntegrationApp @relation(fields: [app_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+
+  @@index([app_uuid, created_at])
+}
+
 model AffectiveTrait {
   id          Int      @id @default(autoincrement())
   uuid        String   @unique @default(uuid())

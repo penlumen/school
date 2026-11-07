@@ -49,6 +49,10 @@ export class ReportGateway implements OnGatewayConnection, OnGatewayDisconnect {
         token,
         process.env.JWT_SECRET || 'default_secret',
       ) as DecodedUser & { name?: string; avatar?: string };
+      // Student portal tokens never edit reports.
+      if ((decoded.role as string) === 'STUDENT') {
+        throw new UnauthorizedException();
+      }
 
       client.data.user = decoded;
     } catch {

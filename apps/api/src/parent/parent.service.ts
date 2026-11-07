@@ -306,12 +306,32 @@ export class ParentService {
       select: { uuid: true },
     });
     if (!owned) this.notFound('Invoice not found');
-    const invoice = await this.billing.invoiceDetail(uuid);
+    const [invoice, online_payments] = await Promise.all([
+      this.billing.invoiceDetail(uuid),
+      // Online payments still waiting on the school, or that it turned down.
+      this.prisma.onlinePayment.findMany({
+        where: {
+          invoice_uuid: uuid,
+          user_uuid: decoded.uuid,
+          status: { in: ['AWAITING_CONFIRMATION', 'REJECTED'] },
+        },
+        orderBy: { created_at: 'desc' },
+        take: 10,
+        select: {
+          uuid: true,
+          reference: true,
+          amount: true,
+          status: true,
+          note: true,
+          created_at: true,
+        },
+      }),
+    ]);
     return {
       status: 200,
       success: true,
       message: 'Invoice',
-      data: { invoice },
+      data: { invoice, online_payments },
     };
   }
 
