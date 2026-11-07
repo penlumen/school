@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 
 import {useUser} from '@/hooks/user';
+import {formatPhone, formatPhoneInternational, phoneSearchKey} from '@/lib/phone';
 import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
 import {Badge} from '@/components/ui/badge';
 import {Button} from '@/components/ui/button';
@@ -79,7 +80,9 @@ export function PeopleTable({role, people, onView, onEdit, fetchData}: PeopleTab
                 !search ||
                 person.name?.toLowerCase().includes(search.toLowerCase()) ||
                 person.email?.toLowerCase().includes(search.toLowerCase()) ||
-                person.contact?.includes(search) ||
+                // Match phone numbers by digits, so "0801 234" finds "+234801234...".
+                (!!search.replace(/\D/g, '') &&
+                    phoneSearchKey(person.contact).includes(search.replace(/\D/g, ''))) ||
                 person.address?.toLowerCase().includes(search.toLowerCase());
             const matchesPosition = !positionFilter || person.position === positionFilter;
             return matchesSearch && matchesPosition;
@@ -116,8 +119,8 @@ export function PeopleTable({role, people, onView, onEdit, fetchData}: PeopleTab
             ...filtered.map((p) => [
                 p.name,
                 POSITION_LABEL[p.position] || p.position,
-                p.contact || '',
-                p.alt_contact || '',
+                formatPhoneInternational(p.contact),
+                formatPhoneInternational(p.alt_contact),
                 p.email,
                 p.address || '',
             ]),
@@ -274,9 +277,9 @@ export function PeopleTable({role, people, onView, onEdit, fetchData}: PeopleTab
                                     </TableCell>
                                     <TableCell>
                                         <div className='flex flex-col'>
-                                            <span>{person.contact || '—'}</span>
+                                            <span>{formatPhone(person.contact) || '—'}</span>
                                             {person.alt_contact && (
-                                                <span className='text-xs text-muted-foreground'>{person.alt_contact}</span>
+                                                <span className='text-xs text-muted-foreground'>{formatPhone(person.alt_contact)}</span>
                                             )}
                                         </div>
                                     </TableCell>

@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/sheet';
 import type {PersonRecord} from '@/components/app/person-form-sheet';
 import {AttendanceReview} from '@/components/app/attendance-review';
+import {formatPhone} from '@/lib/phone';
 
 interface PersonDetailSheetProps {
     role: 'STAFF' | 'PARENT';
@@ -50,8 +51,8 @@ export function PersonDetailSheet({role, open, onOpenChange, person, showAttenda
 
     const details = (
         <>
-            <Field label='Contact' value={person.contact}/>
-            <Field label='Alt contact' value={person.alt_contact}/>
+            <Field label='Contact' value={formatPhone(person.contact)}/>
+            <Field label='Alt contact' value={formatPhone(person.alt_contact)}/>
             <Field label='Email' value={person.email}/>
             <Field
                 label='Position'

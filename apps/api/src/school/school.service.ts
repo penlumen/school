@@ -6,6 +6,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { normalizePhone } from '../common/phone.js';
 import { StorageService } from '../storage/storage.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { sanitizeHtml } from '../common/sanitize-html.js';
@@ -136,7 +137,9 @@ export class SchoolService {
       }
       data.email = email;
     }
-    for (const field of ['contact', 'address', 'avatar', 'subtext']) {
+    if ('contact' in body)
+      data.contact = normalizePhone(body.contact, 'Phone number');
+    for (const field of ['address', 'avatar', 'subtext']) {
       if (field in body) data[field] = this.text(body[field], 1000);
     }
     for (const field of ['about', 'mission', 'vision']) {

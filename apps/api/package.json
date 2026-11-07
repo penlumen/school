@@ -27,6 +27,7 @@
     "firebase-admin": "^14.4.0",
     "ioredis": "^6.0.0",
     "jsonwebtoken": "^9.0.3",
+    "libphonenumber-js": "^1.13.15",
     "multer": "^2.3.0",
     "pg": "^8.23.0",
     "prettier": "^3.9.8",

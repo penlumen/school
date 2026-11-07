@@ -7,6 +7,7 @@ import {toast} from 'sonner';
 import {type Account, useAccount} from '@/hooks/account';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
+import {PhoneInput} from '@/components/ui/phone-input';
 import {Label} from '@/components/ui/label';
 import {Skeleton} from '@/components/ui/skeleton';
 import {Textarea} from '@/components/ui/textarea';
@@ -113,11 +114,11 @@ export function AccountPage({managedBy}: { managedBy: string }) {
                                 </div>
                                 <div className='space-y-2'>
                                     <Label htmlFor='account-contact'>Phone number</Label>
-                                    <Input id='account-contact' value={contact.contact} onChange={(e) => setContact({...contact, contact: e.target.value})}/>
+                                    <PhoneInput id='account-contact' value={contact.contact} onChange={(value) => setContact({...contact, contact: value})}/>
                                 </div>
                                 <div className='space-y-2'>
                                     <Label htmlFor='account-alt'>Alternative phone</Label>
-                                    <Input id='account-alt' value={contact.alt_contact} onChange={(e) => setContact({...contact, alt_contact: e.target.value})}/>
+                                    <PhoneInput id='account-alt' value={contact.alt_contact} onChange={(value) => setContact({...contact, alt_contact: value})}/>
                                 </div>
                             </div>
                             <div className='space-y-2'>
