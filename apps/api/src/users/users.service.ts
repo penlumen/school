@@ -11,6 +11,7 @@ import { normalizePhone } from '../common/phone.js';
 import { HashingService } from '../common/hashing.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { StorageService } from '../storage/storage.service.js';
+import { PasswordService } from '../mail/password.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 
 @Injectable()
@@ -20,6 +21,7 @@ export class UsersService {
     private readonly hashing: HashingService,
     private readonly notifications: NotificationsService,
     private readonly storage: StorageService,
+    private readonly passwords: PasswordService,
   ) {}
 
   async index(
@@ -130,9 +132,8 @@ export class UsersService {
     const contact = normalizePhone(rawContact, 'Contact');
     const alt_contact = normalizePhone(rawAltContact, 'Alt contact');
     // The Add Staff/Add Parent forms don't collect a password (matches the
-    // design) — generate one server-side. There's no invite/reset-password
-    // flow yet, so this account's password isn't known to anyone until that
-    // exists; it's still safely hashed and stored either way.
+    // design) — generate one server-side and email the person an invite
+    // link to choose their own.
     const password = body.password || randomBytes(12).toString('base64url');
 
     const currentUser = await this.prisma.user.findUnique({
@@ -243,6 +244,10 @@ export class UsersService {
 
       return created;
     });
+
+    if (!body.password) {
+      void this.passwords.sendInvite(newUser.uuid).catch(() => undefined);
+    }
 
     const roleLabel = role.toLowerCase();
     await this.notifications.notifyBranchAdmins(

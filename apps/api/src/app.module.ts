@@ -26,12 +26,14 @@ import { ParentModule } from './parent/parent.module.js';
 import { AccountModule } from './account/account.module.js';
 import { AffectiveModule } from './affective/affective.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
+import { MailModule } from './mail/mail.module.js';
 
 @Module({
   imports: [
     PrismaModule,
     CacheModule,
     StorageModule,
+    MailModule,
     NotificationsModule,
     AuthModule,
     UsersModule,

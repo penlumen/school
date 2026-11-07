@@ -90,6 +90,8 @@ export default function PaymentsPage() {
             setRejecting(null);
             setNote('');
             load();
+        } catch (e: any) {
+            toast.error(e.message || 'Something went wrong');
         } finally {
             setBusy(null);
         }

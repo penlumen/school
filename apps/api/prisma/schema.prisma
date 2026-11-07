@@ -71,6 +71,7 @@ model User {
   notifications             Notification[]
   device_tokens             DeviceToken[]
   online_payments           OnlinePayment[]
+  password_tokens           PasswordToken[]
 
   @@unique([school_uuid, email, role])
 }
@@ -127,6 +128,13 @@ model School {
   allow_part_payment  Boolean @default(true)
   parent_pays_fees    Boolean @default(false)
 
+  // Email (School Settings › Email). smtp holds the school's own server, with
+  // the password encrypted; without it the platform's SMTP (env) is used.
+  email_enabled Boolean @default(true)
+  smtp          Json?
+  // Category -> false for email types the school switched off.
+  email_types   Json?
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -137,6 +145,7 @@ model School {
   gallery_categories GalleryCategory[]
   gallery_images     GalleryImage[]
   online_payments    OnlinePayment[]
+  email_logs         EmailLog[]
 }
 
 // ========== WEBSITE ==========
@@ -616,6 +625,47 @@ model OnlinePayment {
   user    User?   @relation(fields: [user_uuid], references: [uuid], onUpdate: Cascade, onDelete: SetNull)
 
   @@index([branch_uuid, status])
+}
+
+enum EmailStatus {
+  SENT
+  FAILED
+}
+
+/// One email the system tried to send, for School Settings › Email.
+model EmailLog {
+  id          Int         @id @default(autoincrement())
+  uuid        String      @unique @default(uuid())
+  school_uuid String
+  to          String
+  subject     String
+  category    String
+  status      EmailStatus
+  /// "school" (its own SMTP) or "platform".
+  via         String
+  error       String?
+  created_at  DateTime    @default(now())
+
+  school School @relation(fields: [school_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+
+  @@index([school_uuid, created_at])
+}
+
+/// Single-use link for setting a password: account invites and resets.
+model PasswordToken {
+  id         Int       @id @default(autoincrement())
+  uuid       String    @unique @default(uuid())
+  user_uuid  String
+  /// SHA-256 of the token; the token itself only exists in the email.
+  token_hash String    @unique
+  purpose    String
+  expires_at DateTime
+  used_at    DateTime?
+  created_at DateTime  @default(now())
+
+  user User @relation(fields: [user_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+
+  @@index([user_uuid])
 }
 
 model AffectiveTrait {

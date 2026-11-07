@@ -54,6 +54,14 @@ export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
+    // Coming back from a set-password link: open the right tab with the email filled in.
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const role = params.get('role');
+        if (role === 'parent' || role === 'staff') setTab(role);
+        if (params.get('email')) setEmail(params.get('email')!);
+    }, []);
+
     useEffect(() => {
         const userString = Cookies.get('user');
         const user = userString ? JSON.parse(userString) : null;
@@ -156,7 +164,17 @@ export default function LoginPage() {
                             </div>
 
                             <div className='space-y-2'>
-                                <Label htmlFor='password'>Password</Label>
+                                <div className='flex items-center justify-between'>
+                                    <Label htmlFor='password'>Password</Label>
+                                    {tab !== 'student' && (
+                                        <Link
+                                            href={`/forgot-password?role=${tab}`}
+                                            className='text-xs text-primary hover:underline'
+                                        >
+                                            Forgot password?
+                                        </Link>
+                                    )}
+                                </div>
                                 <div className='relative'>
                                     <Input
                                         id='password'
