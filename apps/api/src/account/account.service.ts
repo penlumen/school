@@ -1,5 +1,6 @@
 import { Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { normalizePhone } from '../common/phone.js';
 import { HashingService } from '../common/hashing.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 
@@ -44,8 +45,8 @@ export class AccountService {
     const user = await this.prisma.user.update({
       where: { uuid: decoded.uuid },
       data: {
-        contact: clean(body?.contact, 40),
-        alt_contact: clean(body?.alt_contact, 40),
+        contact: normalizePhone(body?.contact, 'Phone number'),
+        alt_contact: normalizePhone(body?.alt_contact, 'Alternative phone'),
         address: clean(body?.address, 300),
       },
       select: this.accountSelect,

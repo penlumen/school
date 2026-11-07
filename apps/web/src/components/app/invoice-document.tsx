@@ -1,6 +1,7 @@
 import type {InvoiceDetail} from '@/hooks/billing';
 import {INVOICE_STATUS_LABEL, naira, toNumber} from '@/hooks/billing';
 import {cn} from '@/lib/utils';
+import {formatPhoneInternational} from '@/lib/phone';
 
 const formatDate = (value: string | null) =>
     value
@@ -15,7 +16,7 @@ export function InvoiceDocument({invoice, className}: { invoice: InvoiceDetail; 
     const school = invoice.branch.school;
     const fromName = school.name === invoice.branch.name ? school.name : `${school.name}, ${invoice.branch.name}`;
     const fromAddress = invoice.branch.address || school.address;
-    const fromPhone = invoice.branch.contact || school.contact;
+    const fromPhone = formatPhoneInternational(invoice.branch.contact || school.contact);
     const fromEmail = invoice.branch.email || school.email;
     const logo = school.avatar || invoice.branch.avatar;
     const parent = invoice.student.parent;
@@ -62,7 +63,7 @@ export function InvoiceDocument({invoice, className}: { invoice: InvoiceDetail; 
                     <p className='mt-2 font-medium text-[#003884]'>{parent?.name || 'Parent / guardian'}</p>
                     <div className='mt-1 space-y-0.5 text-[#6c6c6c]'>
                         {parent?.address && <p>{parent.address}</p>}
-                        {parent?.contact && <p>{parent.contact}</p>}
+                        {parent?.contact && <p>{formatPhoneInternational(parent.contact)}</p>}
                         <p>
                             For {invoice.student.name}
                             {invoice.student.class ? ` · ${invoice.student.class.name}` : ''}

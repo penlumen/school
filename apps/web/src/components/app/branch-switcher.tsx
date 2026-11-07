@@ -21,6 +21,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import {Input} from '@/components/ui/input';
+import {PhoneInput} from '@/components/ui/phone-input';
 import {Button} from '@/components/ui/button';
 import {toast} from 'sonner';
 
@@ -175,10 +176,10 @@ export function BranchSwitcher() {
                             value={formData.name}
                             onChange={(e) => setFormData({...formData, name: e.target.value})}
                         />
-                        <Input
-                            placeholder='Contact'
+                        <PhoneInput
+                            placeholder='Branch phone number'
                             value={formData.contact}
-                            onChange={(e) => setFormData({...formData, contact: e.target.value})}
+                            onChange={(contact) => setFormData({...formData, contact})}
                         />
                         <Input
                             placeholder='Address'

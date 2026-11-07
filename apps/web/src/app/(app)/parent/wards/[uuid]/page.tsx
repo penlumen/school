@@ -12,6 +12,7 @@ import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
 import {WardAvatar} from '@/components/app/parent-ui';
 import {ParentInvoiceList} from '@/components/app/parent-invoice-list';
 import {cn} from '@/lib/utils';
+import {formatPhone, phoneHref} from '@/lib/phone';
 
 interface WardDetail extends Ward {
     teacher: { name: string | null; email: string; contact: string | null } | null;
@@ -230,8 +231,8 @@ export default function WardPage() {
                         <p className='font-medium'>{ward.teacher.name}</p>
                         <div className='mt-1 flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground'>
                             {ward.teacher.contact && (
-                                <a href={`tel:${ward.teacher.contact}`} className='flex items-center gap-1 hover:text-foreground'>
-                                    <Phone className='h-3.5 w-3.5'/> {ward.teacher.contact}
+                                <a href={phoneHref(ward.teacher.contact)} className='flex items-center gap-1 hover:text-foreground'>
+                                    <Phone className='h-3.5 w-3.5'/> {formatPhone(ward.teacher.contact)}
                                 </a>
                             )}
                             <a href={`mailto:${ward.teacher.email}`} className='flex items-center gap-1 hover:text-foreground'>

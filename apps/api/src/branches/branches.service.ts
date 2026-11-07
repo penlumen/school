@@ -5,6 +5,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { normalizePhone } from '../common/phone.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { StorageService } from '../storage/storage.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
@@ -66,7 +67,8 @@ export class BranchesService {
   }
 
   async create(decoded: DecodedUser, body: any) {
-    const { name, email, contact, address } = body;
+    const { name, email, address } = body;
+    const contact = normalizePhone(body.contact, 'Branch contact');
 
     if (decoded.role !== 'ADMIN') {
       throw new BadRequestException({
@@ -130,7 +132,8 @@ export class BranchesService {
   }
 
   async update(uuid: string, decoded: DecodedUser, body: any) {
-    const { name, email, contact, address, avatar } = body;
+    const { name, email, address, avatar } = body;
+    const contact = normalizePhone(body.contact, 'Branch contact');
 
     if (decoded.role !== 'ADMIN') {
       throw new BadRequestException({

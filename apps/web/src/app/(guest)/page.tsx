@@ -5,6 +5,7 @@ import {ArrowRight, CalendarDays, Mail, MapPin, Phone} from 'lucide-react';
 
 import {useSite} from '@/hooks/site';
 import {siteIcon} from '@/lib/site-icons';
+import {formatPhone, phoneHref} from '@/lib/phone';
 import {eventDay, eventMonth, excerpt, initials, isUpcoming} from '@/lib/site-format';
 import {Skeleton} from '@/components/ui/skeleton';
 import {Container, EventCard, Eyebrow, Reveal, SectionHeading} from '@/components/guest/site-ui';
@@ -236,8 +237,8 @@ export default function HomePage() {
                                         </a>
                                     )}
                                     {site?.contact && (
-                                        <a href={`tel:${site.contact.replace(/\s+/g, '')}`} className='inline-flex items-center gap-2 rounded-full border border-white/30 px-6 py-3.5 font-medium hover:bg-white/10'>
-                                            <Phone className='h-4 w-4'/> {site.contact}
+                                        <a href={phoneHref(site.contact)} className='inline-flex items-center gap-2 rounded-full border border-white/30 px-6 py-3.5 font-medium hover:bg-white/10'>
+                                            <Phone className='h-4 w-4'/> {formatPhone(site.contact)}
                                         </a>
                                     )}
                                 </div>

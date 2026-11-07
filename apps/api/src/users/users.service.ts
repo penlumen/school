@@ -7,6 +7,7 @@ import {
 import { Role } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { normalizePhone } from '../common/phone.js';
 import { HashingService } from '../common/hashing.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { StorageService } from '../storage/storage.service.js';
@@ -121,11 +122,13 @@ export class UsersService {
       email,
       position,
       address,
-      contact,
-      alt_contact,
+      contact: rawContact,
+      alt_contact: rawAltContact,
       avatar,
       face_descriptor,
     } = body;
+    const contact = normalizePhone(rawContact, 'Contact');
+    const alt_contact = normalizePhone(rawAltContact, 'Alt contact');
     // The Add Staff/Add Parent forms don't collect a password (matches the
     // design) — generate one server-side. There's no invite/reset-password
     // flow yet, so this account's password isn't known to anyone until that
@@ -364,11 +367,13 @@ export class UsersService {
       password,
       position,
       address,
-      contact,
-      alt_contact,
+      contact: rawContact,
+      alt_contact: rawAltContact,
       avatar,
       face_descriptor,
     } = body;
+    const contact = normalizePhone(rawContact, 'Contact');
+    const alt_contact = normalizePhone(rawAltContact, 'Alt contact');
 
     if (decoded.position !== 'ADMINISTRATIVE') {
       throw new BadRequestException({

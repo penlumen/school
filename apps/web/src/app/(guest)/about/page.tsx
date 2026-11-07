@@ -5,6 +5,7 @@ import {MapPin, Phone} from 'lucide-react';
 import {useSite} from '@/hooks/site';
 import {Container, EmptyState, Eyebrow, PageHero, Reveal, SectionHeading} from '@/components/guest/site-ui';
 import {cn} from '@/lib/utils';
+import {formatPhone, phoneHref} from '@/lib/phone';
 
 export default function AboutPage() {
     const {site, loading, fallbackName} = useSite();
@@ -152,8 +153,8 @@ export default function AboutPage() {
                                                 <p className='flex items-start gap-2'><MapPin className='mt-1 h-4 w-4 flex-shrink-0'/>{branch.address}</p>
                                             )}
                                             {branch.contact && (
-                                                <a href={`tel:${branch.contact.replace(/\s+/g, '')}`} className='flex items-start gap-2 hover:text-foreground'>
-                                                    <Phone className='mt-1 h-4 w-4 flex-shrink-0'/>{branch.contact}
+                                                <a href={phoneHref(branch.contact)} className='flex items-start gap-2 hover:text-foreground'>
+                                                    <Phone className='mt-1 h-4 w-4 flex-shrink-0'/>{formatPhone(branch.contact)}
                                                 </a>
                                             )}
                                         </div>
