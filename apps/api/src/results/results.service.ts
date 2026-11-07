@@ -30,22 +30,63 @@ export class ResultsService {
     };
   }
 
+  private isAdmin(decoded: DecodedUser) {
+    return (
+      ['ROOT', 'ADMIN'].includes(decoded.role) ||
+      decoded.position === 'ADMINISTRATIVE'
+    );
+  }
+
+  /**
+   * The one rule for every report action: staff who can use the class's
+   * branch, and who are either an administrator or one of the class's
+   * teachers. Parents use the parent endpoints instead.
+   */
+  private async canAccessClass(decoded: DecodedUser, classUuid: string) {
+    if (!['ROOT', 'ADMIN', 'STAFF'].includes(decoded.role)) return false;
+    const klass = await this.prisma.class.findUnique({
+      where: { uuid: classUuid },
+      select: { branch_uuid: true, teacher_uuid: true, teachers_uuid: true },
+    });
+    if (!klass) return false;
+    const branchAccess = await this.prisma.branchAccess.findFirst({
+      where: {
+        user_uuid: decoded.uuid,
+        branch_uuid: klass.branch_uuid,
+        school_uuid: decoded.school_uuid,
+      },
+      select: { id: true },
+    });
+    if (!branchAccess) return false;
+    return (
+      this.isAdmin(decoded) ||
+      klass.teacher_uuid === decoded.uuid ||
+      klass.teachers_uuid.includes(decoded.uuid)
+    );
+  }
+
+  private notFound(message = 'Result not found'): never {
+    throw new NotFoundException({ status: 404, success: false, message });
+  }
+
+  /**
+   * Report list for the Reports page. Administrators (ADMIN/ROOT role or an
+   * administrative position) see every class in the branch; other staff only
+   * the classes they teach (class teacher or one of its teachers). Filters:
+   * class, status, term and a name / reg. number search.
+   */
   async index(
     branchUuid: string | undefined,
     decoded: DecodedUser,
     query: {
-      status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+      status?: string;
+      class_uuid?: string;
+      calendar_uuid?: string;
       search?: string;
       page?: string;
       limit?: string;
     },
   ) {
-    const status = query.status;
-    const search = query.search;
-    const page = Number(query.page) || 1;
-    const limit = Number(query.limit) || 30;
-    const skip = (page - 1) * limit;
-
     if (!branchUuid) {
       throw new BadRequestException({
         success: false,
@@ -53,84 +94,135 @@ export class ResultsService {
       });
     }
 
-    try {
-      let results;
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(query.limit) || 20));
+    const status = ['PENDING', 'APPROVED', 'REJECTED'].includes(
+      query.status || '',
+    )
+      ? (query.status as 'PENDING' | 'APPROVED' | 'REJECTED')
+      : undefined;
+    const search = query.search?.trim();
 
-      if (decoded.position === 'ADMINISTRATIVE') {
-        results = await this.prisma.result.findMany({
+    const isAdmin = this.isAdmin(decoded);
+    // Same rule as single reports: staff of this school with access to the branch.
+    const branchAccess = ['ROOT', 'ADMIN', 'STAFF'].includes(decoded.role)
+      ? await this.prisma.branchAccess.findFirst({
           where: {
-            ...(status && { status }),
-            student: {
-              branch_uuid: branchUuid,
-              ...(search && {
-                OR: [
-                  { name: { contains: search, mode: 'insensitive' } },
-                  { reg_number: { contains: search, mode: 'insensitive' } },
-                ],
-              }),
-            },
-          },
-          include: { student: true, assessments: true },
-          orderBy: { created_at: 'desc' },
-          take: limit,
-          skip,
-        });
-      } else {
-        const classes = await this.prisma.class.findMany({
-          where: {
+            user_uuid: decoded.uuid,
             branch_uuid: branchUuid,
-            OR: [
-              { teacher_uuid: decoded.uuid },
-              { teachers_uuid: { has: decoded.uuid } },
-            ],
+            school_uuid: decoded.school_uuid,
           },
-          select: { name: true },
-        });
-        const classes_names = classes.map((c) => c.name);
+          select: { id: true },
+        })
+      : null;
 
-        results = await this.prisma.result.findMany({
-          where: {
-            ...(status && { status }),
-            class_name: { in: classes_names },
-            student: {
-              branch_uuid: branchUuid,
-              ...(search && {
-                OR: [
-                  { name: { contains: search, mode: 'insensitive' } },
-                  { reg_number: { contains: search, mode: 'insensitive' } },
-                ],
-              }),
-            },
+    // The classes this user may see; also offered as the class filter.
+    const classes = await this.prisma.class.findMany({
+      where: {
+        branch_uuid: branchAccess ? branchUuid : '__no_access__',
+        ...(isAdmin
+          ? {}
+          : {
+              OR: [
+                { teacher_uuid: decoded.uuid },
+                { teachers_uuid: { has: decoded.uuid } },
+              ],
+            }),
+      },
+      select: { uuid: true, name: true },
+      orderBy: { name: 'asc' },
+    });
+    const allowed = classes.map((c) => c.uuid);
+    // A class outside the user's access simply matches nothing.
+    const classFilter = query.class_uuid
+      ? allowed.includes(query.class_uuid)
+        ? [query.class_uuid]
+        : []
+      : allowed;
+
+    const where = {
+      class_uuid: { in: classFilter },
+      ...(status && { status }),
+      ...(query.calendar_uuid && { calendar_uuid: query.calendar_uuid }),
+      student: {
+        branch_uuid: branchUuid,
+        ...(search && {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' as const } },
+            { reg_number: { contains: search, mode: 'insensitive' as const } },
+          ],
+        }),
+      },
+    };
+
+    const [results, total, counts, terms] = await Promise.all([
+      this.prisma.result.findMany({
+        where,
+        select: {
+          uuid: true,
+          class_uuid: true,
+          class_name: true,
+          overall: true,
+          status: true,
+          approval_requested: true,
+          updated_at: true,
+          student: {
+            select: { uuid: true, name: true, reg_number: true, avatar: true },
           },
-          include: { student: true, assessments: true },
-          orderBy: { created_at: 'desc' },
-          take: limit,
-          skip,
-        });
-      }
-
-      return {
-        success: true,
-        data: {
-          results: results.map((r: any) => ({
-            ...r,
-            assessments: r.assessments.map((a: any) =>
-              this.toPlainAssessment(a),
-            ),
-          })),
-          page,
-          hasMore: results.length === limit,
+          calendar: { select: { uuid: true, session: true, term: true } },
+          _count: { select: { assessments: true } },
         },
-      };
-    } catch (error) {
-      throw new InternalServerErrorException({
-        success: false,
-        message: 'Failed to fetch results',
-      });
-    }
+        orderBy: { updated_at: 'desc' },
+        take: limit,
+        skip: (page - 1) * limit,
+      }),
+      this.prisma.result.count({ where }),
+      // Per-status totals for the summary chips, ignoring the status filter.
+      this.prisma.result.groupBy({
+        by: ['status'],
+        where: { ...where, status: undefined },
+        _count: { _all: true },
+      }),
+      this.prisma.calendar.findMany({
+        where: { branch_uuid: branchUuid },
+        select: { uuid: true, session: true, term: true, status: true },
+        orderBy: { created_at: 'desc' },
+      }),
+    ]);
+
+    return {
+      status: 200,
+      success: true,
+      message: 'Results',
+      data: {
+        results: results.map(({ _count, ...r }) => ({
+          ...r,
+          subjects: _count.assessments,
+          average: _count.assessments
+            ? Math.round((r.overall / _count.assessments) * 10) / 10
+            : null,
+        })),
+        page,
+        limit,
+        total,
+        counts: Object.fromEntries(
+          counts.map((c) => [c.status, c._count._all]),
+        ),
+        filters: { classes, terms, all_classes: isAdmin },
+      },
+    };
   }
 
-  async show(studentUuid: string) {
+  async show(studentUuid: string, decoded: DecodedUser) {
+    const student = await this.prisma.student.findUnique({
+      where: { uuid: studentUuid },
+      select: { class_uuid: true },
+    });
+    // Not found and not allowed look the same, so ids can't be probed.
+    if (!student || !(await this.canAccessClass(decoded, student.class_uuid))) {
+      this.notFound('Student not found');
+    }
+
     try {
       const results = await this.prisma.result.findMany({
         where: { student: { uuid: studentUuid } },
@@ -158,37 +250,41 @@ export class ResultsService {
     }
   }
 
-  async view(branchUuid: string | undefined, resultUuid: string) {
-    if (!resultUuid) {
-      throw new BadRequestException({
-        status: 400,
-        success: false,
-        message: 'Result uuid is required',
-      });
+  /** A report card for staff who can access the report's class. */
+  async view(resultUuid: string, decoded: DecodedUser) {
+    const result = resultUuid
+      ? await this.prisma.result.findUnique({
+          where: { uuid: resultUuid },
+          select: { class_uuid: true },
+        })
+      : null;
+    if (!result || !(await this.canAccessClass(decoded, result.class_uuid))) {
+      this.notFound();
     }
+    return this.reportCard(resultUuid);
+  }
 
-    const [grading, result] = await Promise.all([
-      this.prisma.grade.findMany({
-        where: { branch_uuid: branchUuid },
-        orderBy: { score: 'desc' },
-      }),
-      this.prisma.result.findUnique({
-        where: { uuid: resultUuid },
-        include: { student: true, assessments: true, calendar: true },
-      }),
-    ]);
+  /**
+   * Builds a report card with grades and class position. No access check:
+   * callers must already have checked (staff via view(), parents via the
+   * parent module's own-child check).
+   */
+  async reportCard(resultUuid: string) {
+    const result = await this.prisma.result.findUnique({
+      where: { uuid: resultUuid },
+      include: { student: true, assessments: true, calendar: true },
+    });
+    if (!result) this.notFound();
 
-    if (!result) {
-      throw new NotFoundException({
-        status: 404,
-        success: false,
-        message: 'Result not found',
-      });
-    }
+    // The grade scale belongs to the report's own branch.
+    const grading = await this.prisma.grade.findMany({
+      where: { branch_uuid: result.student?.branch_uuid },
+      orderBy: { score: 'desc' },
+    });
 
     const classResults = await this.prisma.result.findMany({
       where: {
-        class_name: result.class_name,
+        class_uuid: result.class_uuid,
         calendar_uuid: result.calendar_uuid,
       },
       select: { uuid: true, overall: true },
@@ -257,12 +353,7 @@ export class ResultsService {
         });
       }
 
-      const isAdmin = decoded.position === 'ADMINISTRATIVE';
-      const isClassTeacher =
-        student.class.teacher_uuid === decoded.uuid ||
-        student.class.teachers_uuid.includes(decoded.uuid);
-
-      if (!isAdmin && !isClassTeacher) {
+      if (!(await this.canAccessClass(decoded, student.class_uuid))) {
         throw new ForbiddenException({
           status: 403,
           success: false,
@@ -375,19 +466,14 @@ export class ResultsService {
       });
     }
 
-    const isAdmin = decoded.position === 'ADMINISTRATIVE';
-    const isClassTeacher =
-      existing.student &&
-      (existing.student.class.teacher_uuid === decoded.uuid ||
-        existing.student.class.teachers_uuid.includes(decoded.uuid));
-
-    if (!isAdmin && !isClassTeacher) {
+    if (!(await this.canAccessClass(decoded, existing.class_uuid))) {
       throw new ForbiddenException({
         status: 403,
         success: false,
         message: 'Unauthorized',
       });
     }
+    const isAdmin = this.isAdmin(decoded);
 
     if (!Array.isArray(assessments)) {
       throw new BadRequestException({
@@ -558,12 +644,22 @@ export class ResultsService {
   }
 
   async remove(resultUuid: string, decoded: DecodedUser) {
-    if (decoded.position !== 'ADMINISTRATIVE') {
+    if (!this.isAdmin(decoded)) {
       throw new BadRequestException({
         status: 400,
         success: false,
-        message: 'Unauthorized',
+        message: 'Only administrators can delete reports',
       });
+    }
+    const existing = await this.prisma.result.findUnique({
+      where: { uuid: resultUuid },
+      select: { class_uuid: true },
+    });
+    if (
+      !existing ||
+      !(await this.canAccessClass(decoded, existing.class_uuid))
+    ) {
+      this.notFound();
     }
 
     try {

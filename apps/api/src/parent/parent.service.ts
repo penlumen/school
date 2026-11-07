@@ -261,7 +261,7 @@ export class ParentService {
       select: { student: { select: { branch_uuid: true } } },
     });
     if (!result?.student) this.notFound('Report card not found');
-    return this.results.view(result.student.branch_uuid, resultUuid);
+    return this.results.reportCard(resultUuid);
   }
 
   // ---------- Fees ----------
