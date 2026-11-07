@@ -329,7 +329,7 @@ export function GradingTab() {
                                 onChange={(e) => setNewGrade({...newGrade, score: e.target.value})}
                             />
                             <p className='text-xs text-muted-foreground'>
-                                The highest score in this grade&apos;s range.
+                                The lowest total that earns this grade (e.g. 70 for 70–79).
                             </p>
                         </div>
                         <Button type='submit' disabled={adding} className='w-full'>

@@ -24,8 +24,9 @@ interface StudentData {
 
 interface AssessmentObject {
     subject: string;
-    assignment: number;
-    assessment: number;
+    // First and second continuous assessments (formerly assignment/assessment).
+    ca_one: number;
+    ca_two: number;
     examination: number;
     overall: number;
     grade?: string;
@@ -223,8 +224,8 @@ export default function TraditionalResultSheet() {
                                 {assessments.map((assessment, index) => (
                                     <tr key={index} className="h-7">
                                         <td className='border border-black px-2 font-bold text-xs uppercase'>{assessment.subject}</td>
-                                        <td className='border border-black text-center text-xs'>{assessment.assignment}</td>
-                                        <td className='border border-black text-center text-xs'>{assessment.assessment}</td>
+                                        <td className='border border-black text-center text-xs'>{assessment.ca_one}</td>
+                                        <td className='border border-black text-center text-xs'>{assessment.ca_two}</td>
                                         <td className='border border-black text-center text-xs'>{assessment.examination}</td>
                                         <td className='border border-black text-center font-bold text-xs'>{assessment.overall}</td>
                                         <td className='border border-black text-center font-bold text-xs'>
