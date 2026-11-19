@@ -37,7 +37,14 @@ export interface InvoiceListItem {
         parent: { uuid: string; name: string | null } | null;
     };
     template: { uuid: string; name: string } | null;
+    /** Class and term at the time the invoice was issued. */
+    class: { uuid: string; name: string } | null;
+    calendar: { uuid: string; session: string; term: string | null } | null;
 }
+
+/** "First Term · 2025/2026" */
+export const termLabel = (calendar: { session: string; term: string | null }) =>
+    [calendar.term, calendar.session].filter(Boolean).join(' · ');
 
 export interface InvoiceDetail extends InvoiceListItem {
     note: string | null;
@@ -66,6 +73,8 @@ export interface TemplatePayload {
 export interface InvoicePayload {
     student_uuids: string[];
     template_uuid: string;
+    /** Term billed; the API defaults to the branch's active term. */
+    calendar_uuid?: string;
     due_at?: string;
     note?: string;
 }

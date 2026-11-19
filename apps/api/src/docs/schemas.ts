@@ -284,6 +284,11 @@ export class InvoiceCreateBody {
     description: 'Extra or custom items',
   })
   items?: FeeItem[];
+  @ApiPropertyOptional({
+    example: '3f2b8c1e-5d4a-4f6b-9c2d-1a2b3c4d5e6f',
+    description: "Term billed (calendar uuid); defaults to the branch's active term",
+  })
+  calendar_uuid?: string;
   @ApiPropertyOptional({ example: '2026-12-01' })
   due_at?: string;
   @ApiPropertyOptional()

@@ -262,9 +262,10 @@ model Calendar {
   created_at DateTime       @default(now())
   updated_at DateTime       @default(now()) @updatedAt
 
-  results Result[]
-  events  Event[]
-  branch  Branch   @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  results  Result[]
+  events   Event[]
+  branch   Branch    @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  invoices Invoice[]
 }
 
 // ========== STUDENT ==========
@@ -315,6 +316,7 @@ model Class {
   subjects   Subject[]
   students   Student[]
   attendance StudentAttendance[]
+  invoices   Invoice[]
 }
 
 // ========== SUBJECT ==========
@@ -553,6 +555,9 @@ model Invoice {
   branch_uuid   String
   student_uuid  String
   template_uuid String?
+  /// The student's class and the term billed, when the invoice was issued.
+  class_uuid    String?
+  calendar_uuid String?
   status        InvoiceStatus @default(PENDING)
   total         Decimal       @db.Decimal(12, 2)
   paid          Decimal       @default(0) @db.Decimal(12, 2)
@@ -568,6 +573,8 @@ model Invoice {
   items    InvoiceItem[]
   history  InvoiceStatusChange[]
   payments OnlinePayment[]
+  class    Class?                @relation(fields: [class_uuid], references: [uuid], onUpdate: Cascade, onDelete: SetNull)
+  calendar Calendar?             @relation(fields: [calendar_uuid], references: [uuid], onUpdate: Cascade, onDelete: SetNull)
 }
 
 // Line items are copied from the template, so later template edits never change issued invoices.
