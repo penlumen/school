@@ -16,6 +16,12 @@ import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Public } from '../common/decorators/public.decorator.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { PaymentsService } from './payments.service.js';
+import { ApiBody, ApiOperation } from '@nestjs/swagger';
+import {
+  PaymentAmountBody,
+  PaymentSettingsBody,
+  RejectPaymentBody,
+} from '../docs/schemas.js';
 
 @Controller('payments')
 export class PaymentsController {
@@ -27,6 +33,8 @@ export class PaymentsController {
     return this.paymentsService.settings(user);
   }
 
+  @ApiOperation({ summary: 'Save Paystack keys and payment rules' })
+  @ApiBody({ type: PaymentSettingsBody })
   @Put('settings')
   saveSettings(@CurrentUser() user: DecodedUser, @Body() body: any) {
     return this.paymentsService.saveSettings(user, body);
@@ -38,6 +46,8 @@ export class PaymentsController {
     return this.paymentsService.options(user);
   }
 
+  @ApiOperation({ summary: 'Parent: amount, fee and total for a payment' })
+  @ApiBody({ type: PaymentAmountBody })
   @Post('quote/:invoice')
   @HttpCode(200)
   quote(
@@ -48,6 +58,8 @@ export class PaymentsController {
     return this.paymentsService.quote(invoice, user, body);
   }
 
+  @ApiOperation({ summary: 'Parent: start a Paystack payment' })
+  @ApiBody({ type: PaymentAmountBody })
   @Post('checkout/:invoice')
   @HttpCode(200)
   checkout(
@@ -96,6 +108,8 @@ export class PaymentsController {
     return this.paymentsService.confirm(uuid, branchUuid, user);
   }
 
+  @ApiOperation({ summary: 'Staff: reject a payment awaiting confirmation' })
+  @ApiBody({ type: RejectPaymentBody })
   @Post('reject/:uuid')
   @HttpCode(200)
   reject(

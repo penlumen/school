@@ -11,6 +11,12 @@ import {
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { BillingService } from './billing.service.js';
+import { ApiBody, ApiOperation } from '@nestjs/swagger';
+import {
+  InvoiceCreateBody,
+  InvoiceStatusBody,
+  TemplateBody,
+} from '../docs/schemas.js';
 
 @Controller('billing-template')
 export class BillingTemplatesController {
@@ -33,6 +39,8 @@ export class BillingTemplatesController {
     return this.billingService.template(uuid, branchUuid, user);
   }
 
+  @ApiOperation({ summary: 'Create a billing template' })
+  @ApiBody({ type: TemplateBody })
   @Post('create')
   create(
     @Headers('x-branch-session') branchUuid: string,
@@ -42,6 +50,8 @@ export class BillingTemplatesController {
     return this.billingService.createTemplate(branchUuid, user, body);
   }
 
+  @ApiOperation({ summary: 'Update a billing template' })
+  @ApiBody({ type: TemplateBody })
   @Patch('update/:uuid')
   update(
     @Param('uuid') uuid: string,
@@ -83,6 +93,8 @@ export class InvoicesController {
     return this.billingService.invoice(uuid, branchUuid, user);
   }
 
+  @ApiOperation({ summary: 'Issue invoices to one or more students' })
+  @ApiBody({ type: InvoiceCreateBody })
   @Post('create')
   create(
     @Headers('x-branch-session') branchUuid: string,
@@ -92,6 +104,8 @@ export class InvoicesController {
     return this.billingService.createInvoices(branchUuid, user, body);
   }
 
+  @ApiOperation({ summary: 'Record a payment, refund or cancellation' })
+  @ApiBody({ type: InvoiceStatusBody })
   @Patch('status/:uuid')
   updateStatus(
     @Param('uuid') uuid: string,

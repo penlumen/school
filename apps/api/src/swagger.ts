@@ -88,13 +88,74 @@ function finish(document: OpenAPIObject) {
           },
         };
       }
+
+      // OIDC and the data API answer in OAuth/OpenID shapes, not the envelope.
+      if (!tag.startsWith('Integrations: ')) {
+        const success = Object.keys(operation.responses ?? {}).find((code) =>
+          code.startsWith('2'),
+        );
+        operation.responses = {
+          [success ?? '200']: {
+            description: 'Success',
+            content: { 'application/json': { schema: ref('Envelope') } },
+          },
+          ...Object.fromEntries(
+            [
+              ['400', 'Bad request, or not allowed for your role'],
+              ['401', 'Missing or expired token'],
+              ['404', 'Not found'],
+              ['422', 'Invalid input; message says what to fix'],
+            ].map(([code, description]) => [
+              code,
+              {
+                description,
+                content: { 'application/json': { schema: ref('Error') } },
+              },
+            ]),
+          ),
+        };
+      }
     }
   }
+  document.components = {
+    ...document.components,
+    schemas: {
+      ...document.components?.schemas,
+      Envelope: {
+        type: 'object',
+        description: 'Every response from the school API',
+        properties: {
+          status: { type: 'integer', example: 200 },
+          success: { type: 'boolean', example: true },
+          message: { type: 'string', example: 'Student created' },
+          data: {
+            type: 'object',
+            additionalProperties: true,
+            description: 'The result, e.g. { student } or { students }',
+          },
+        },
+      },
+      Error: {
+        type: 'object',
+        properties: {
+          status: { type: 'integer', example: 400 },
+          success: { type: 'boolean', example: false },
+          message: {
+            type: 'string',
+            example:
+              'What went wrong, e.g. "Registration number already taken"',
+          },
+        },
+      },
+    },
+  };
   document.tags = [...new Set(Object.values(TAGS)), 'Integrations: data API']
     .sort()
     .map((name) => ({ name }));
   return document;
 }
+
+const ref = (name: string) => ({ $ref: `#/components/schemas/${name}` });
 
 /**
  * Serves the API docs at /api/docs (JSON at /api/docs-json). On by default

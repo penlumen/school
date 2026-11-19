@@ -12,6 +12,8 @@ import {
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { UsersService } from './users.service.js';
+import { ApiBody, ApiOperation } from '@nestjs/swagger';
+import { UserBody } from '../docs/schemas.js';
 
 @Controller('user')
 export class UsersController {
@@ -31,6 +33,8 @@ export class UsersController {
     return this.usersService.show(uuid);
   }
 
+  @ApiOperation({ summary: 'Add a staff member or parent' })
+  @ApiBody({ type: UserBody })
   @Post('create')
   create(
     @Headers('x-branch-session') branchUuid: string,
@@ -49,6 +53,8 @@ export class UsersController {
     return this.usersService.attach(uuid, branchUuid, user);
   }
 
+  @ApiOperation({ summary: 'Update a staff member or parent' })
+  @ApiBody({ type: UserBody })
   @Patch('update/:uuid')
   update(
     @Param('uuid') uuid: string,

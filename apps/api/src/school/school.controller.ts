@@ -13,6 +13,8 @@ import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Public } from '../common/decorators/public.decorator.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { SchoolService } from './school.service.js';
+import { ApiBody, ApiOperation } from '@nestjs/swagger';
+import { SchoolUpdateBody } from '../docs/schemas.js';
 
 @Controller('school')
 export class SchoolController {
@@ -23,6 +25,8 @@ export class SchoolController {
     return this.schoolService.show(user);
   }
 
+  @ApiOperation({ summary: 'Update school settings and website content' })
+  @ApiBody({ type: SchoolUpdateBody })
   @Patch('update')
   update(@CurrentUser() user: DecodedUser, @Body() body: any) {
     return this.schoolService.update(user, body);
