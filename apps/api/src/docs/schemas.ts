@@ -286,7 +286,8 @@ export class InvoiceCreateBody {
   items?: FeeItem[];
   @ApiPropertyOptional({
     example: '3f2b8c1e-5d4a-4f6b-9c2d-1a2b3c4d5e6f',
-    description: "Term billed (calendar uuid); defaults to the branch's active term",
+    description:
+      "Term billed (calendar uuid); defaults to the branch's active term",
   })
   calendar_uuid?: string;
   @ApiPropertyOptional({ example: '2026-12-01' })
@@ -392,4 +393,31 @@ export class TestEmailBody {
     example: 'you@school.com',
   })
   to?: string;
+}
+
+// ---------- Import ----------
+
+export class ImportBody {
+  @ApiProperty({
+    description:
+      'Spreadsheet rows keyed by column (header names or keys), at most 2000',
+    example: [
+      {
+        name: 'Amina Muhammad',
+        class: 'JSS 1',
+        parent_email: 'hauwa@example.com',
+        parent_name: 'Hauwa Muhammad',
+      },
+    ],
+  })
+  rows!: Record<string, string>[];
+  @ApiPropertyOptional({
+    default: true,
+    description: 'true (default) only checks the rows; false saves them',
+  })
+  dry_run?: boolean;
+  @ApiPropertyOptional({
+    description: 'Results only: the term the scores are for',
+  })
+  calendar_uuid?: string;
 }

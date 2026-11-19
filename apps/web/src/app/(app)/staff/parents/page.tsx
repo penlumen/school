@@ -10,6 +10,7 @@ import LoadingPage from '@/components/loading-page';
 import {PeopleTable} from '@/components/app/people-table';
 import {PersonFormSheet, type PersonRecord} from '@/components/app/person-form-sheet';
 import {PersonDetailSheet} from '@/components/app/person-detail-sheet';
+import {DataTransferMenu} from '@/components/app/data-transfer-menu';
 
 export default function ParentsPage() {
     const {index} = useUser();
@@ -54,16 +55,19 @@ export default function ParentsPage() {
                         Manage school parent information and accounts
                     </p>
                 </div>
-                <Button
-                    size='sm'
-                    onClick={() => {
-                        setActivePerson(null);
-                        setFormOpen(true);
-                    }}
-                >
-                    <Plus className='h-4 w-4'/>
-                    Add parent
-                </Button>
+                <div className='flex flex-wrap gap-2'>
+                    <DataTransferMenu types={['parents']} onImported={fetchData}/>
+                    <Button
+                        size='sm'
+                        onClick={() => {
+                            setActivePerson(null);
+                            setFormOpen(true);
+                        }}
+                    >
+                        <Plus className='h-4 w-4'/>
+                        Add parent
+                    </Button>
+                </div>
             </div>
 
             <PeopleTable

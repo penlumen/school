@@ -13,6 +13,7 @@ import {PeopleTable} from '@/components/app/people-table';
 import {PersonFormSheet, type PersonRecord} from '@/components/app/person-form-sheet';
 import {PersonDetailSheet} from '@/components/app/person-detail-sheet';
 import {StaffAttendanceTab} from '@/components/app/staff-attendance-tab';
+import {DataTransferMenu} from '@/components/app/data-transfer-menu';
 
 export default function StaffPage() {
     const {index} = useUser();
@@ -94,16 +95,19 @@ export default function StaffPage() {
                         Manage school staff information and accounts
                     </p>
                 </div>
-                <Button
-                    size='sm'
-                    onClick={() => {
-                        setActivePerson(null);
-                        setFormOpen(true);
-                    }}
-                >
-                    <Plus className='h-4 w-4'/>
-                    Add staff
-                </Button>
+                <div className='flex flex-wrap gap-2'>
+                    <DataTransferMenu types={['staff']} onImported={fetchData}/>
+                    <Button
+                        size='sm'
+                        onClick={() => {
+                            setActivePerson(null);
+                            setFormOpen(true);
+                        }}
+                    >
+                        <Plus className='h-4 w-4'/>
+                        Add staff
+                    </Button>
+                </div>
             </div>
 
             {isAdmin ? (

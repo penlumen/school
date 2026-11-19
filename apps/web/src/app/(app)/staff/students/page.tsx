@@ -10,6 +10,7 @@ import LoadingPage from '@/components/loading-page';
 import {StudentsTable} from '@/components/app/students-table';
 import {StudentFormSheet, type StudentRecord} from '@/components/app/student-form-sheet';
 import {StudentDetailSheet} from '@/components/app/student-detail-sheet';
+import {DataTransferMenu} from '@/components/app/data-transfer-menu';
 
 export default function StudentsPage() {
     const {index} = useStudent();
@@ -52,16 +53,19 @@ export default function StudentsPage() {
                     <h1 className='text-3xl font-bold tracking-tight'>Students</h1>
                     <p className='text-muted-foreground'>Manage student records and information</p>
                 </div>
-                <Button
-                    size='sm'
-                    onClick={() => {
-                        setActiveStudent(null);
-                        setFormOpen(true);
-                    }}
-                >
-                    <Plus className='h-4 w-4'/>
-                    Add student
-                </Button>
+                <div className='flex flex-wrap gap-2'>
+                    <DataTransferMenu types={['students']} onImported={fetchData}/>
+                    <Button
+                        size='sm'
+                        onClick={() => {
+                            setActiveStudent(null);
+                            setFormOpen(true);
+                        }}
+                    >
+                        <Plus className='h-4 w-4'/>
+                        Add student
+                    </Button>
+                </div>
             </div>
 
             <StudentsTable

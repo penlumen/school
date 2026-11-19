@@ -10,6 +10,7 @@ import {Button} from '@/components/ui/button';
 import LoadingPage from '@/components/loading-page';
 import {ClassesTable} from '@/components/app/classes-table';
 import {ClassFormSheet, type ClassRecord} from '@/components/app/class-form-sheet';
+import {DataTransferMenu} from '@/components/app/data-transfer-menu';
 
 export default function ClassesPage() {
     const {index: userIndex} = useUser();
@@ -61,16 +62,19 @@ export default function ClassesPage() {
                     <h1 className='text-3xl font-bold tracking-tight'>Classes</h1>
                     <p className='text-muted-foreground'>View and manage all classes</p>
                 </div>
-                <Button
-                    size='sm'
-                    onClick={() => {
-                        setActiveClass(null);
-                        setFormOpen(true);
-                    }}
-                >
-                    <Plus className='h-4 w-4'/>
-                    Add class
-                </Button>
+                <div className='flex flex-wrap gap-2'>
+                    <DataTransferMenu types={['classes', 'subjects']} onImported={fetchData}/>
+                    <Button
+                        size='sm'
+                        onClick={() => {
+                            setActiveClass(null);
+                            setFormOpen(true);
+                        }}
+                    >
+                        <Plus className='h-4 w-4'/>
+                        Add class
+                    </Button>
+                </div>
             </div>
 
             <ClassesTable

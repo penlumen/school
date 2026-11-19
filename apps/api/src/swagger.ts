@@ -37,6 +37,7 @@ const TAGS: Record<string, string> = {
   integrations: 'Integrations',
   oidc: 'Integrations: OpenID Connect',
   storage: 'Storage',
+  data: 'Import & export',
 };
 
 const BEARER = 'bearer';

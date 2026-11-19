@@ -29,6 +29,7 @@ import { PaymentsModule } from './payments/payments.module.js';
 import { MailModule } from './mail/mail.module.js';
 import { StudentPortalModule } from './student-portal/student-portal.module.js';
 import { IntegrationsModule } from './integrations/integrations.module.js';
+import { DataTransferModule } from './data-transfer/data-transfer.module.js';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { IntegrationsModule } from './integrations/integrations.module.js';
     AffectiveModule,
     PaymentsModule,
     StudentPortalModule,
+    DataTransferModule,
   ],
   controllers: [AppController],
   providers: [
