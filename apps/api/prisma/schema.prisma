@@ -109,13 +109,15 @@ model School {
   country String?
   zip     String?
 
-  // Public website content, edited from School Settings.
-  subtext  String?
-  about    String?
-  mission  String?
-  vision   String?
-  features Json?
-  values   Json?
+  // Public website content, edited from School Settings. When the website is
+  // off, its pages send visitors to the portal login.
+  website_enabled Boolean @default(true)
+  subtext         String?
+  about           String?
+  mission         String?
+  vision          String?
+  features        Json?
+  values          Json?
 
   // Brand colours for the portals, public site and printouts: { preset, primary }.
   theme Json?
@@ -201,6 +203,8 @@ model Branch {
   contact     String?
   avatar      String?
   address     String?
+  /// Registration number prefix, e.g. "NPR/SS"; numbers are PREFIX/YY/0001.
+  reg_prefix  String?
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 

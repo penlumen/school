@@ -86,6 +86,11 @@ export class PublicSiteController {
     return this.schoolService.publicSite(token);
   }
 
+  @Get('status')
+  status(@Headers('x-school-token') token: string) {
+    return this.schoolService.publicStatus(token);
+  }
+
   @Get('theme')
   theme(@Headers('x-school-token') token: string) {
     return this.schoolService.publicTheme(token);

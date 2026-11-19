@@ -51,7 +51,7 @@ interface StudentFormSheetProps {
 const emptyForm = {name: '', reg_number: '', gender: '', parent_uuid: '', class_uuid: '', avatar: '', status: 'active'};
 
 export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, onSaved}: StudentFormSheetProps) {
-    const {create, update} = useStudent();
+    const {create, update, nextRegNumber} = useStudent();
     const {index: indexClasses} = useClass();
     const {index: indexUsers} = useUser();
 
@@ -74,6 +74,8 @@ export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, 
     const [entityUuid, setEntityUuid] = useState<string | null>(student?.uuid || null);
     const [faceDescriptor, setFaceDescriptor] = useState<number[] | null>(null);
     const [submitting, setSubmitting] = useState(false);
+    // The number the branch prefix would give; left as is, the server assigns it on save.
+    const [suggested, setSuggested] = useState<string | null>(null);
 
     const isEdit = !!student;
 
@@ -89,6 +91,16 @@ export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, 
             }
         });
 
+        if (!isEdit) {
+            nextRegNumber()
+                .then(({reg_number}) => {
+                    if (cancelled || !reg_number) return;
+                    setSuggested(reg_number);
+                    setFormData((current) => (current.reg_number ? current : {...current, reg_number}));
+                })
+                .catch(() => undefined);
+        }
+
         return () => {
             cancelled = true;
         };
@@ -97,7 +109,7 @@ export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.name || !formData.reg_number || !formData.parent_uuid || !formData.class_uuid) {
+        if (!formData.name || (!formData.reg_number && !suggested) || !formData.parent_uuid || !formData.class_uuid) {
             toast.error('Name, registration number, parent and class are required');
             return;
         }
@@ -106,6 +118,8 @@ export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, 
         try {
             const payload = {
                 ...formData,
+                // Untouched suggestion: let the server take the next free number at save time.
+                ...(!isEdit && suggested && formData.reg_number.trim() === suggested ? {reg_number: ''} : {}),
                 ...(entityUuid ? {uuid: entityUuid} : {}),
                 ...(faceDescriptor ? {face_descriptor: faceDescriptor} : {}),
             };
@@ -114,7 +128,11 @@ export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, 
                 : await create(payload);
 
             if (response.success) {
-                toast.success(`Student ${isEdit ? 'updated' : 'added'} successfully`);
+                toast.success(
+                    isEdit
+                        ? 'Student updated successfully'
+                        : `Student added as ${response.data?.student?.reg_number ?? formData.reg_number}`,
+                );
                 onOpenChange(false);
                 onSaved();
             } else {
@@ -165,6 +183,11 @@ export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, 
                             value={formData.reg_number}
                             onChange={(e) => setFormData({...formData, reg_number: e.target.value})}
                         />
+                        {!isEdit && suggested && (
+                            <p className='text-xs text-muted-foreground'>
+                                Next number from the branch prefix. Change it only for special cases, like transfers.
+                            </p>
+                        )}
                     </div>
 
                     <div className='space-y-2'>

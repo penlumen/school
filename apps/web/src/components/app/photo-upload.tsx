@@ -98,7 +98,9 @@ export function PhotoUpload({
 
     const handleTakePhoto = () => {
         if (typeof navigator.mediaDevices?.getUserMedia === 'function') {
-            setCameraOpen(true);
+            // Let the menu finish closing first, or it hands focus back to its
+            // trigger after the dialog opens and the dialog can't be used.
+            setTimeout(() => setCameraOpen(true), 0);
         } else {
             captureInputRef.current?.click();
         }

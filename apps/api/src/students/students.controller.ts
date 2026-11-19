@@ -33,6 +33,11 @@ export class StudentsController {
     return this.studentsService.create(branchUuid, user, body);
   }
 
+  @Get('next-reg-number')
+  nextRegNumber(@Headers('x-branch-session') branchUuid: string) {
+    return this.studentsService.nextRegNumber(branchUuid);
+  }
+
   @Get('show/:uuid')
   show(@Param('uuid') uuid: string) {
     return this.studentsService.show(uuid);
