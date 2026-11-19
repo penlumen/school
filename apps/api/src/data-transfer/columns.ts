@@ -29,8 +29,13 @@ export const DATA_TYPES = {
         hint: 'Must match an existing class name',
       },
       { key: 'gender', label: 'Gender', hint: 'Male or Female' },
+      { key: 'date_of_birth', label: 'Date of birth', hint: 'dd/mm/yyyy' },
       { key: 'status', label: 'Status', hint: 'active or inactive' },
-      { key: 'parent_email', label: 'Parent email', required: true },
+      {
+        key: 'parent_email',
+        label: 'Parent email',
+        hint: 'Leave empty to add the student without a parent for now',
+      },
       {
         key: 'parent_name',
         label: 'Parent name',

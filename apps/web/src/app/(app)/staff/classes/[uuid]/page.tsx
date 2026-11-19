@@ -3,7 +3,7 @@
 import {useEffect, useState} from 'react';
 import {useParams, useRouter} from 'next/navigation';
 import {toast} from 'sonner';
-import {ArrowLeft, Eye, MoreVertical, Plus, Search} from 'lucide-react';
+import {ArrowDown, ArrowLeft, ArrowUp, Eye, GripVertical, MoreVertical, Plus, Search} from 'lucide-react';
 
 import {useClass} from '@/hooks/class';
 import {useSubject} from '@/hooks/subject';
@@ -40,6 +40,7 @@ import {StudentFormSheet, type StudentRecord} from '@/components/app/student-for
 import {StudentDetailSheet} from '@/components/app/student-detail-sheet';
 import {SubjectFormSheet, type SubjectRecord} from '@/components/app/subject-form-sheet';
 import {ClassAttendanceTab} from '@/components/app/class-attendance-tab';
+import {cn} from '@/lib/utils';
 
 export default function ClassDetailPage() {
     const params = useParams();
@@ -47,11 +48,13 @@ export default function ClassDetailPage() {
     const classUuid = params.uuid as string;
 
     const {show} = useClass();
-    const {index: indexSubjects, remove: removeSubject} = useSubject();
+    const {index: indexSubjects, remove: removeSubject, reorder: reorderSubjects} = useSubject();
 
     const [isLoading, setIsLoading] = useState(true);
     const [classData, setClassData] = useState<any>(null);
     const [subjects, setSubjects] = useState<SubjectRecord[]>([]);
+    const [dragging, setDragging] = useState<string | null>(null);
+    const [savingOrder, setSavingOrder] = useState(false);
     const [studentSearch, setStudentSearch] = useState('');
     const [subjectSearch, setSubjectSearch] = useState('');
 
@@ -111,6 +114,30 @@ export default function ClassDetailPage() {
     const filteredStudents = students.filter((s) =>
         !studentSearch || s.name.toLowerCase().includes(studentSearch.toLowerCase())
     );
+    /** Moves a subject and saves the new order; puts it back if saving fails. */
+    const moveSubject = async (uuid: string, toIndex: number) => {
+        const from = subjects.findIndex((s) => s.uuid === uuid);
+        if (from === -1 || toIndex < 0 || toIndex >= subjects.length || from === toIndex) return;
+        const previous = subjects;
+        const next = [...subjects];
+        const [moved] = next.splice(from, 1);
+        next.splice(toIndex, 0, moved);
+        setSubjects(next);
+        setSavingOrder(true);
+        try {
+            const response = await reorderSubjects(classUuid, next.map((s) => s.uuid));
+            if (!response.success) {
+                setSubjects(previous);
+                toast.error(response.message);
+            }
+        } catch (e: any) {
+            setSubjects(previous);
+            toast.error(e.message || 'Could not save the order');
+        } finally {
+            setSavingOrder(false);
+        }
+    };
+
     const filteredSubjects = subjects.filter((s) =>
         !subjectSearch || s.name.toLowerCase().includes(subjectSearch.toLowerCase())
     );
@@ -258,10 +285,16 @@ export default function ClassDetailPage() {
                         </Button>
                     </div>
 
+                    <p className='text-sm text-muted-foreground'>
+                        {subjectSearch
+                            ? 'Clear the search to change the order.'
+                            : 'Drag subjects (or use the arrows) to set the order they appear in on report cards.'}
+                    </p>
                     <div className='overflow-x-auto rounded-md border'>
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead className='w-24'>Order</TableHead>
                                     <TableHead>Name</TableHead>
                                     <TableHead>Description</TableHead>
                                     <TableHead className='text-right'>Actions</TableHead>
@@ -270,13 +303,59 @@ export default function ClassDetailPage() {
                             <TableBody>
                                 {filteredSubjects.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={3} className='h-24 text-center text-muted-foreground'>
+                                        <TableCell colSpan={4} className='h-24 text-center text-muted-foreground'>
                                             No subjects found.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    filteredSubjects.map((subject) => (
-                                        <TableRow key={subject.uuid}>
+                                    filteredSubjects.map((subject) => {
+                                        const index = subjects.findIndex((s) => s.uuid === subject.uuid);
+                                        const canMove = !subjectSearch && !savingOrder;
+                                        return (
+                                        <TableRow
+                                            key={subject.uuid}
+                                            draggable={canMove}
+                                            onDragStart={(e) => {
+                                                setDragging(subject.uuid);
+                                                e.dataTransfer.effectAllowed = 'move';
+                                            }}
+                                            onDragOver={(e) => {
+                                                if (dragging && dragging !== subject.uuid) e.preventDefault();
+                                            }}
+                                            onDrop={(e) => {
+                                                e.preventDefault();
+                                                if (dragging) void moveSubject(dragging, index);
+                                                setDragging(null);
+                                            }}
+                                            onDragEnd={() => setDragging(null)}
+                                            className={cn(canMove && 'cursor-grab', dragging === subject.uuid && 'opacity-50')}
+                                        >
+                                            <TableCell>
+                                                <div className='flex items-center gap-1 text-muted-foreground'>
+                                                    <GripVertical className='h-4 w-4'/>
+                                                    <span className='w-5 text-sm tabular-nums'>{index + 1}</span>
+                                                    <Button
+                                                        variant='ghost'
+                                                        size='icon'
+                                                        className='h-7 w-7'
+                                                        aria-label={`Move ${subject.name} up`}
+                                                        disabled={!canMove || index === 0}
+                                                        onClick={() => moveSubject(subject.uuid, index - 1)}
+                                                    >
+                                                        <ArrowUp className='h-3.5 w-3.5'/>
+                                                    </Button>
+                                                    <Button
+                                                        variant='ghost'
+                                                        size='icon'
+                                                        className='h-7 w-7'
+                                                        aria-label={`Move ${subject.name} down`}
+                                                        disabled={!canMove || index === subjects.length - 1}
+                                                        onClick={() => moveSubject(subject.uuid, index + 1)}
+                                                    >
+                                                        <ArrowDown className='h-3.5 w-3.5'/>
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
                                             <TableCell className='font-medium'>{subject.name}</TableCell>
                                             <TableCell className='max-w-[300px] truncate text-muted-foreground'>
                                                 {subject.description || '—'}
@@ -307,7 +386,8 @@ export default function ClassDetailPage() {
                                                 </DropdownMenu>
                                             </TableCell>
                                         </TableRow>
-                                    ))
+                                        );
+                                    })
                                 )}
                             </TableBody>
                         </Table>

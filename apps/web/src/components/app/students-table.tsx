@@ -44,17 +44,20 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import type {StudentRecord} from '@/components/app/student-form-sheet';
+import {formatDate} from '@/lib/date';
 
 const PAGE_SIZE = 10;
 
 interface StudentsTableProps {
     students: StudentRecord[];
     onView: (student: StudentRecord) => void;
+    /** Opens the parent's details when their name is clicked. */
+    onViewParent?: (student: StudentRecord) => void;
     onEdit: (student: StudentRecord) => void;
     fetchData: () => void;
 }
 
-export function StudentsTable({students, onView, onEdit, fetchData}: StudentsTableProps) {
+export function StudentsTable({students, onView, onViewParent, onEdit, fetchData}: StudentsTableProps) {
     const {remove} = useStudent();
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<string | null>(null);
@@ -78,12 +81,13 @@ export function StudentsTable({students, onView, onEdit, fetchData}: StudentsTab
 
     const handleExportCsv = () => {
         const rows = [
-            ['Name', 'Reg Number', 'Parent', 'Gender', 'Class', 'Status'],
+            ['Name', 'Reg Number', 'Parent', 'Gender', 'Date of birth', 'Class', 'Status'],
             ...filtered.map((s) => [
                 s.name,
                 s.reg_number,
                 s.parent?.name || '',
                 s.gender || '',
+                s.date_of_birth ? formatDate(s.date_of_birth) : '',
                 s.class?.name || '',
                 s.status,
             ]),
@@ -196,7 +200,19 @@ export function StudentsTable({students, onView, onEdit, fetchData}: StudentsTab
                                             {student.name}
                                         </button>
                                     </TableCell>
-                                    <TableCell>{student.parent?.name || '—'}</TableCell>
+                                    <TableCell>
+                                        {student.parent ? (
+                                            <button
+                                                type='button'
+                                                className='text-left hover:text-primary hover:underline'
+                                                onClick={() => onViewParent?.(student)}
+                                            >
+                                                {student.parent.name}
+                                            </button>
+                                        ) : (
+                                            <span className='text-muted-foreground'>No parent yet</span>
+                                        )}
+                                    </TableCell>
                                     <TableCell>{student.gender || '—'}</TableCell>
                                     <TableCell>{student.class?.name || '—'}</TableCell>
                                     <TableCell>

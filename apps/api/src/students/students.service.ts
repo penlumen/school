@@ -58,6 +58,48 @@ export class StudentsService {
     };
   }
 
+  /**
+   * The parent to link, if any: '' or null means none yet. Must be a parent
+   * account in the same school.
+   */
+  private async parentFor(value: unknown, schoolUuid: string) {
+    if (value === undefined) return undefined;
+    if (value === null || value === '') return null;
+    const parent = await this.prisma.user.findFirst({
+      where: { uuid: String(value), school_uuid: schoolUuid, role: 'PARENT' },
+      select: { uuid: true },
+    });
+    if (!parent) {
+      throw new UnprocessableEntityException({
+        status: 422,
+        success: false,
+        message: 'Choose a parent from this school',
+      });
+    }
+    return parent.uuid;
+  }
+
+  /** "YYYY-MM-DD" or empty (cleared); undefined leaves it unchanged. */
+  private dateOfBirth(value: unknown) {
+    if (value === undefined) return undefined;
+    if (value === null || value === '') return null;
+    const text = String(value);
+    const date = new Date(`${text.slice(0, 10)}T00:00:00Z`);
+    if (
+      !/^\d{4}-\d{2}-\d{2}/.test(text) ||
+      isNaN(date.getTime()) ||
+      date > new Date() ||
+      date.getUTCFullYear() < 1900
+    ) {
+      throw new UnprocessableEntityException({
+        status: 422,
+        success: false,
+        message: 'Enter a valid date of birth',
+      });
+    }
+    return date;
+  }
+
   private async branchPrefix(branchUuid: string) {
     const branch = await this.prisma.branch.findUnique({
       where: { uuid: branchUuid },
@@ -129,13 +171,17 @@ export class StudentsService {
       });
     }
 
-    if (!name || !parent_uuid || !class_uuid) {
+    if (!name || !class_uuid) {
       throw new UnprocessableEntityException({
         status: 422,
         success: false,
-        message: 'Name, Parent and class are required',
+        message: 'Name and class are required',
       });
     }
+    // A student can be added before their parent; link one later.
+    const parentUuid =
+      (await this.parentFor(parent_uuid, decoded.school_uuid)) ?? null;
+    const dateOfBirth = this.dateOfBirth(body.date_of_birth) ?? null;
 
     if (!branchUuid) {
       throw new BadRequestException({
@@ -185,7 +231,8 @@ export class StudentsService {
             uuid: body.uuid || undefined,
             name,
             reg_number,
-            parent_uuid,
+            parent_uuid: parentUuid,
+            date_of_birth: dateOfBirth,
             branch_uuid: branchUuid,
             class_uuid,
             gender,
@@ -265,13 +312,15 @@ export class StudentsService {
       });
     }
 
-    if (!name || !parent_uuid || !class_uuid || !reg_number) {
+    if (!name || !class_uuid || !reg_number) {
       throw new UnprocessableEntityException({
         status: 422,
         success: false,
-        message: 'Name, Parent, class and Registration number are required',
+        message: 'Name, class and Registration number are required',
       });
     }
+    const parentUuid = await this.parentFor(parent_uuid, decoded.school_uuid);
+    const dateOfBirth = this.dateOfBirth(body.date_of_birth);
 
     if (!branchUuid) {
       throw new BadRequestException({
@@ -304,7 +353,8 @@ export class StudentsService {
       data: {
         name,
         reg_number,
-        parent_uuid,
+        parent_uuid: parentUuid,
+        date_of_birth: dateOfBirth,
         class_uuid,
         gender,
         avatar,

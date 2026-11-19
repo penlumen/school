@@ -45,9 +45,11 @@ export const useStudent = () => {
       uuid: studentData.uuid,
       name: studentData.name,
       reg_number: studentData.reg_number,
-      parent_uuid: studentData.parent_uuid,
+      // No parent yet is sent as null.
+      parent_uuid: studentData.parent_uuid || null,
       class_uuid: studentData.class_uuid,
       gender: studentData.gender,
+      date_of_birth: studentData.date_of_birth || null,
       avatar: studentData.avatar,
       face_descriptor: studentData.face_descriptor,
     });
@@ -72,9 +74,10 @@ export const useStudent = () => {
       {
         name: studentData.name,
         reg_number: studentData.reg_number,
-        parent_uuid: studentData.parent_uuid,
+        parent_uuid: studentData.parent_uuid || null,
         class_uuid: studentData.class_uuid,
         gender: studentData.gender,
+        date_of_birth: studentData.date_of_birth || null,
         avatar: studentData.avatar,
         face_descriptor: studentData.face_descriptor,
         status: studentData.status,

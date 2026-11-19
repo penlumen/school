@@ -151,6 +151,14 @@ export const useResult = () => {
         }
     };
 
+    /** Approve or reject many reports at once (administrators). */
+    const bulkStatus = async (uuids: string[], status: 'APPROVED' | 'REJECTED', reason?: string) => {
+        const data = (await axiosInstance.post('/api/v1/result/bulk-status', {uuids, status, reason})).data;
+        return data.success
+            ? {success: true as const, message: data.message as string, data: data.data}
+            : {success: false as const, message: data.message || 'Something went wrong'};
+    };
+
     return {
         show,
         view,
@@ -158,5 +166,6 @@ export const useResult = () => {
         create,
         update,
         remove,
+        bulkStatus,
     };
 };

@@ -31,6 +31,11 @@ import {
 import {BillingHeader} from '@/components/app/billing-ui';
 import {DataTransferMenu} from '@/components/app/data-transfer-menu';
 import {cn} from '@/lib/utils';
+import {formatDate} from '@/lib/date';
+import Cookies from 'js-cookie';
+import {Checkbox} from '@/components/ui/checkbox';
+import {Label} from '@/components/ui/label';
+import {Textarea} from '@/components/ui/textarea';
 
 type ResultStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -87,7 +92,14 @@ const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2)
 
 export default function ReportsPage() {
     const router = useRouter();
-    const {index, remove} = useResult();
+    const {index, remove, bulkStatus} = useResult();
+    // Same rule as the API: administrators approve and reject.
+    const viewer = JSON.parse(Cookies.get('user') || 'null');
+    const isAdmin = ['ROOT', 'ADMIN'].includes(viewer?.role) || viewer?.position === 'ADMINISTRATIVE';
+    const [selected, setSelected] = useState<Set<string>>(new Set());
+    const [rejecting, setRejecting] = useState(false);
+    const [reason, setReason] = useState('');
+    const [bulkBusy, setBulkBusy] = useState(false);
     const [data, setData] = useState<ReportList | null>(null);
     const [loading, setLoading] = useState(true);
     const [classUuid, setClassUuid] = useState(ALL);
@@ -116,8 +128,10 @@ export default function ReportsPage() {
         setLoading(true);
         try {
             const response = await index({page, status, class_uuid: classUuid, calendar_uuid: term, search: debounced});
-            if (response.success) setData(response.data);
-            else toast.error(response.message);
+            if (response.success) {
+                setData(response.data);
+                setSelected(new Set());
+            } else toast.error(response.message);
         } catch (error: any) {
             toast.error(error.message || 'Something went wrong');
         } finally {
@@ -141,6 +155,32 @@ export default function ReportsPage() {
         }
         setPendingDelete(null);
     };
+
+    const applyBulk = async (status: 'APPROVED' | 'REJECTED') => {
+        setBulkBusy(true);
+        try {
+            const response = await bulkStatus([...selected], status, status === 'REJECTED' ? reason.trim() : undefined);
+            if (!response.success) return toast.error(response.message);
+            toast.success(response.message);
+            setRejecting(false);
+            setReason('');
+            load();
+        } catch (error: any) {
+            toast.error(error.message || 'Something went wrong');
+        } finally {
+            setBulkBusy(false);
+        }
+    };
+
+    const pageRows = data?.results || [];
+    const allOnPage = pageRows.length > 0 && pageRows.every((r) => selected.has(r.uuid));
+    const toggle = (uuid: string) =>
+        setSelected((current) => {
+            const next = new Set(current);
+            if (next.has(uuid)) next.delete(uuid);
+            else next.add(uuid);
+            return next;
+        });
 
     const totalPages = data ? Math.max(1, Math.ceil(data.total / data.limit)) : 1;
     const totalAll = data ? Object.values(data.counts).reduce((sum, n) => sum + (n || 0), 0) : 0;
@@ -234,11 +274,43 @@ export default function ReportsPage() {
                     </p>
                 </div>
             ) : (
+                <div className='space-y-3'>
+                {isAdmin && selected.size > 0 && (
+                    <div className='flex flex-wrap items-center gap-2 rounded-[10px] border border-border bg-muted/40 px-4 py-2 text-sm'>
+                        <span className='font-medium'>{selected.size} selected</span>
+                        <Button size='sm' disabled={bulkBusy} onClick={() => applyBulk('APPROVED')}>
+                            <CheckCircle2 className='h-4 w-4'/>
+                            {bulkBusy ? 'Saving...' : 'Approve'}
+                        </Button>
+                        <Button size='sm' variant='outline' disabled={bulkBusy} onClick={() => setRejecting(true)}>
+                            <XCircle className='h-4 w-4'/> Reject
+                        </Button>
+                        <Button size='sm' variant='ghost' disabled={bulkBusy} onClick={() => setSelected(new Set())}>
+                            Clear
+                        </Button>
+                    </div>
+                )}
                 <div className='overflow-x-auto'>
                     <Table>
                         <TableHeader className='bg-muted/50 [&_tr]:border-0'>
                             <TableRow>
-                                <TableHead className='pl-4'>Student</TableHead>
+                                {isAdmin && (
+                                    <TableHead className='w-10 pl-4'>
+                                        <Checkbox
+                                            aria-label='Select all reports on this page'
+                                            checked={allOnPage}
+                                            disabled={!pageRows.length}
+                                            onCheckedChange={() =>
+                                                setSelected((current) => {
+                                                    const next = new Set(current);
+                                                    pageRows.forEach((r) => (allOnPage ? next.delete(r.uuid) : next.add(r.uuid)));
+                                                    return next;
+                                                })
+                                            }
+                                        />
+                                    </TableHead>
+                                )}
+                                <TableHead className={isAdmin ? '' : 'pl-4'}>Student</TableHead>
                                 <TableHead>Class</TableHead>
                                 <TableHead>Term</TableHead>
                                 <TableHead className='text-center'>Average</TableHead>
@@ -250,11 +322,11 @@ export default function ReportsPage() {
                         <TableBody>
                             {loading && !data ? (
                                 Array.from({length: 5}).map((_, i) => (
-                                    <TableRow key={i}><TableCell colSpan={7}><Skeleton className='h-8 w-full'/></TableCell></TableRow>
+                                    <TableRow key={i}><TableCell colSpan={isAdmin ? 8 : 7}><Skeleton className='h-8 w-full'/></TableCell></TableRow>
                                 ))
                             ) : !data || data.results.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className='h-32 text-center text-muted-foreground'>
+                                    <TableCell colSpan={isAdmin ? 8 : 7} className='h-32 text-center text-muted-foreground'>
                                         No reports match these filters.
                                     </TableCell>
                                 </TableRow>
@@ -265,7 +337,16 @@ export default function ReportsPage() {
                                         className={cn('h-14 cursor-pointer', loading && 'opacity-60')}
                                         onClick={() => router.push(`/staff/reports/${report.uuid}`)}
                                     >
-                                        <TableCell className='pl-4'>
+                                        {isAdmin && (
+                                            <TableCell className='pl-4' onClick={(e) => e.stopPropagation()}>
+                                                <Checkbox
+                                                    aria-label={`Select ${report.student.name}'s report`}
+                                                    checked={selected.has(report.uuid)}
+                                                    onCheckedChange={() => toggle(report.uuid)}
+                                                />
+                                            </TableCell>
+                                        )}
+                                        <TableCell className={isAdmin ? '' : 'pl-4'}>
                                             <div className='flex items-center gap-3'>
                                                 <Avatar className='h-8 w-8'>
                                                     <AvatarImage src={report.student.avatar || ''} alt=''/>
@@ -298,7 +379,7 @@ export default function ReportsPage() {
                                         </TableCell>
                                         <TableCell><StatusBadge status={report.status} requested={report.approval_requested}/></TableCell>
                                         <TableCell className='text-sm text-muted-foreground'>
-                                            {new Date(report.updated_at).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'})}
+                                            {formatDate(report.updated_at)}
                                         </TableCell>
                                         <TableCell className='text-center' onClick={(e) => e.stopPropagation()}>
                                             <DropdownMenu>
@@ -327,6 +408,7 @@ export default function ReportsPage() {
                         </TableBody>
                     </Table>
                 </div>
+                </div>
             )}
 
             {data && data.total > 0 && (
@@ -344,6 +426,33 @@ export default function ReportsPage() {
                     </div>
                 </div>
             )}
+
+            <Dialog open={rejecting} onOpenChange={(open) => !bulkBusy && setRejecting(open)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Reject {selected.size} {selected.size === 1 ? 'report' : 'reports'}?</DialogTitle>
+                        <DialogDescription>
+                            Their class teachers are notified so they can review them. The reason is included in the notification.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className='space-y-2'>
+                        <Label htmlFor='reject-reason'>Reason (optional)</Label>
+                        <Textarea
+                            id='reject-reason'
+                            value={reason}
+                            maxLength={300}
+                            placeholder='e.g. Exam scores are missing for some subjects'
+                            onChange={(e) => setReason(e.target.value)}
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant='outline' disabled={bulkBusy} onClick={() => setRejecting(false)}>Cancel</Button>
+                        <Button variant='destructive' disabled={bulkBusy} onClick={() => applyBulk('REJECTED')}>
+                            {bulkBusy ? 'Rejecting...' : 'Reject'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <Dialog open={!!pendingDelete} onOpenChange={(open) => !open && setPendingDelete(null)}>
                 <DialogContent>

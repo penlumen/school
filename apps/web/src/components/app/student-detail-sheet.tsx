@@ -35,11 +35,23 @@ import {
 } from '@/components/ui/dialog';
 import type {StudentRecord} from '@/components/app/student-form-sheet';
 import {AttendanceReview} from '@/components/app/attendance-review';
+import {formatDate} from '@/lib/date';
 
 interface StudentDetailSheetProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     student: StudentRecord | null;
+    /** Opens the parent's details from the Parent row. */
+    onViewParent?: (student: StudentRecord) => void;
+}
+
+/** Whole years since a YYYY-MM-DD date of birth. */
+function ageOf(dateOfBirth: string) {
+    const born = new Date(dateOfBirth);
+    const now = new Date();
+    let age = now.getUTCFullYear() - born.getUTCFullYear();
+    if (now.getUTCMonth() < born.getUTCMonth() || (now.getUTCMonth() === born.getUTCMonth() && now.getUTCDate() < born.getUTCDate())) age--;
+    return age;
 }
 
 function Field({label, value}: { label: string; value?: React.ReactNode }) {
@@ -51,7 +63,7 @@ function Field({label, value}: { label: string; value?: React.ReactNode }) {
     );
 }
 
-export function StudentDetailSheet({open, onOpenChange, student}: StudentDetailSheetProps) {
+export function StudentDetailSheet({open, onOpenChange, student, onViewParent}: StudentDetailSheetProps) {
     const router = useRouter();
     const {show, create, remove} = useResult();
     const {history} = useStudentAttendance();
@@ -163,8 +175,23 @@ export function StudentDetailSheet({open, onOpenChange, student}: StudentDetailS
                         <TabsContent value='overview' className='pt-2'>
                             <Field label='Registration number' value={student.reg_number}/>
                             <Field label='Gender' value={student.gender}/>
+                            <Field
+                                label='Date of birth'
+                                value={student.date_of_birth ? `${formatDate(student.date_of_birth)} (age ${ageOf(student.date_of_birth)})` : undefined}
+                            />
                             <Field label='Class' value={student.class?.name}/>
-                            <Field label='Parent' value={student.parent?.name}/>
+                            <Field
+                                label='Parent'
+                                value={
+                                    student.parent && onViewParent ? (
+                                        <button type='button' className='text-primary hover:underline' onClick={() => onViewParent(student)}>
+                                            {student.parent.name}
+                                        </button>
+                                    ) : (
+                                        student.parent?.name || 'No parent yet'
+                                    )
+                                }
+                            />
                         </TabsContent>
 
                         <TabsContent value='attendance' className='pt-2'>
