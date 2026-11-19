@@ -24,9 +24,12 @@ export class DashboardService {
     private readonly cache: CacheService,
   ) {}
 
-  /** % change vs the count as of the start of this month, derived from real created_at timestamps. */
-  private trend(currentTotal: number, createdThisMonth: number) {
-    const previousTotal = currentTotal - createdThisMonth;
+  /**
+   * % change since the current term began: the count when the term opened
+   * stands in for last term's total, worked out from created_at timestamps.
+   */
+  private trend(currentTotal: number, createdThisTerm: number) {
+    const previousTotal = currentTotal - createdThisTerm;
     if (previousTotal <= 0) {
       return currentTotal > 0 ? 100 : 0;
     }
@@ -46,25 +49,38 @@ export class DashboardService {
       `dashboard:cards:${branchUuid}`,
       60,
       async () => {
-        const startOfMonth = new Date();
-        startOfMonth.setDate(1);
-        startOfMonth.setHours(0, 0, 0, 0);
+        // The current term: the active one, else the latest that has opened.
+        const term =
+          (await this.prisma.calendar.findFirst({
+            where: {
+              branch_uuid: branchUuid,
+              status: 'ACTIVE',
+              open_date: { not: null },
+            },
+            orderBy: { open_date: 'desc' },
+          })) ??
+          (await this.prisma.calendar.findFirst({
+            where: { branch_uuid: branchUuid, open_date: { lte: new Date() } },
+            orderBy: { open_date: 'desc' },
+          }));
+        // Without a term there's nothing to compare with; trends come back null.
+        const termStart = term?.open_date ?? new Date(8.64e15);
 
         const [
           total_students,
-          students_this_month,
+          students_this_term,
           total_parents,
-          parents_this_month,
+          parents_this_term,
           total_staffs,
-          staffs_this_month,
+          staffs_this_term,
           total_classes,
-          classes_this_month,
+          classes_this_term,
         ] = await Promise.all([
           this.prisma.student.count({ where: { branch_uuid: branchUuid } }),
           this.prisma.student.count({
             where: {
               branch_uuid: branchUuid,
-              created_at: { gte: startOfMonth },
+              created_at: { gte: termStart },
             },
           }),
           this.prisma.branchAccess.count({
@@ -74,7 +90,7 @@ export class DashboardService {
             where: {
               branch_uuid: branchUuid,
               role: 'PARENT',
-              created_at: { gte: startOfMonth },
+              created_at: { gte: termStart },
             },
           }),
           this.prisma.branchAccess.count({
@@ -87,27 +103,36 @@ export class DashboardService {
             where: {
               branch_uuid: branchUuid,
               OR: [{ role: 'ROOT' }, { role: 'ADMIN' }, { role: 'STAFF' }],
-              created_at: { gte: startOfMonth },
+              created_at: { gte: termStart },
             },
           }),
           this.prisma.class.count({ where: { branch_uuid: branchUuid } }),
           this.prisma.class.count({
             where: {
               branch_uuid: branchUuid,
-              created_at: { gte: startOfMonth },
+              created_at: { gte: termStart },
             },
           }),
         ]);
 
+        const trend = (total: number, added: number) =>
+          term ? this.trend(total, added) : null;
         return {
           total_parents,
-          total_parents_trend: this.trend(total_parents, parents_this_month),
+          total_parents_trend: trend(total_parents, parents_this_term),
           total_staffs,
-          total_staffs_trend: this.trend(total_staffs, staffs_this_month),
+          total_staffs_trend: trend(total_staffs, staffs_this_term),
           total_classes,
-          total_classes_trend: this.trend(total_classes, classes_this_month),
+          total_classes_trend: trend(total_classes, classes_this_term),
           total_students: total_students || 0,
-          total_students_trend: this.trend(total_students, students_this_month),
+          total_students_trend: trend(total_students, students_this_term),
+          // What the trends compare against, for the dashboard's label.
+          trend_term: term
+            ? {
+                label: [term.term, term.session].filter(Boolean).join(' '),
+                started: term.open_date,
+              }
+            : null,
         };
       },
     );
