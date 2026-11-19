@@ -246,7 +246,7 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
       label: 'Billings',
       items: [
         {
-          title: 'Billing Templates',
+          title: 'Templates',
           icon: FileText,
           href: '/staff/templates',
           description:

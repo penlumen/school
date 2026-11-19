@@ -7,6 +7,8 @@ import {Plus, X} from 'lucide-react';
 import {type ContentItem, type SchoolSettings, useSchool} from '@/hooks/school';
 import {SITE_ICONS, siteIcon} from '@/lib/site-icons';
 import {Button} from '@/components/ui/button';
+import {Checkbox} from '@/components/ui/checkbox';
+import {refreshSiteStatus} from '@/app/actions/site';
 import {Input} from '@/components/ui/input';
 import {PhoneInput} from '@/components/ui/phone-input';
 import {Label} from '@/components/ui/label';
@@ -41,6 +43,24 @@ export function SchoolHomeTab({school, onSaved}: { school: SchoolSettings; onSav
         school.features?.length ? school.features : DEFAULT_FEATURES,
     );
     const [saving, setSaving] = useState<'info' | 'features' | null>(null);
+    const [websiteOn, setWebsiteOn] = useState(school.website_enabled !== false);
+    const [savingWebsite, setSavingWebsite] = useState(false);
+
+    const toggleWebsite = async (next: boolean) => {
+        setSavingWebsite(true);
+        try {
+            const response = await update({website_enabled: next});
+            if (!response.success) return toast.error(response.message);
+            setWebsiteOn(next);
+            onSaved({website_enabled: next});
+            await refreshSiteStatus().catch(() => undefined);
+            toast.success(next ? 'Website turned on' : 'Website turned off');
+        } catch (error: any) {
+            toast.error(error.message || 'Something went wrong');
+        } finally {
+            setSavingWebsite(false);
+        }
+    };
 
     const save = async (section: 'info' | 'features', payload: Partial<SchoolSettings>, message: string) => {
         setSaving(section);
@@ -64,6 +84,27 @@ export function SchoolHomeTab({school, onSaved}: { school: SchoolSettings; onSav
 
     return (
         <div>
+            <SettingsSection title='Public website' description='Your school’s Home, About, Gallery and Events pages.'>
+                <label className='flex items-start gap-3 rounded-[10px] border border-border p-4'>
+                    <Checkbox
+                        className='mt-0.5'
+                        checked={websiteOn}
+                        disabled={savingWebsite}
+                        onCheckedChange={(checked) => toggleWebsite(checked === true)}
+                    />
+                    <span>
+                        <span className='block font-medium'>Show the school website</span>
+                        <span className='block text-sm text-muted-foreground'>
+                            {websiteOn
+                                ? 'Anyone can visit your website. Turn it off to send visitors straight to the portal login.'
+                                : 'The website is off: visitors go straight to the portal login. Your content is kept for when you turn it back on.'}
+                        </span>
+                    </span>
+                </label>
+            </SettingsSection>
+
+            <SettingsDivider/>
+
             <SettingsSection
                 title='School Information'
                 description="Your school's identity and contact details, displayed on the Home page."

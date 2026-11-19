@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { normalizePhone } from '../common/phone.js';
+import { parseRegPrefix } from '../common/reg-number.js';
 import { DEFAULT_AFFECTIVE_TRAITS } from '../affective/affective.service.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { StorageService } from '../storage/storage.service.js';
@@ -164,7 +165,16 @@ export class BranchesService {
 
     const branch = await this.prisma.branch.update({
       where: { uuid },
-      data: { name, email, contact, address, avatar },
+      data: {
+        name,
+        email,
+        contact,
+        address,
+        avatar,
+        ...('reg_prefix' in body && {
+          reg_prefix: parseRegPrefix(body.reg_prefix),
+        }),
+      },
     });
 
     if (!branch) {

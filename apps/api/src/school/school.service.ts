@@ -28,6 +28,7 @@ const SCHOOL_PROFILE = {
   features: true,
   values: true,
   theme: true,
+  website_enabled: true,
 };
 
 interface ContentItem {
@@ -151,6 +152,9 @@ export class SchoolService {
       data.features = this.contentItems(body.features, true);
     if ('values' in body) data.values = this.contentItems(body.values, false);
     if ('theme' in body) data.theme = parseTheme(body.theme);
+    if ('website_enabled' in body) {
+      data.website_enabled = body.website_enabled === true;
+    }
 
     try {
       const school = await this.prisma.school.update({
@@ -421,8 +425,36 @@ export class SchoolService {
     return school.uuid;
   }
 
+  /** Whether the public website is on; the web app checks this on every public page. */
+  async publicStatus(token: string | undefined) {
+    const schoolUuid = await this.schoolByToken(token);
+    return {
+      status: 200,
+      success: true,
+      message: 'Website status',
+      data: { website_enabled: await this.websiteOn(schoolUuid) },
+    };
+  }
+
+  private async websiteOn(schoolUuid: string) {
+    const school = await this.prisma.school.findUnique({
+      where: { uuid: schoolUuid },
+      select: { website_enabled: true },
+    });
+    return school?.website_enabled ?? false;
+  }
+
   async publicSite(token: string | undefined) {
     const schoolUuid = await this.schoolByToken(token);
+    // A switched-off website publishes nothing.
+    if (!(await this.websiteOn(schoolUuid))) {
+      return {
+        status: 200,
+        success: true,
+        message: 'Website is off',
+        data: { school: null, website_enabled: false },
+      };
+    }
     const school = await this.prisma.school.findUnique({
       where: { uuid: schoolUuid },
       select: {
@@ -480,6 +512,14 @@ export class SchoolService {
   /** Only events an admin has explicitly marked "Show on website". */
   async publicEvents(token: string | undefined) {
     const schoolUuid = await this.schoolByToken(token);
+    if (!(await this.websiteOn(schoolUuid))) {
+      return {
+        status: 200,
+        success: true,
+        message: 'Website is off',
+        data: { events: [] },
+      };
+    }
     const events = await this.prisma.event.findMany({
       where: { is_public: true, branch: { school_uuid: schoolUuid } },
       orderBy: [{ date: 'asc' }, { start_time: 'asc' }],

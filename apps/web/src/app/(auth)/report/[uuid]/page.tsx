@@ -55,6 +55,13 @@ interface ResultData {
         principal_remark: string;
         status: 'APPROVED' | 'PENDING' | 'REJECTED';
     };
+    /** The student's branch: its logo and address head the report. */
+    branch?: {
+        name: string;
+        avatar: string | null;
+        address: string | null;
+        school: { name: string; avatar: string | null } | null;
+    } | null;
     summary: ResultSummary;
     assessments: AssessmentObject[];
     grading_system?: GradingScale[];
@@ -83,9 +90,10 @@ const formatDate = (dateString: string | undefined) => {
     return new Date(dateString).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'});
 };
 
-const school_logo = process.env.NEXT_PUBLIC_APP_LOGO;
-const school_name = process.env.NEXT_PUBLIC_APP_FULL_NAME;
-const school_address = process.env.NEXT_PUBLIC_APP_ADDRESS;
+// Fallbacks for a branch or school that hasn't filled in its details yet.
+const ENV_LOGO = process.env.NEXT_PUBLIC_APP_LOGO;
+const ENV_NAME = process.env.NEXT_PUBLIC_APP_FULL_NAME;
+const ENV_ADDRESS = process.env.NEXT_PUBLIC_APP_ADDRESS;
 
 export default function TraditionalResultSheet() {
     const [resultData, setResultData] = useState<ResultData | null>(null);
@@ -104,6 +112,10 @@ export default function TraditionalResultSheet() {
     };
 
     const gradingSystem = resultData?.grading_system || DEFAULT_GRADING_SYSTEM;
+    const branch = resultData?.branch;
+    const school_logo = branch?.avatar || branch?.school?.avatar || ENV_LOGO;
+    const school_name = branch?.school?.name || ENV_NAME;
+    const school_address = branch?.address || ENV_ADDRESS;
 
     const fetchData = async () => {
         try {

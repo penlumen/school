@@ -279,6 +279,21 @@ export class ResultsService {
     });
     if (!result) this.notFound();
 
+    // Letterhead: the branch's own logo and address, under the school's name.
+    const branch = result.student
+      ? await this.prisma.branch.findUnique({
+          where: { uuid: result.student.branch_uuid },
+          select: {
+            name: true,
+            avatar: true,
+            address: true,
+            contact: true,
+            email: true,
+            school: { select: { name: true, avatar: true } },
+          },
+        })
+      : null;
+
     // The grade scale belongs to the report's own branch.
     const grading = await this.prisma.grade.findMany({
       where: { branch_uuid: result.student?.branch_uuid },
@@ -321,6 +336,7 @@ export class ResultsService {
       message: 'Successfully fetched result',
       data: {
         result,
+        branch,
         assessments: enrichedAssessments,
         summary: {
           position,

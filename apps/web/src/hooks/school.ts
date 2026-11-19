@@ -22,6 +22,7 @@ export interface SchoolProfile {
     features: ContentItem[] | null;
     values: ContentItem[] | null;
     theme: SchoolTheme | null;
+    website_enabled: boolean;
 }
 
 export interface Facility {
