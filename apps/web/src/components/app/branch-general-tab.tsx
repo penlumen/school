@@ -19,6 +19,7 @@ interface BranchForm {
     contact: string;
     address: string;
     avatar: string | null;
+    reg_prefix: string;
 }
 
 export function BranchGeneralTab() {
@@ -43,6 +44,7 @@ export function BranchGeneralTab() {
                     contact: branch.contact || '',
                     address: branch.address || '',
                     avatar: branch.avatar || null,
+                    reg_prefix: branch.reg_prefix || '',
                 });
             }
         });
@@ -133,6 +135,23 @@ export function BranchGeneralTab() {
                         placeholder='Enter branch address'
                         onChange={(e) => setForm({...form, address: e.target.value})}
                     />
+                </div>
+
+                <div className='space-y-2'>
+                    <Label htmlFor='branch-reg-prefix'>Registration number prefix</Label>
+                    <Input
+                        id='branch-reg-prefix'
+                        className='font-mono uppercase'
+                        value={form.reg_prefix}
+                        maxLength={30}
+                        placeholder='e.g. NPR/SS'
+                        onChange={(e) => setForm({...form, reg_prefix: e.target.value.toUpperCase()})}
+                    />
+                    <p className='text-xs text-muted-foreground'>
+                        {form.reg_prefix.trim()
+                            ? `New students are numbered ${form.reg_prefix.trim().replace(/\/+$/, '')}/${String(new Date().getFullYear()).slice(-2)}/0001, 0002 and so on, starting again each year. Numbers already in use are skipped.`
+                            : 'Set a prefix to number new students automatically. Without one, staff type each number.'}
+                    </p>
                 </div>
 
                 <div className='flex justify-end'>

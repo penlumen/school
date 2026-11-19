@@ -10,6 +10,7 @@ import { parseRecordStatus } from '../common/record-status.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { StorageService } from '../storage/storage.service.js';
 import { WebhooksService } from '../integrations/webhooks.service.js';
+import { nextRegNumber } from '../common/reg-number.js';
 import { DecodedUser } from '../common/types/auth.js';
 
 @Injectable()
@@ -57,6 +58,37 @@ export class StudentsService {
     };
   }
 
+  private async branchPrefix(branchUuid: string) {
+    const branch = await this.prisma.branch.findUnique({
+      where: { uuid: branchUuid },
+      select: { reg_prefix: true },
+    });
+    return branch?.reg_prefix ?? null;
+  }
+
+  /** What the Add Student form fills in; the number is only taken on save. */
+  async nextRegNumber(branchUuid: string | undefined) {
+    if (!branchUuid) {
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Branch ID is required',
+      });
+    }
+    const prefix = await this.branchPrefix(branchUuid);
+    return {
+      status: 200,
+      success: true,
+      message: 'Next registration number',
+      data: {
+        prefix,
+        reg_number: prefix
+          ? await nextRegNumber(this.prisma, branchUuid, prefix)
+          : null,
+      },
+    };
+  }
+
   async show(uuid: string) {
     const student = await this.prisma.student.findUnique({
       where: { uuid },
@@ -84,15 +116,10 @@ export class StudentsService {
     decoded: DecodedUser,
     body: any,
   ) {
-    const {
-      name,
-      reg_number,
-      parent_uuid,
-      class_uuid,
-      gender,
-      avatar,
-      face_descriptor,
-    } = body;
+    const { name, parent_uuid, class_uuid, gender, avatar, face_descriptor } =
+      body;
+    let reg_number =
+      typeof body.reg_number === 'string' ? body.reg_number.trim() : '';
 
     if (decoded.position !== 'ADMINISTRATIVE') {
       throw new BadRequestException({
@@ -102,11 +129,11 @@ export class StudentsService {
       });
     }
 
-    if (!name || !parent_uuid || !class_uuid || !reg_number) {
+    if (!name || !parent_uuid || !class_uuid) {
       throw new UnprocessableEntityException({
         status: 422,
         success: false,
-        message: 'Name, Parent, class and Registration number are required',
+        message: 'Name, Parent and class are required',
       });
     }
 
@@ -118,34 +145,67 @@ export class StudentsService {
       });
     }
 
-    const existingReg = await this.prisma.student.findUnique({
-      where: {
-        branch_uuid_reg_number: { branch_uuid: branchUuid, reg_number },
-      },
-    });
-
-    if (existingReg) {
-      throw new BadRequestException({
-        status: 400,
+    // Left blank: number the student from the branch prefix.
+    const prefix = reg_number ? null : await this.branchPrefix(branchUuid);
+    if (!reg_number && !prefix) {
+      throw new UnprocessableEntityException({
+        status: 422,
         success: false,
-        message: 'Registration number already taken',
+        message:
+          'Enter a registration number, or set a prefix in Branch Settings to number students automatically',
       });
     }
 
-    const result = await this.prisma.student.create({
-      data: {
-        uuid: body.uuid || undefined,
-        name,
-        reg_number,
-        parent_uuid,
-        branch_uuid: branchUuid,
-        class_uuid,
-        gender,
-        avatar,
-        face_descriptor: face_descriptor || [],
-      },
-      include: { class: true },
-    });
+    if (reg_number) {
+      const existingReg = await this.prisma.student.findUnique({
+        where: {
+          branch_uuid_reg_number: { branch_uuid: branchUuid, reg_number },
+        },
+      });
+
+      if (existingReg) {
+        throw new BadRequestException({
+          status: 400,
+          success: false,
+          message: 'Registration number already taken',
+        });
+      }
+    }
+
+    // Two students added at once can be given the same generated number;
+    // the unique index catches it and the next number is tried.
+    let result;
+    for (let attempt = 0; ; attempt++) {
+      if (prefix) {
+        reg_number = await nextRegNumber(this.prisma, branchUuid, prefix);
+      }
+      try {
+        result = await this.prisma.student.create({
+          data: {
+            uuid: body.uuid || undefined,
+            name,
+            reg_number,
+            parent_uuid,
+            branch_uuid: branchUuid,
+            class_uuid,
+            gender,
+            avatar,
+            face_descriptor: face_descriptor || [],
+          },
+          include: { class: true },
+        });
+        break;
+      } catch (error: any) {
+        if (error?.code !== 'P2002') throw error;
+        if (!prefix || attempt >= 4) {
+          throw new BadRequestException({
+            status: 400,
+            success: false,
+            message: 'Registration number already taken',
+          });
+        }
+      }
+    }
 
     await this.notifications.notifyBranchAdmins(
       branchUuid,

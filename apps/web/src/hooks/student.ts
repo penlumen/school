@@ -34,6 +34,12 @@ export const useStudent = () => {
     }
   };
 
+  /** The number the next new student would get, from the branch prefix (null without one). */
+  const nextRegNumber = async (): Promise<{ prefix: string | null; reg_number: string | null }> => {
+    const response = await axiosInstance.get('/api/v1/student/next-reg-number');
+    return response.data?.data ?? { prefix: null, reg_number: null };
+  };
+
   const create = async (studentData: any) => {
     const response = await axiosInstance.post('/api/v1/student/create', {
       uuid: studentData.uuid,
@@ -113,5 +119,6 @@ export const useStudent = () => {
     create,
     update,
     remove,
+    nextRegNumber,
   };
 };
