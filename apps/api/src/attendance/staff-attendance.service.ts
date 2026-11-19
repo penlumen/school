@@ -8,19 +8,12 @@ import { AttendanceStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { DecodedUser } from '../common/types/auth.js';
+import { formatDate } from '../common/date.js';
 
 function startOfDay(dateStr?: string): Date {
   const date = dateStr ? new Date(dateStr) : new Date();
   date.setHours(0, 0, 0, 0);
   return date;
-}
-
-function formatDate(date: Date) {
-  return date.toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
 }
 
 /** Parses `YYYY-MM` into a [start, end) date range, or returns undefined when absent. */

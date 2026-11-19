@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { DecodedUser } from '../common/types/auth.js';
+import { formatDate } from '../common/date.js';
 
 interface EventTagsInput {
   tag_all_staff?: boolean;
@@ -57,11 +58,7 @@ export class EventsService {
     date: Date;
     location?: string | null;
   }) {
-    const date = event.date.toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
+    const date = formatDate(event.date);
     return `"${event.title}" on ${date}${event.location ? ` at ${event.location}` : ''}`;
   }
 

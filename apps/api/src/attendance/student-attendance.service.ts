@@ -8,19 +8,12 @@ import { AttendanceStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { DecodedUser } from '../common/types/auth.js';
+import { formatDate } from '../common/date.js';
 
 function startOfDay(dateStr?: string): Date {
   const date = dateStr ? new Date(dateStr) : new Date();
   date.setHours(0, 0, 0, 0);
   return date;
-}
-
-function formatDate(date: Date) {
-  return date.toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
 }
 
 /** Parses `YYYY-MM` into a [start, end) date range, or returns undefined when absent. */
@@ -51,7 +44,7 @@ export class StudentAttendanceService {
 
   /** Tells a student's parent when they've been marked absent (only on the transition, not repeats). */
   private async notifyIfAbsent(
-    student: { name: string; parent_uuid: string; branch_uuid: string },
+    student: { name: string; parent_uuid: string | null; branch_uuid: string },
     previousStatus: AttendanceStatus | undefined,
     record: { status: AttendanceStatus; date: Date },
   ) {

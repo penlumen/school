@@ -38,6 +38,7 @@ import {
 } from '@/components/ui/dialog';
 import {BillingHeader, InvoiceStatusBadge} from '@/components/app/billing-ui';
 import {CreateInvoiceSheet, UpdateStatusSheet} from '@/components/app/invoice-sheets';
+import {formatDate} from '@/lib/date';
 
 const PAGE_SIZE = 10;
 const ALL = 'all';
@@ -136,8 +137,8 @@ export default function InvoicesPage() {
                 String(toNumber(i.total)),
                 String(toNumber(i.paid)),
                 INVOICE_STATUS_LABEL[i.status],
-                i.issued_at.slice(0, 10),
-                i.due_at?.slice(0, 10) || '',
+                formatDate(i.issued_at, ''),
+                formatDate(i.due_at, ''),
             ]),
         ];
         const csv = rows.map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n');

@@ -8,6 +8,7 @@ import { CalendarStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { DecodedUser } from '../common/types/auth.js';
+import { formatDate } from '../common/date.js';
 
 @Injectable()
 export class CalendarService {
@@ -27,7 +28,7 @@ export class CalendarService {
     decoded: DecodedUser,
   ) {
     const closes = calendar.close_date
-      ? ` It runs until ${new Date(calendar.close_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}.`
+      ? ` It runs until ${formatDate(calendar.close_date)}.`
       : '';
     await this.notifications.notifyBranchRoles(
       calendar.branch_uuid,

@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/dialog';
 import {BillingHeader} from '@/components/app/billing-ui';
 import {cn} from '@/lib/utils';
+import {formatDateTime} from '@/lib/date';
 
 const ALL = 'all';
 const FILTERS: (OnlinePaymentStatus | typeof ALL)[] = ['AWAITING_CONFIRMATION', 'SUCCESS', 'REJECTED', 'FAILED', ALL];
@@ -36,7 +37,7 @@ const BADGE: Record<OnlinePaymentStatus, string> = {
 };
 
 const when = (value: string) =>
-    new Date(value).toLocaleString('en-GB', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'});
+    formatDateTime(value);
 
 /** Billings › Payments: online payments from parents, and the ones waiting for staff. */
 export default function PaymentsPage() {

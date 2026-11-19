@@ -11,6 +11,7 @@ import {Skeleton} from '@/components/ui/skeleton';
 import {BillingHeader, InvoiceStatusBadge} from '@/components/app/billing-ui';
 import {InvoiceDocument} from '@/components/app/invoice-document';
 import {UpdateStatusSheet} from '@/components/app/invoice-sheets';
+import {formatDateTime} from '@/lib/date';
 
 export default function InvoicePage() {
     const {uuid} = useParams<{ uuid: string }>();
@@ -102,7 +103,7 @@ export default function InvoicePage() {
                                     </p>
                                     {entry.description && <p className='text-sm text-muted-foreground'>{entry.description}</p>}
                                     <p className='text-xs text-muted-foreground'>
-                                        {new Date(entry.created_at).toLocaleString('en-GB', {dateStyle: 'medium', timeStyle: 'short'})}
+                                        {formatDateTime(entry.created_at)}
                                     </p>
                                 </li>
                             ))}

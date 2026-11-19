@@ -32,6 +32,7 @@ import {Skeleton} from '@/components/ui/skeleton';
 import {Textarea} from '@/components/ui/textarea';
 import {SettingsSection} from '@/components/app/settings-shell';
 import {cn} from '@/lib/utils';
+import {formatDateTime} from '@/lib/date';
 
 const ICONS: Record<string, LucideIcon> = {
     'book-open': BookOpen,
@@ -314,7 +315,7 @@ function AppCard({
                                             <div className='min-w-0 flex-1'>
                                                 <p className='font-mono text-xs'>{d.event}</p>
                                                 <p className='text-xs text-muted-foreground'>
-                                                    {new Date(d.created_at).toLocaleString('en-GB', {dateStyle: 'medium', timeStyle: 'short'})}
+                                                    {formatDateTime(d.created_at)}
                                                     {d.response_status ? ` · HTTP ${d.response_status}` : ''}
                                                     {` · ${d.attempts} attempt${d.attempts === 1 ? '' : 's'}`}
                                                 </p>

@@ -8,6 +8,7 @@ import {useResult} from '@/hooks/result';
 import {isParentSession, useParent} from '@/hooks/parent';
 import type {AffectiveRow, AffectiveScaleItem} from '@/hooks/affective';
 import {useParams} from 'next/navigation';
+import {formatDate} from '@/lib/date';
 
 // ... (Interfaces and Constants remain the same as your original code)
 interface GradingScale {
@@ -85,10 +86,6 @@ const getGradeAndRemark = (score: number, gradingSystem: GradingScale[]) => {
     return {grade: "F", remark: "Failed"};
 };
 
-const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'});
-};
 
 // Fallbacks for a branch or school that hasn't filled in its details yet.
 const ENV_LOGO = process.env.NEXT_PUBLIC_APP_LOGO;
@@ -317,9 +314,9 @@ export default function TraditionalResultSheet() {
                                 </table>
                                 <p className="my-2 text-[10px] uppercase italic">
                                     <span className="font-bold">Note:</span> Vacation commences on <span
-                                    className="font-bold">{formatDate(resultData.result.calendar?.close_date)}</span> and
+                                    className="font-bold">{formatDate(resultData.result.calendar?.close_date, 'N/A')}</span> and
                                     academic activities resume on <span
-                                    className="font-bold">{formatDate(resultData.result.calendar?.open_date)}.</span>
+                                    className="font-bold">{formatDate(resultData.result.calendar?.open_date, 'N/A')}.</span>
                                 </p>
                             </div>
                         </div>

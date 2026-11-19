@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import LoadingPage from '@/components/loading-page';
 import {EventFormSheet, type EventRecord} from '@/components/app/event-form-sheet';
+import {formatDate} from '@/lib/date';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const HOURS = Array.from({length: 15}, (_, i) => i + 7); // 07:00 - 21:00
@@ -158,7 +159,7 @@ export default function CalendarDetailPage() {
                             <ChevronLeft className='h-4 w-4'/>
                         </Button>
                         <span className='px-2 text-sm font-medium min-w-[110px] text-center'>
-                            {refDate.toLocaleDateString('en-US', {month: 'long', year: 'numeric'})}
+                            {refDate.toLocaleDateString('en-GB', {month: 'long', year: 'numeric'})}
                         </span>
                         <Button variant='ghost' size='icon' onClick={() => navigate(1)}>
                             <ChevronRight className='h-4 w-4'/>
@@ -290,7 +291,7 @@ export default function CalendarDetailPage() {
                     <div className='grid grid-cols-[80px_1fr]'>
                         <div className='border-b border-r bg-muted/40 p-2 text-xs'>Time</div>
                         <div className={`border-b bg-muted/40 p-2 text-sm font-semibold ${isWithinTerm(refDate, section) ? 'bg-primary/[0.045]' : ''}`}>
-                            {refDate.toLocaleDateString('en-US', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'})}
+                            {refDate.toLocaleDateString('en-GB', {weekday: 'long'})} {formatDate(refDate)}
                         </div>
                         {HOURS.map((hour) => {
                             const key = toKey(refDate);

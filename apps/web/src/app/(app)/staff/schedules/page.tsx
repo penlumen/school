@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/dialog';
 import LoadingPage from '@/components/loading-page';
 import {CalendarFormSheet, type CalendarRecord} from '@/components/app/calendar-form-sheet';
+import {formatDate} from '@/lib/date';
 
 export default function SchedulePage() {
     const {index, remove} = useCalendar();
@@ -119,14 +120,10 @@ export default function SchedulePage() {
                                     <TableCell className='font-medium'>{section.session}</TableCell>
                                     <TableCell className='capitalize'>{section.term}</TableCell>
                                     <TableCell>
-                                        {new Date(section.next_term_resumption_date).toLocaleDateString('en-US', {
-                                            month: 'short', day: 'numeric', year: 'numeric',
-                                        })}
+                                        {formatDate(section.next_term_resumption_date)}
                                     </TableCell>
                                     <TableCell>
-                                        {new Date(section.close_date).toLocaleDateString('en-US', {
-                                            month: 'short', day: 'numeric', year: 'numeric',
-                                        })}
+                                        {formatDate(section.close_date)}
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant={section.status === 'ACTIVE' ? 'default' : 'secondary'}>

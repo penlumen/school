@@ -9,6 +9,7 @@ import {requestFcmToken} from '@/lib/firebase';
 import {Button} from '@/components/ui/button';
 import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
+import {formatDateTime} from '@/lib/date';
 
 interface NotificationItem {
     uuid: string;
@@ -20,9 +21,7 @@ interface NotificationItem {
 }
 
 function timeAgo(dateString: string) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'}) +
-        ' • ' + date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+    return formatDateTime(dateString);
 }
 
 function iconFor(type: string) {

@@ -6,9 +6,7 @@ import {ChevronRight} from 'lucide-react';
 import {naira, toNumber} from '@/hooks/billing';
 import type {ParentInvoice} from '@/hooks/parent';
 import {InvoiceStatusBadge} from '@/components/app/billing-ui';
-
-const formatDate = (value: string | null) =>
-    value ? new Date(value).toLocaleDateString('en-GB', {timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric'}) : null;
+import {formatDate} from '@/lib/date';
 
 /** Invoices as tappable rows: what it's for, how much is left, and its status. */
 export function ParentInvoiceList({invoices, showStudent = true}: { invoices: ParentInvoice[]; showStudent?: boolean }) {
@@ -25,7 +23,7 @@ export function ParentInvoiceList({invoices, showStudent = true}: { invoices: Pa
             {invoices.map((invoice) => {
                 const closed = invoice.status === 'CANCELLED' || invoice.status === 'REFUNDED';
                 const balance = closed ? 0 : Math.max(0, toNumber(invoice.total) - toNumber(invoice.paid));
-                const due = formatDate(invoice.due_at);
+                const due = invoice.due_at ? formatDate(invoice.due_at) : null;
                 return (
                     <li key={invoice.uuid}>
                         <Link href={`/parent/fees/${invoice.uuid}`} className='flex items-center gap-4 p-4 transition-colors hover:bg-muted/50'>

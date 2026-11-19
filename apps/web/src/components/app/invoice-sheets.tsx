@@ -22,6 +22,7 @@ import {Label} from '@/components/ui/label';
 import {Textarea} from '@/components/ui/textarea';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
 import {Sheet, SheetContent, SheetHeader, SheetTitle} from '@/components/ui/sheet';
+import {DateField} from '@/components/ui/date-field';
 import type {StudentRecord} from '@/components/app/student-form-sheet';
 import {StudentPicker} from '@/components/app/student-picker';
 
@@ -137,7 +138,7 @@ export function CreateInvoiceSheet({
                     )}
                     <div className='space-y-2'>
                         <Label htmlFor='invoice-due'>Due date (optional)</Label>
-                        <Input id='invoice-due' type='date' value={dueAt} onChange={(e) => setDueAt(e.target.value)}/>
+                        <DateField id='invoice-due' value={dueAt} onChange={setDueAt}/>
                     </div>
                     <div className='space-y-2'>
                         <Label htmlFor='invoice-note'>Note to parent (optional)</Label>

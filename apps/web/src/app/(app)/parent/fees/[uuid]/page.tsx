@@ -13,6 +13,7 @@ import {Skeleton} from '@/components/ui/skeleton';
 import {InvoiceStatusBadge} from '@/components/app/billing-ui';
 import {InvoiceDocument} from '@/components/app/invoice-document';
 import {PayInvoiceDialog} from '@/components/app/pay-invoice-dialog';
+import {formatDate} from '@/lib/date';
 
 export default function ParentInvoicePage() {
     const {uuid} = useParams<{ uuid: string }>();
@@ -147,7 +148,7 @@ export default function ParentInvoicePage() {
                                             {p.status === 'REFUNDED' ? 'Refund' : 'Payment'} · {naira(p.amount)}
                                         </p>
                                         <p className='text-xs text-muted-foreground'>
-                                            {new Date(p.created_at).toLocaleDateString('en-GB', {dateStyle: 'medium'})} · {INVOICE_STATUS_LABEL[p.status]}
+                                            {formatDate(p.created_at)} · {INVOICE_STATUS_LABEL[p.status]}
                                         </p>
                                     </li>
                                 ))}
