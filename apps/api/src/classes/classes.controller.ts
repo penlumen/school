@@ -11,6 +11,8 @@ import {
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { ClassesService } from './classes.service.js';
+import { ApiBody, ApiOperation } from '@nestjs/swagger';
+import { ClassBody } from '../docs/schemas.js';
 
 @Controller('class')
 export class ClassesController {
@@ -24,6 +26,8 @@ export class ClassesController {
     return this.classesService.index(branchUuid, user);
   }
 
+  @ApiOperation({ summary: 'Create a class' })
+  @ApiBody({ type: ClassBody })
   @Post('create')
   create(
     @Headers('x-branch-session') branchUuid: string,
@@ -38,6 +42,8 @@ export class ClassesController {
     return this.classesService.show(uuid);
   }
 
+  @ApiOperation({ summary: 'Update a class' })
+  @ApiBody({ type: ClassBody })
   @Patch('update/:uuid')
   update(
     @Param('uuid') uuid: string,

@@ -29,6 +29,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import {BillingHeader} from '@/components/app/billing-ui';
+import {DataTransferMenu} from '@/components/app/data-transfer-menu';
 import {cn} from '@/lib/utils';
 
 type ResultStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -154,6 +155,7 @@ export default function ReportsPage() {
                         ? 'Results for the classes you teach'
                         : 'Results and report cards for every class'
                 }
+                action={<DataTransferMenu types={['results']} onImported={load}/>}
             />
 
             {/* Status summary doubles as a quick filter. */}

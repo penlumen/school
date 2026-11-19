@@ -12,7 +12,9 @@ import {
     templateTotal,
     toNumber,
     useBilling,
+    termLabel,
 } from '@/hooks/billing';
+import {useCalendar} from '@/hooks/calendar';
 import {useStudent} from '@/hooks/student';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
@@ -33,12 +35,15 @@ export function CreateInvoiceSheet({
     onCreated: (invoices: InvoiceListItem[]) => void;
 }) {
     const {templates: fetchTemplates, createInvoices} = useBilling();
+    const {index: fetchTerms} = useCalendar();
     const {index: fetchStudents} = useStudent();
     const [templates, setTemplates] = useState<BillingTemplate[]>([]);
     const [students, setStudents] = useState<StudentRecord[]>([]);
     const [studentUuids, setStudentUuids] = useState<string[]>([]);
     const [templateUuid, setTemplateUuid] = useState('');
     const [dueAt, setDueAt] = useState('');
+    const [terms, setTerms] = useState<{ uuid: string; session: string; term: string | null; status: string }[]>([]);
+    const [calendarUuid, setCalendarUuid] = useState('');
     const [note, setNote] = useState('');
     const [saving, setSaving] = useState(false);
 
@@ -50,6 +55,13 @@ export function CreateInvoiceSheet({
         setNote('');
         fetchTemplates().then((r) => r.success && setTemplates(r.data.templates.filter((t: BillingTemplate) => t.status === 'ACTIVE')));
         fetchStudents().then((r) => r.success && setStudents(r.data.students || []));
+        fetchTerms().then((r) => {
+            if (!r.success) return;
+            const list = r.data.calendars || [];
+            setTerms(list);
+            // Bill the active term unless staff pick another (e.g. next term's fees sent early).
+            setCalendarUuid(list.find((c: { status: string }) => c.status === 'ACTIVE')?.uuid || '');
+        });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
 
@@ -62,7 +74,13 @@ export function CreateInvoiceSheet({
         if (!templateUuid) return toast.error('Choose a billing template');
         setSaving(true);
         try {
-            const response = await createInvoices({student_uuids: studentUuids, template_uuid: templateUuid, due_at: dueAt || undefined, note});
+            const response = await createInvoices({
+                student_uuids: studentUuids,
+                template_uuid: templateUuid,
+                calendar_uuid: calendarUuid || undefined,
+                due_at: dueAt || undefined,
+                note,
+            });
             if (response.success) {
                 toast.success(response.data.invoices.length > 1 ? `${response.data.invoices.length} invoices created` : 'Invoice created');
                 onCreated(response.data.invoices);
@@ -100,6 +118,23 @@ export function CreateInvoiceSheet({
                             </SelectContent>
                         </Select>
                     </div>
+                    {terms.length > 0 && (
+                        <div className='space-y-2'>
+                            <Label htmlFor='invoice-term'>Term</Label>
+                            <Select value={calendarUuid} onValueChange={setCalendarUuid}>
+                                <SelectTrigger id='invoice-term' className='w-full'>
+                                    <SelectValue placeholder='Choose a term'/>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {terms.map((t) => (
+                                        <SelectItem key={t.uuid} value={t.uuid}>
+                                            {termLabel(t)}{t.status === 'ACTIVE' ? ' (current)' : ''}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
                     <div className='space-y-2'>
                         <Label htmlFor='invoice-due'>Due date (optional)</Label>
                         <Input id='invoice-due' type='date' value={dueAt} onChange={(e) => setDueAt(e.target.value)}/>

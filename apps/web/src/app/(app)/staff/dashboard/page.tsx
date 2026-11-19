@@ -33,15 +33,17 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
+// Trends are % change since the current term began; null when no term is set up.
 interface CardData {
   total_students: number;
-  total_students_trend: number;
+  total_students_trend: number | null;
   total_parents: number;
-  total_parents_trend: number;
+  total_parents_trend: number | null;
   total_staffs: number;
-  total_staffs_trend: number;
+  total_staffs_trend: number | null;
   total_classes: number;
-  total_classes_trend: number;
+  total_classes_trend: number | null;
+  trend_term?: { label: string; started: string } | null;
 }
 
 interface PerformancePoint {
@@ -226,12 +228,18 @@ export default function DashboardPage() {
                       <ArrowRight className='h-3 w-3' />
                     </Link>
                   ) : (
-                    <>
-                      <TrendBadge value={trend} />
-                      <span className='text-xs text-muted-foreground ml-1.5'>
-                        from last month
+                    card.trend_term && trend !== null ? (
+                      <span title={`Change since ${card.trend_term.label} began`}>
+                        <TrendBadge value={trend} />
+                        <span className='text-xs text-muted-foreground ml-1.5'>
+                          vs last term
+                        </span>
                       </span>
-                    </>
+                    ) : (
+                      <span className='text-xs text-muted-foreground'>
+                        Set up a term to compare
+                      </span>
+                    )
                   )}
                 </div>
               </CardContent>

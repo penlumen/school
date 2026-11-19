@@ -306,7 +306,47 @@ export class BillingService {
       },
     },
     template: { select: { uuid: true, name: true } },
+    class: { select: { uuid: true, name: true } },
+    calendar: { select: { uuid: true, session: true, term: true } },
   };
+
+  /**
+   * The term an invoice bills: the one chosen when issuing (e.g. next term's
+   * fees sent early), else the branch's active term, else the term whose
+   * dates include today.
+   */
+  private async termFor(branchUuid: string, requested: unknown) {
+    if (typeof requested === 'string' && requested) {
+      const term = await this.prisma.calendar.findFirst({
+        where: { uuid: requested, branch_uuid: branchUuid },
+        select: { uuid: true },
+      });
+      if (!term) {
+        throw new UnprocessableEntityException({
+          status: 422,
+          success: false,
+          message: 'Choose a term from this branch',
+        });
+      }
+      return term.uuid;
+    }
+    const now = new Date();
+    const term =
+      (await this.prisma.calendar.findFirst({
+        where: { branch_uuid: branchUuid, status: 'ACTIVE' },
+        select: { uuid: true },
+      })) ??
+      (await this.prisma.calendar.findFirst({
+        where: {
+          branch_uuid: branchUuid,
+          open_date: { lte: now },
+          OR: [{ close_date: null }, { close_date: { gte: now } }],
+        },
+        orderBy: { open_date: 'desc' },
+        select: { uuid: true },
+      }));
+    return term?.uuid ?? null;
+  }
 
   private async findInvoice(uuid: string, branchUuid: string) {
     const invoice = await this.prisma.invoice.findFirst({
@@ -436,7 +476,7 @@ export class BillingService {
 
     const students = await this.prisma.student.findMany({
       where: { uuid: { in: studentUuids }, branch_uuid: branch },
-      select: { uuid: true, name: true, parent_uuid: true },
+      select: { uuid: true, name: true, parent_uuid: true, class_uuid: true },
     });
     if (students.length !== studentUuids.length) {
       throw new BadRequestException({
@@ -473,6 +513,7 @@ export class BillingService {
     );
     const dueAt = this.date(body?.due_at);
     const note = this.text(body?.note, 500);
+    const calendarUuid = await this.termFor(branch, body?.calendar_uuid);
 
     // Ids are generated here so invoices, their lines and history can be
     // written as three flat inserts in one batched transaction (a single
@@ -484,6 +525,8 @@ export class BillingService {
         branch_uuid: branch,
         student_uuid: student.uuid,
         template_uuid: templateUuid,
+        class_uuid: student.class_uuid,
+        calendar_uuid: calendarUuid,
         total,
         due_at: dueAt,
         note,

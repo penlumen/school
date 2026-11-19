@@ -6,7 +6,15 @@ import {useRouter} from 'next/navigation';
 import {toast} from 'sonner';
 import {ChevronLeft, ChevronRight, MoreVertical, Plus, Search, Upload} from 'lucide-react';
 
-import {INVOICE_STATUS_LABEL, type InvoiceListItem, type InvoiceStatus, naira, toNumber, useBilling} from '@/hooks/billing';
+import {
+    INVOICE_STATUS_LABEL,
+    type InvoiceListItem,
+    type InvoiceStatus,
+    naira,
+    termLabel,
+    toNumber,
+    useBilling,
+} from '@/hooks/billing';
 import {Button} from '@/components/ui/button';
 import {Checkbox} from '@/components/ui/checkbox';
 import {Input} from '@/components/ui/input';
@@ -40,6 +48,9 @@ export default function InvoicesPage() {
     const [invoices, setInvoices] = useState<InvoiceListItem[] | null>(null);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<InvoiceStatus | typeof ALL>(ALL);
+    const [classFilter, setClassFilter] = useState(ALL);
+    const [sessionFilter, setSessionFilter] = useState(ALL);
+    const [termFilter, setTermFilter] = useState(ALL);
     const [page, setPage] = useState(1);
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [createOpen, setCreateOpen] = useState(false);
@@ -57,9 +68,35 @@ export default function InvoicesPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // Filter choices come from the invoices themselves: the class and term each was issued for.
+    const options = useMemo(() => {
+        const list = invoices || [];
+        const unique = (values: (string | null | undefined)[]) =>
+            [...new Set(values.filter((v): v is string => !!v))].sort((a, b) => a.localeCompare(b));
+        return {
+            classes: [...new Map(list.filter((i) => i.class).map((i) => [i.class!.uuid, i.class!.name])).entries()].sort(
+                (a, b) => a[1].localeCompare(b[1], undefined, {numeric: true}),
+            ),
+            sessions: unique(list.map((i) => i.calendar?.session)).reverse(),
+            terms: unique(list.map((i) => i.calendar?.term)),
+        };
+    }, [invoices]);
+
+    // Class and term narrow everything on the page, the totals included.
+    const scoped = useMemo(
+        () =>
+            (invoices || []).filter(
+                (inv) =>
+                    (classFilter === ALL || inv.class?.uuid === classFilter) &&
+                    (sessionFilter === ALL || inv.calendar?.session === sessionFilter) &&
+                    (termFilter === ALL || inv.calendar?.term === termFilter),
+            ),
+        [invoices, classFilter, sessionFilter, termFilter],
+    );
+
     const filtered = useMemo(() => {
         const q = search.toLowerCase();
-        return (invoices || []).filter(
+        return scoped.filter(
             (inv) =>
                 (statusFilter === ALL || inv.status === statusFilter) &&
                 (!q ||
@@ -67,17 +104,17 @@ export default function InvoicesPage() {
                     inv.student.name.toLowerCase().includes(q) ||
                     (inv.student.parent?.name || '').toLowerCase().includes(q)),
         );
-    }, [invoices, search, statusFilter]);
+    }, [scoped, search, statusFilter]);
 
     const totals = useMemo(() => {
-        const active = (invoices || []).filter((i) => i.status !== 'CANCELLED');
+        const active = scoped.filter((i) => i.status !== 'CANCELLED');
         const billed = active.reduce((s, i) => s + toNumber(i.total), 0);
-        const paid = (invoices || []).reduce((s, i) => s + toNumber(i.paid), 0);
+        const paid = scoped.reduce((s, i) => s + toNumber(i.paid), 0);
         const outstanding = active
             .filter((i) => i.status !== 'REFUNDED')
             .reduce((s, i) => s + Math.max(0, toNumber(i.total) - toNumber(i.paid)), 0);
         return {billed, paid, outstanding};
-    }, [invoices]);
+    }, [scoped]);
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
     const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -89,11 +126,12 @@ export default function InvoicesPage() {
     const exportCsv = () => {
         const source = selected.size ? filtered.filter((i) => selected.has(i.uuid)) : filtered;
         const rows = [
-            ['Invoice ID', 'Student', 'Class', 'Recipient', 'Total', 'Paid', 'Status', 'Issued', 'Due'],
+            ['Invoice ID', 'Student', 'Class', 'Term', 'Recipient', 'Total', 'Paid', 'Status', 'Issued', 'Due'],
             ...source.map((i) => [
                 i.number,
                 i.student.name,
-                i.student.class?.name || '',
+                i.class?.name || i.student.class?.name || '',
+                i.calendar ? termLabel(i.calendar) : '',
                 i.student.parent?.name || '',
                 String(toNumber(i.total)),
                 String(toNumber(i.paid)),
@@ -149,8 +187,8 @@ export default function InvoicesPage() {
                 ))}
             </div>
 
-            <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
-                <div className='flex flex-1 flex-col gap-3 sm:flex-row sm:items-center'>
+            <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
+                <div className='flex flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center'>
                     <div className='relative w-full sm:max-w-xs'>
                         <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground'/>
                         <Input
@@ -180,6 +218,48 @@ export default function InvoicesPage() {
                             ))}
                         </SelectContent>
                     </Select>
+                    {[
+                        {
+                            label: 'Filter by class',
+                            all: 'All classes',
+                            value: classFilter,
+                            set: setClassFilter,
+                            items: options.classes.map(([uuid, name]) => [uuid, name]),
+                        },
+                        {
+                            label: 'Filter by session',
+                            all: 'All sessions',
+                            value: sessionFilter,
+                            set: setSessionFilter,
+                            items: options.sessions.map((s) => [s, s]),
+                        },
+                        {
+                            label: 'Filter by term',
+                            all: 'All terms',
+                            value: termFilter,
+                            set: setTermFilter,
+                            items: options.terms.map((t) => [t, t]),
+                        },
+                    ].map((filter) => (
+                        <Select
+                            key={filter.label}
+                            value={filter.value}
+                            onValueChange={(value) => {
+                                filter.set(value);
+                                setPage(1);
+                            }}
+                        >
+                            <SelectTrigger className='w-full sm:w-40' aria-label={filter.label}>
+                                <SelectValue/>
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={ALL}>{filter.all}</SelectItem>
+                                {filter.items.map(([value, label]) => (
+                                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    ))}
                 </div>
                 <Button variant='outline' onClick={exportCsv} disabled={!filtered.length}>
                     <Upload className='h-4 w-4'/>

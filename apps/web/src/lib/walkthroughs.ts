@@ -33,7 +33,7 @@ export const WALKTHROUGHS: Record<WalkthroughRole, { title: string; intro: strin
                 id: 'dashboard',
                 chapter: 'Getting around',
                 title: 'Your dashboard at a glance',
-                caption: 'Totals for staff, parents, students and classes, with how they changed since last month, and attendance trends below.',
+                caption: 'Totals for staff, parents, students and classes, with how they changed since last term, and attendance trends below.',
                 focus: {x: 21.9, y: 20.5, w: 76.3, h: 26.3},
                 duration: 7,
             },
