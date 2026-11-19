@@ -123,12 +123,22 @@ export class StudentBody {
       'Leave empty on create to take the next number from the branch prefix',
   })
   reg_number?: string;
-  @ApiProperty({ example: UUID })
-  parent_uuid!: string;
+  @ApiPropertyOptional({
+    example: UUID,
+    nullable: true,
+    description:
+      'Parent account; leave out or null to add the student without one',
+  })
+  parent_uuid?: string | null;
   @ApiProperty({ example: UUID })
   class_uuid!: string;
   @ApiPropertyOptional({ enum: ['Male', 'Female'] })
   gender?: string;
+  @ApiPropertyOptional({
+    example: '2014-03-21',
+    description: 'YYYY-MM-DD; empty clears it',
+  })
+  date_of_birth?: string;
   @ApiPropertyOptional({ description: 'Image URL' })
   avatar?: string;
   @ApiPropertyOptional({

@@ -23,6 +23,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import {DateField} from '@/components/ui/date-field';
 import {TagMultiSelect} from '@/components/app/tag-multi-select';
 
 export interface EventRecord {
@@ -170,11 +171,10 @@ export function EventFormSheet({calendarUuid, open, onOpenChange, event, default
 
                     <div className='space-y-2'>
                         <Label htmlFor='date'>Date</Label>
-                        <Input
+                        <DateField
                             id='date'
-                            type='date'
                             value={formData.date}
-                            onChange={(e) => setFormData({...formData, date: e.target.value})}
+                            onChange={(date) => setFormData({...formData, date})}
                         />
                     </div>
 

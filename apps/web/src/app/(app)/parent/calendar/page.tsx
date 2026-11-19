@@ -8,11 +8,12 @@ import {eventMonthHeading, isUpcoming} from '@/lib/site-format';
 import {Skeleton} from '@/components/ui/skeleton';
 import {BillingHeader} from '@/components/app/billing-ui';
 import {EventCard} from '@/components/guest/site-ui';
+import {formatWeekdayDate} from '@/lib/date';
 
 const SCHOOL_NAME = process.env.NEXT_PUBLIC_APP_FULL_NAME || 'School';
 
 const formatDate = (value: string | null) =>
-    value ? new Date(value).toLocaleDateString('en-GB', {timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'long', year: 'numeric'}) : '—';
+    formatWeekdayDate(value);
 
 export default function ParentCalendarPage() {
     const {calendar} = useParent();

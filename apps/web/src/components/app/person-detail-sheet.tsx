@@ -28,6 +28,8 @@ interface PersonDetailSheetProps {
     person: PersonRecord | null;
     /** Staff attendance is admin-only on the API, so callers opt in. */
     showAttendance?: boolean;
+    /** Extra content under the details, e.g. a parent's children. */
+    extra?: React.ReactNode;
 }
 
 const POSITION_LABEL: Record<string, string> = {
@@ -46,7 +48,7 @@ function Field({label, value}: { label: string; value?: React.ReactNode }) {
     );
 }
 
-export function PersonDetailSheet({role, open, onOpenChange, person, showAttendance}: PersonDetailSheetProps) {
+export function PersonDetailSheet({role, open, onOpenChange, person, showAttendance, extra}: PersonDetailSheetProps) {
     const {history} = useStaffAttendance();
     const {resendInvite} = usePasswordLinks();
     const [sending, setSending] = useState(false);
@@ -86,6 +88,7 @@ export function PersonDetailSheet({role, open, onOpenChange, person, showAttenda
                 }
             />
             <Field label='Address' value={person.address}/>
+            {extra}
             {canInvite && person.email && (
                 <div className='pt-4'>
                     <Button variant='outline' className='w-full' disabled={sending} onClick={sendLink}>

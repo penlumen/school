@@ -38,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
+import {formatDate, formatDateTime} from '@/lib/date';
 
 interface Student {
   uuid: string;
@@ -395,9 +396,9 @@ export default function ReportsPage() {
                       </TableCell>
                       <TableCell>
                         <div className='text-sm'>
-                          {new Date(report.created_at).toLocaleDateString()}
+                          {formatDate(report.created_at)}
                           <div className='text-xs text-muted-foreground'>
-                            {new Date(report.created_at).toLocaleTimeString()}
+                            {formatDateTime(report.created_at).split(', ')[1]}
                           </div>
                         </div>
                       </TableCell>

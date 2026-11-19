@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Headers,
+  HttpCode,
   Param,
   Patch,
   Post,
@@ -66,6 +67,12 @@ export class ResultsController {
     @Body() body: any,
   ) {
     return this.resultsService.update(resultUuid, user, body);
+  }
+
+  @Post('bulk-status')
+  @HttpCode(200)
+  bulkStatus(@CurrentUser() user: DecodedUser, @Body() body: any) {
+    return this.resultsService.bulkStatus(user, body);
   }
 
   @Delete('delete/:result_uuid')

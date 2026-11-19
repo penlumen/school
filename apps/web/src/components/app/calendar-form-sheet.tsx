@@ -21,6 +21,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import {DateField} from '@/components/ui/date-field';
+import {formatDate} from '@/lib/date';
 
 export interface CalendarRecord {
   uuid: string;
@@ -167,11 +169,7 @@ export function CalendarFormSheet({
             <div className='space-y-1 rounded-md border bg-muted/40 px-3 py-2'>
               <Label className='text-xs text-muted-foreground'>Open date</Label>
               <p className='text-sm'>
-                {new Date(calendarItem.open_date).toLocaleDateString('en-US', {
-                  month: 'long',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
+                {formatDate(calendarItem.open_date)}
               </p>
               <p className='text-xs text-muted-foreground'>
                 Derived automatically from the previous term&apos;s resumption
@@ -194,12 +192,11 @@ export function CalendarFormSheet({
           <div className='grid grid-cols-1 gap-4'>
             <div className='space-y-2'>
               <Label htmlFor='close_date'>Close date</Label>
-              <Input
+              <DateField
                 id='close_date'
-                type='date'
                 value={formData.close_date}
-                onChange={(e) =>
-                  setFormData({ ...formData, close_date: e.target.value })
+                onChange={(close_date) =>
+                  setFormData({ ...formData, close_date })
                 }
               />
             </div>
@@ -207,14 +204,13 @@ export function CalendarFormSheet({
               <Label htmlFor='next_term_resumption_date'>
                 Next term resumption date
               </Label>
-              <Input
+              <DateField
                 id='next_term_resumption_date'
-                type='date'
                 value={formData.next_term_resumption_date}
-                onChange={(e) =>
+                onChange={(next_term_resumption_date) =>
                   setFormData({
                     ...formData,
-                    next_term_resumption_date: e.target.value,
+                    next_term_resumption_date,
                   })
                 }
               />

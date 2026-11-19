@@ -13,6 +13,7 @@ import {Skeleton} from '@/components/ui/skeleton';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
 import {SettingsDivider, SettingsSection} from '@/components/app/settings-shell';
 import {cn} from '@/lib/utils';
+import {formatDateTime} from '@/lib/date';
 
 const SECURITY_LABEL: Record<SmtpSecurity, string> = {
     ssl: 'SSL/TLS (usually port 465)',
@@ -35,7 +36,7 @@ const emptyForm = (): SmtpForm => ({
 });
 
 const when = (value: string) =>
-    new Date(value).toLocaleString('en-GB', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'});
+    formatDateTime(value);
 
 /** School Settings › Email: the school's own SMTP server and which emails go out. */
 export function SchoolEmailTab() {

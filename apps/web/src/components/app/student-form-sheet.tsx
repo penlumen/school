@@ -25,17 +25,21 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import {DateField} from '@/components/ui/date-field';
+import type {PersonRecord} from '@/components/app/person-form-sheet';
 
 export interface StudentRecord {
     uuid: string;
     name: string;
     reg_number: string;
     gender?: string;
+    date_of_birth?: string | null;
     avatar?: string;
     status: string;
-    parent_uuid: string;
+    /** Null until the student's parent is linked. */
+    parent_uuid: string | null;
     class_uuid: string;
-    parent?: { uuid: string; name: string };
+    parent?: PersonRecord | null;
     class?: { uuid: string; name: string };
 }
 
@@ -48,7 +52,8 @@ interface StudentFormSheetProps {
     onSaved: () => void;
 }
 
-const emptyForm = {name: '', reg_number: '', gender: '', parent_uuid: '', class_uuid: '', avatar: '', status: 'active'};
+const emptyForm = {name: '', reg_number: '', gender: '', date_of_birth: '', parent_uuid: '', class_uuid: '', avatar: '', status: 'active'};
+const NO_PARENT = 'none';
 
 export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, onSaved}: StudentFormSheetProps) {
     const {create, update, nextRegNumber} = useStudent();
@@ -64,6 +69,7 @@ export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, 
                 name: student.name || '',
                 reg_number: student.reg_number || '',
                 gender: student.gender || '',
+                date_of_birth: student.date_of_birth?.slice(0, 10) || '',
                 parent_uuid: student.parent_uuid || '',
                 class_uuid: student.class_uuid || '',
                 avatar: student.avatar || '',
@@ -109,8 +115,8 @@ export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.name || (!formData.reg_number && !suggested) || !formData.parent_uuid || !formData.class_uuid) {
-            toast.error('Name, registration number, parent and class are required');
+        if (!formData.name || (!formData.reg_number && !suggested) || !formData.class_uuid) {
+            toast.error('Name, registration number and class are required');
             return;
         }
 
@@ -207,15 +213,26 @@ export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, 
                     </div>
 
                     <div className='space-y-2'>
+                        <Label htmlFor='date_of_birth'>Date of birth</Label>
+                        <DateField
+                            id='date_of_birth'
+                            value={formData.date_of_birth}
+                            max={new Date().toISOString().slice(0, 10)}
+                            onChange={(date_of_birth) => setFormData({...formData, date_of_birth})}
+                        />
+                    </div>
+
+                    <div className='space-y-2'>
                         <Label>Parent/guardian</Label>
                         <Select
-                            value={formData.parent_uuid}
-                            onValueChange={(value) => setFormData({...formData, parent_uuid: value})}
+                            value={formData.parent_uuid || NO_PARENT}
+                            onValueChange={(value) => setFormData({...formData, parent_uuid: value === NO_PARENT ? '' : value})}
                         >
                             <SelectTrigger className='w-full'>
                                 <SelectValue placeholder='Select option'/>
                             </SelectTrigger>
                             <SelectContent>
+                                <SelectItem value={NO_PARENT}>No parent yet</SelectItem>
                                 {parents.map((parent) => (
                                     <SelectItem key={parent.uuid} value={parent.uuid}>
                                         {parent.name}

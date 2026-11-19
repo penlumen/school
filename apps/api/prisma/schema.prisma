@@ -272,12 +272,14 @@ model Calendar {
 model Student {
   id               Int       @id @default(autoincrement())
   uuid             String    @unique @default(uuid())
-  parent_uuid      String
+  /// Optional: a student can be added before their parent's record.
+  parent_uuid      String?
   branch_uuid      String
   class_uuid       String
   reg_number       String
   name             String
   gender           String?
+  date_of_birth    DateTime? @db.Date
   avatar           String?
   face_descriptor  Float[]
   status           String    @default("active")
@@ -288,7 +290,7 @@ model Student {
   created_at       DateTime  @default(now())
   updated_at       DateTime  @updatedAt
 
-  parent     User                @relation(fields: [parent_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
+  parent     User?               @relation(fields: [parent_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
   branch     Branch              @relation(fields: [branch_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
   class      Class               @relation(fields: [class_uuid], references: [uuid], onUpdate: Cascade, onDelete: Cascade)
   results    Result[]
@@ -326,6 +328,8 @@ model Subject {
   class_uuid  String
   name        String
   description String?
+  /// Order within the class, set by dragging; report cards follow it.
+  position    Int      @default(0)
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 

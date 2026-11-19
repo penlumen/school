@@ -2,11 +2,7 @@ import type {InvoiceDetail} from '@/hooks/billing';
 import {INVOICE_STATUS_LABEL, naira, toNumber} from '@/hooks/billing';
 import {cn} from '@/lib/utils';
 import {formatPhoneInternational} from '@/lib/phone';
-
-const formatDate = (value: string | null) =>
-    value
-        ? new Date(value).toLocaleDateString('en-GB', {timeZone: 'UTC', day: '2-digit', month: 'short', year: 'numeric'})
-        : '—';
+import {formatDate} from '@/lib/date';
 
 const initials = (name: string) =>
     name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();

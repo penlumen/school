@@ -1,4 +1,5 @@
 import type {SiteEvent} from '@/hooks/site';
+import {formatDate} from '@/lib/date';
 
 // Event dates are stored as calendar dates (midnight UTC), so always format in UTC.
 const fmt = (date: string, options: Intl.DateTimeFormatOptions) =>
@@ -8,7 +9,7 @@ export const eventDay = (date: string) => fmt(date, {day: '2-digit'});
 export const eventMonth = (date: string) => fmt(date, {month: 'short'});
 export const eventWeekday = (date: string) => fmt(date, {weekday: 'short'});
 export const eventMonthHeading = (date: string) => fmt(date, {month: 'long', year: 'numeric'});
-export const eventLongDate = (date: string) => fmt(date, {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'});
+export const eventLongDate = (date: string) => `${fmt(date, {weekday: 'long'})} ${formatDate(date)}`;
 
 /** "09:00" → "9:00 am" */
 export function formatTime(time: string | null) {

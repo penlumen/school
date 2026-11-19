@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
 } from '@nestjs/common';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { DecodedUser } from '../common/types/auth.js';
@@ -18,6 +19,15 @@ export class SubjectsController {
   @Get('index/:class_uuid')
   index(@Param('class_uuid') classUuid: string) {
     return this.subjectsService.index(classUuid);
+  }
+
+  @Put('reorder/:class_uuid')
+  reorder(
+    @CurrentUser() user: DecodedUser,
+    @Param('class_uuid') classUuid: string,
+    @Body() body: any,
+  ) {
+    return this.subjectsService.reorder(user, classUuid, body);
   }
 
   @Get('show/:subject_uuid')

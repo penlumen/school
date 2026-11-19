@@ -11,6 +11,7 @@ import {StudentsTable} from '@/components/app/students-table';
 import {StudentFormSheet, type StudentRecord} from '@/components/app/student-form-sheet';
 import {StudentDetailSheet} from '@/components/app/student-detail-sheet';
 import {DataTransferMenu} from '@/components/app/data-transfer-menu';
+import {PersonDetailSheet} from '@/components/app/person-detail-sheet';
 
 export default function StudentsPage() {
     const {index} = useStudent();
@@ -20,6 +21,10 @@ export default function StudentsPage() {
     const [formOpen, setFormOpen] = useState(false);
     const [detailOpen, setDetailOpen] = useState(false);
     const [activeStudent, setActiveStudent] = useState<StudentRecord | null>(null);
+    const [parentOf, setParentOf] = useState<StudentRecord | null>(null);
+    const parent = parentOf?.parent ?? null;
+    // The parent's children in this branch, from the list already loaded.
+    const children = parent ? students.filter((s) => s.parent_uuid === parent.uuid) : [];
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -75,6 +80,7 @@ export default function StudentsPage() {
                     setActiveStudent(student);
                     setDetailOpen(true);
                 }}
+                onViewParent={setParentOf}
                 onEdit={(student) => {
                     setActiveStudent(student);
                     setFormOpen(true);
@@ -92,6 +98,41 @@ export default function StudentsPage() {
                 open={detailOpen}
                 onOpenChange={setDetailOpen}
                 student={activeStudent}
+                onViewParent={(student) => {
+                    setDetailOpen(false);
+                    setParentOf(student);
+                }}
+            />
+            <PersonDetailSheet
+                role='PARENT'
+                open={!!parent}
+                onOpenChange={(open) => !open && setParentOf(null)}
+                person={parent}
+                extra={
+                    <div className='py-3'>
+                        <p className='mb-2 text-sm text-muted-foreground'>
+                            {children.length === 1 ? 'Child' : `Children (${children.length})`}
+                        </p>
+                        <ul className='space-y-1'>
+                            {children.map((child) => (
+                                <li key={child.uuid}>
+                                    <button
+                                        type='button'
+                                        className='flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted'
+                                        onClick={() => {
+                                            setParentOf(null);
+                                            setActiveStudent(child);
+                                            setDetailOpen(true);
+                                        }}
+                                    >
+                                        <span className='font-medium'>{child.name}</span>
+                                        <span className='text-muted-foreground'>{child.class?.name}</span>
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                }
             />
         </div>
     );

@@ -19,6 +19,7 @@ import type {AffectiveRow, AffectiveScaleItem} from '@/hooks/affective';
 import {useReportSocket} from '@/hooks/report-socket';
 import {useParams, useRouter} from 'next/navigation';
 import LoadingPage from '@/components/loading-page';
+import {formatDate} from '@/lib/date';
 
 // --- Interfaces ---
 interface GradingScale {
@@ -154,9 +155,7 @@ export default function ReportPage() {
     // --- Helpers ---
     const readableDate = (dateString: string) => {
         if (!dateString) return 'N/A';
-        return new Date(dateString).toLocaleDateString('en-GB', {
-            day: 'numeric', month: 'short', year: 'numeric'
-        });
+        return formatDate(dateString);
     };
 
     const getGradeColor = (grade: string) => {

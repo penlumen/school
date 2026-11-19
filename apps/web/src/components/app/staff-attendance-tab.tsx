@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {DateField} from '@/components/ui/date-field';
 import { FacialRecognitionModal } from '@/components/app/facial-recognition-modal';
 
 const STATUS_STYLE: Record<string, string> = {
@@ -117,10 +118,10 @@ export function StaffAttendanceTab() {
           />
         </div>
         <div className='flex items-center gap-2'>
-          <Input
-            type='date'
+          <DateField
+            aria-label='Attendance date'
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(value) => value && setDate(value)}
             className='w-40'
           />
           <Button size='sm' onClick={() => setModalOpen(true)}>

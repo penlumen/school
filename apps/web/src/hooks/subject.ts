@@ -104,11 +104,20 @@ export const useSubject = () => {
         }
     };
 
+    /** Saves the class's subjects in this order (every subject uuid, top first). */
+    const reorder = async (class_uuid: string, order: string[]) => {
+        const data = (await axiosInstance.put(`/api/v1/subject/reorder/${class_uuid}`, {order})).data;
+        return data.success
+            ? {success: true as const, data: data.data}
+            : {success: false as const, message: data.message || 'Something went wrong'};
+    };
+
     return {
         show,
         index,
         create,
         update,
         remove,
+        reorder,
     };
 };

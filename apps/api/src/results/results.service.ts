@@ -238,10 +238,14 @@ export class ResultsService {
         success: true,
         message: 'Successfully fetched results',
         data: {
-          results: results.map((r) => ({
-            ...r,
-            assessments: r.assessments.map((a) => this.toPlainAssessment(a)),
-          })),
+          results: await Promise.all(
+            results.map(async (r) => ({
+              ...r,
+              assessments: (
+                await this.orderAssessments(r.class_uuid, r.assessments)
+              ).map((a) => this.toPlainAssessment(a)),
+            })),
+          ),
         },
       };
     } catch (error) {
@@ -318,7 +322,11 @@ export class ResultsService {
       return { grade: match?.grade || 'F', remark: match?.remark || 'Failed' };
     };
 
-    const enrichedAssessments = result.assessments.map((asm) => {
+    const ordered = await this.orderAssessments(
+      result.class_uuid,
+      result.assessments,
+    );
+    const enrichedAssessments = ordered.map((asm) => {
       const plain = this.toPlainAssessment(asm);
       const total = plain.ca_one + plain.ca_two + plain.examination;
       const { grade, remark } = getGradeInfo(total);
@@ -611,9 +619,9 @@ export class ResultsService {
       data: {
         result: {
           ...updated,
-          assessments: updated.assessments.map((a) =>
-            this.toPlainAssessment(a),
-          ),
+          assessments: (
+            await this.orderAssessments(updated.class_uuid, updated.assessments)
+          ).map((a) => this.toPlainAssessment(a)),
         },
       },
     };
@@ -632,12 +640,13 @@ export class ResultsService {
       student: {
         name: string;
         branch_uuid: string;
-        parent_uuid: string;
+        parent_uuid: string | null;
         class: { teacher_uuid: string | null; teachers_uuid: string[] };
       } | null;
     },
     after: { status: string; approval_requested: boolean },
     decoded: DecodedUser,
+    reason?: string,
   ) {
     const student = before.student;
     if (!student) return;
@@ -684,10 +693,110 @@ export class ResultsService {
         student.branch_uuid,
         'RESULT_REJECTED',
         'Result rejected',
-        `${subject} was rejected and needs to be reviewed.`,
+        `${subject} was rejected and needs to be reviewed.${reason ? ` Reason: ${reason}` : ''}`,
         { excludeUuid: decoded.uuid },
       );
     }
+  }
+
+  /** Report cards list subjects in the order set on the class. */
+  private async orderAssessments<T extends { subject: string }>(
+    classUuid: string,
+    assessments: T[],
+  ) {
+    const subjects = await this.prisma.subject.findMany({
+      where: { class_uuid: classUuid },
+      select: { name: true, position: true },
+    });
+    const rank = new Map(subjects.map((s) => [s.name, s.position]));
+    return [...assessments].sort(
+      (a, b) =>
+        (rank.get(a.subject) ?? Number.MAX_SAFE_INTEGER) -
+          (rank.get(b.subject) ?? Number.MAX_SAFE_INTEGER) ||
+        a.subject.localeCompare(b.subject),
+    );
+  }
+
+  /** Approve or reject many reports at once (administrators). */
+  async bulkStatus(decoded: DecodedUser, body: any) {
+    if (!this.isAdmin(decoded)) {
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Only administrators can approve or reject reports',
+      });
+    }
+    const status = body?.status;
+    if (status !== 'APPROVED' && status !== 'REJECTED') {
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Status must be APPROVED or REJECTED',
+      });
+    }
+    const uuids: string[] = Array.isArray(body?.uuids)
+      ? [
+          ...new Set<string>(
+            body.uuids.filter((u: unknown) => typeof u === 'string'),
+          ),
+        ]
+      : [];
+    if (!uuids.length || uuids.length > 200) {
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Choose between 1 and 200 reports',
+      });
+    }
+    const reason =
+      typeof body?.reason === 'string' ? body.reason.trim().slice(0, 300) : '';
+
+    const results = await this.prisma.result.findMany({
+      where: {
+        uuid: { in: uuids },
+        student: { branch: { school_uuid: decoded.school_uuid } },
+      },
+      include: { student: { include: { class: true } } },
+    });
+
+    let updated = 0;
+    for (const existing of results) {
+      if (existing.status === status) continue;
+      const after = await this.prisma.result.update({
+        where: { uuid: existing.uuid },
+        // Either way the report is no longer waiting on an approval request.
+        data: { status, approval_requested: false },
+      });
+      updated++;
+      await this.notifyResultChange(
+        existing,
+        after,
+        decoded,
+        reason || undefined,
+      );
+      if (status === 'APPROVED' && existing.student) {
+        this.webhooks.emit(
+          decoded.school_uuid,
+          existing.student.branch_uuid,
+          'result.published',
+          {
+            uuid: existing.uuid,
+            student_uuid: existing.student.uuid,
+            class_name: existing.class_name,
+          },
+        );
+      }
+    }
+    const verb = status === 'APPROVED' ? 'approved' : 'rejected';
+    const skipped = uuids.length - updated;
+    return {
+      status: 200,
+      success: true,
+      message:
+        `${updated} ${updated === 1 ? 'report' : 'reports'} ${verb}` +
+        (skipped ? `; ${skipped} already ${verb} or not found` : ''),
+      data: { updated, skipped },
+    };
   }
 
   async remove(resultUuid: string, decoded: DecodedUser) {

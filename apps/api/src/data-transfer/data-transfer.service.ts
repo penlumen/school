@@ -43,6 +43,32 @@ interface Planned extends RowResult {
 
 const lower = (value: string) => value.trim().toLowerCase();
 
+/** dd/mm/yyyy, as dates are shown everywhere in the app. */
+const ddmmyyyy = (date: Date | null) =>
+  date
+    ? `${String(date.getUTCDate()).padStart(2, '0')}/${String(date.getUTCMonth() + 1).padStart(2, '0')}/${date.getUTCFullYear()}`
+    : '';
+
+/**
+ * A date cell: dd/mm/yyyy (or d/m/yyyy, with - or .), or yyyy-mm-dd as
+ * Excel date cells arrive. Null when it can't be read.
+ */
+function parseDate(value: string): Date | null {
+  const dmy = value.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
+  const ymd = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const [y, m, d] = dmy
+    ? [Number(dmy[3]), Number(dmy[2]), Number(dmy[1])]
+    : ymd
+      ? [Number(ymd[1]), Number(ymd[2]), Number(ymd[3])]
+      : [NaN, NaN, NaN];
+  const date = new Date(Date.UTC(y, m - 1, d));
+  return date.getUTCFullYear() === y &&
+    date.getUTCMonth() === m - 1 &&
+    date.getUTCDate() === d
+    ? date
+    : null;
+}
+
 /**
  * Spreadsheet import and export for one branch. Imports are checked in full
  * first (dry run, nothing saved) so staff can see what will be created,
@@ -156,6 +182,7 @@ export class DataTransferService {
             name: true,
             reg_number: true,
             gender: true,
+            date_of_birth: true,
             status: true,
             class: { select: { name: true } },
             parent: { select: { email: true, name: true, contact: true } },
@@ -166,6 +193,7 @@ export class DataTransferService {
           reg_number: s.reg_number,
           class: s.class?.name ?? '',
           gender: s.gender ?? '',
+          date_of_birth: ddmmyyyy(s.date_of_birth),
           status: s.status,
           parent_email: s.parent?.email ?? '',
           parent_name: s.parent?.name ?? '',
@@ -466,6 +494,7 @@ export class DataTransferService {
           name: true,
           class_uuid: true,
           gender: true,
+          date_of_birth: true,
           status: true,
           parent_uuid: true,
         },
@@ -512,10 +541,20 @@ export class DataTransferService {
           ? lower(row.status)
           : (errors.push('Status must be active or inactive'), undefined);
 
+      let dateOfBirth: Date | undefined;
+      if (row.date_of_birth) {
+        const parsed = parseDate(row.date_of_birth);
+        if (!parsed || parsed > new Date() || parsed.getUTCFullYear() < 1900) {
+          errors.push('Date of birth must be a past date written dd/mm/yyyy');
+        } else dateOfBirth = parsed;
+      }
+
+      // No parent email: the student is added without a parent (or keeps theirs).
       const email = lower(row.parent_email || '');
-      let parentUuid = parentByEmail.get(email);
-      if (!email) errors.push('Parent email is required');
-      else if (!EMAIL.test(email)) errors.push('Parent email is not valid');
+      let parentUuid = email ? parentByEmail.get(email) : undefined;
+      if (!email) {
+        // nothing to check
+      } else if (!EMAIL.test(email)) errors.push('Parent email is not valid');
       else if (!parentUuid) {
         const phone = this.phone(
           row.parent_phone || '',
@@ -553,28 +592,35 @@ export class DataTransferService {
         if (existing.name !== row.name) changes.push('name');
         if (existing.class_uuid !== cls!.uuid) changes.push('class');
         if (gender && existing.gender !== gender) changes.push('gender');
+        if (
+          dateOfBirth &&
+          existing.date_of_birth?.getTime() !== dateOfBirth.getTime()
+        )
+          changes.push('date of birth');
         if (status && existing.status !== status) changes.push('status');
-        if (parentUuid && existing.parent_uuid !== parentUuid)
+        if (email && (!parentUuid || existing.parent_uuid !== parentUuid))
           changes.push('parent');
-        if (!parentUuid) changes.push('parent');
         item.action = changes.length ? 'update' : 'unchanged';
       }
 
       item.apply = async () => {
-        parentUuid ??= await this.parentFor(
-          email,
-          newParents,
-          branch.uuid,
-          decoded.school_uuid,
-        );
+        if (email) {
+          parentUuid ??= await this.parentFor(
+            email,
+            newParents,
+            branch.uuid,
+            decoded.school_uuid,
+          );
+        }
         if (existing) {
           const student = await this.prisma.student.update({
             where: { uuid: existing.uuid },
             data: {
               name: row.name,
               class_uuid: cls!.uuid,
-              parent_uuid: parentUuid,
+              ...(email && { parent_uuid: parentUuid }),
               ...(gender && { gender }),
+              ...(dateOfBirth && { date_of_birth: dateOfBirth }),
               ...(status && { status }),
             },
             include: { class: true },
@@ -593,8 +639,9 @@ export class DataTransferService {
                 reg_number,
                 branch_uuid: branch.uuid,
                 class_uuid: cls!.uuid,
-                parent_uuid: parentUuid,
+                parent_uuid: parentUuid ?? null,
                 gender,
+                date_of_birth: dateOfBirth ?? null,
                 status: status ?? 'active',
                 face_descriptor: [],
               },

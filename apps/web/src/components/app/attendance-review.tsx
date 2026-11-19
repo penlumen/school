@@ -12,6 +12,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {formatWeekdayDate} from '@/lib/date';
 
 type ArrivalFilter = 'any' | 'before' | 'after';
 
@@ -179,9 +180,7 @@ export function AttendanceReview({subjectKey, fetchHistory}: AttendanceReviewPro
                         >
                             <div>
                                 <p className='text-sm'>
-                                    {new Date(record.date).toLocaleDateString('en-GB', {
-                                        weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC',
-                                    })}
+                                    {formatWeekdayDate(record.date)}
                                 </p>
                                 {record.status === 'PRESENT' && (
                                     <p className='text-xs text-muted-foreground'>
