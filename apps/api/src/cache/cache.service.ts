@@ -5,6 +5,7 @@ import { Redis } from 'ioredis';
 export class CacheService implements OnModuleDestroy {
   private readonly logger = new Logger(CacheService.name);
   private readonly client: Redis;
+  private warned = false;
 
   constructor() {
     this.client = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
@@ -12,16 +13,36 @@ export class CacheService implements OnModuleDestroy {
       // read/write helpers below just fall through to the DB on failure.
       maxRetriesPerRequest: 1,
       lazyConnect: true,
+      // Fail commands at once while disconnected instead of queueing them,
+      // so a down Redis never makes a request wait.
+      enableOfflineQueue: false,
+      // "localhost" can resolve to ::1 first, which some Redis builds (e.g.
+      // on Windows) accept and then reset; IPv4 works everywhere.
+      family: 4,
+      // Keep trying in the background, at most every 30 seconds.
+      retryStrategy: (times) => Math.min(times * 1000, 30000),
     });
-    this.client.on('error', (err) =>
-      this.logger.warn(`Redis error: ${err.message}`),
-    );
+    this.client.on('error', (err) => {
+      // One warning per outage, not one per retry.
+      if (!this.warned) this.logger.warn(`Redis error: ${err.message}`);
+      this.warned = true;
+    });
+    this.client.on('ready', () => {
+      if (this.warned) this.logger.log('Redis connected');
+      this.warned = false;
+    });
     this.client
       .connect()
       .catch((err) => this.logger.warn(`Redis unavailable: ${err.message}`));
   }
 
+  /** While Redis is down, caching is skipped and everything reads the DB. */
+  private get ready() {
+    return this.client.status === 'ready';
+  }
+
   async get<T>(key: string): Promise<T | null> {
+    if (!this.ready) return null;
     try {
       const value = await this.client.get(key);
       return value ? (JSON.parse(value) as T) : null;
@@ -31,6 +52,7 @@ export class CacheService implements OnModuleDestroy {
   }
 
   async set(key: string, value: unknown, ttlSeconds = 60): Promise<void> {
+    if (!this.ready) return;
     try {
       await this.client.set(key, JSON.stringify(value), 'EX', ttlSeconds);
     } catch (err: any) {
@@ -39,7 +61,7 @@ export class CacheService implements OnModuleDestroy {
   }
 
   async del(...keys: string[]): Promise<void> {
-    if (keys.length === 0) return;
+    if (keys.length === 0 || !this.ready) return;
     try {
       await this.client.del(...keys);
     } catch (err: any) {
@@ -51,6 +73,7 @@ export class CacheService implements OnModuleDestroy {
 
   /** Deletes every key matching a prefix, e.g. "grades:index:" */
   async delByPrefix(prefix: string): Promise<void> {
+    if (!this.ready) return;
     try {
       const stream = this.client.scanStream({
         match: `${prefix}*`,
