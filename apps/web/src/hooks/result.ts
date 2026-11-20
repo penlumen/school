@@ -159,6 +159,14 @@ export const useResult = () => {
             : {success: false as const, message: data.message || 'Something went wrong'};
     };
 
+    /** Delete many reports and their scores (administrators). */
+    const bulkDelete = async (uuids: string[]) => {
+        const data = (await axiosInstance.post('/api/v1/result/bulk-delete', {uuids})).data;
+        return data.success
+            ? {success: true as const, message: data.message as string, data: data.data}
+            : {success: false as const, message: data.message || 'Something went wrong'};
+    };
+
     return {
         show,
         view,
@@ -167,5 +175,6 @@ export const useResult = () => {
         update,
         remove,
         bulkStatus,
+        bulkDelete,
     };
 };

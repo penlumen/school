@@ -4,7 +4,7 @@ import {useEffect, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
 import {toast} from 'sonner';
-import {ChevronLeft, ChevronRight, MoreVertical, Plus, Search, Upload} from 'lucide-react';
+import {Ban, CheckCircle2, ChevronLeft, ChevronRight, MoreVertical, Plus, Search, Trash2, Upload} from 'lucide-react';
 
 import {
     INVOICE_STATUS_LABEL,
@@ -45,7 +45,7 @@ const ALL = 'all';
 
 export default function InvoicesPage() {
     const router = useRouter();
-    const {invoices: fetchInvoices, removeInvoice} = useBilling();
+    const {invoices: fetchInvoices, removeInvoice, bulkStatus, bulkDelete} = useBilling();
     const [invoices, setInvoices] = useState<InvoiceListItem[] | null>(null);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<InvoiceStatus | typeof ALL>(ALL);
@@ -57,8 +57,10 @@ export default function InvoicesPage() {
     const [createOpen, setCreateOpen] = useState(false);
     const [statusInvoice, setStatusInvoice] = useState<InvoiceListItem | null>(null);
     const [pendingDelete, setPendingDelete] = useState<InvoiceListItem | null>(null);
+    const [bulkAction, setBulkAction] = useState<'FULL_PAYMENT' | 'CANCELLED' | 'DELETE' | null>(null);
+    const [bulkBusy, setBulkBusy] = useState(false);
 
-    useEffect(() => {
+    const load = () =>
         fetchInvoices().then((response) => {
             if (response.success) setInvoices(response.data.invoices);
             else {
@@ -66,8 +68,29 @@ export default function InvoicesPage() {
                 setInvoices([]);
             }
         });
+
+    useEffect(() => {
+        load();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    const runBulk = async () => {
+        if (!bulkAction) return;
+        setBulkBusy(true);
+        try {
+            const uuids = [...selected];
+            const response = bulkAction === 'DELETE' ? await bulkDelete(uuids) : await bulkStatus(uuids, bulkAction);
+            if (!response.success) return toast.error(response.message);
+            toast.success(response.message);
+            setBulkAction(null);
+            setSelected(new Set());
+            await load();
+        } catch (error: any) {
+            toast.error(error.message || 'Something went wrong');
+        } finally {
+            setBulkBusy(false);
+        }
+    };
 
     // Filter choices come from the invoices themselves: the class and term each was issued for.
     const options = useMemo(() => {
@@ -268,6 +291,24 @@ export default function InvoicesPage() {
                 </Button>
             </div>
 
+            {selected.size > 0 && (
+                <div className='flex flex-wrap items-center gap-2 rounded-[10px] border border-border bg-muted/40 px-4 py-2 text-sm'>
+                    <span className='font-medium'>{selected.size} selected</span>
+                    <Button size='sm' disabled={bulkBusy} onClick={() => setBulkAction('FULL_PAYMENT')}>
+                        <CheckCircle2 className='h-4 w-4'/> Mark paid
+                    </Button>
+                    <Button size='sm' variant='outline' disabled={bulkBusy} onClick={() => setBulkAction('CANCELLED')}>
+                        <Ban className='h-4 w-4'/> Cancel
+                    </Button>
+                    <Button size='sm' variant='outline' className='text-destructive' disabled={bulkBusy} onClick={() => setBulkAction('DELETE')}>
+                        <Trash2 className='h-4 w-4'/> Delete
+                    </Button>
+                    <Button size='sm' variant='ghost' disabled={bulkBusy} onClick={() => setSelected(new Set())}>
+                        Clear
+                    </Button>
+                </div>
+            )}
+
             <div className='overflow-x-auto'>
                 <Table>
                     <TableHeader className='bg-muted/50 [&_tr]:border-0'>
@@ -370,6 +411,37 @@ export default function InvoicesPage() {
                 onCreated={(created) => setInvoices((current) => [...created, ...(current || [])])}
             />
             <UpdateStatusSheet invoice={statusInvoice} onOpenChange={(open) => !open && setStatusInvoice(null)} onUpdated={replace}/>
+
+            <Dialog open={!!bulkAction} onOpenChange={(open) => !bulkBusy && !open && setBulkAction(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {bulkAction === 'FULL_PAYMENT' ? 'Mark' : bulkAction === 'CANCELLED' ? 'Cancel' : 'Delete'}{' '}
+                            {selected.size} {selected.size === 1 ? 'invoice' : 'invoices'}
+                            {bulkAction === 'FULL_PAYMENT' ? ' as paid in full' : ''}?
+                        </DialogTitle>
+                        <DialogDescription>
+                            {bulkAction === 'FULL_PAYMENT'
+                                ? 'The outstanding balance of each is recorded as received. Cancelled and refunded invoices are skipped.'
+                                : bulkAction === 'CANCELLED'
+                                    ? 'Parents no longer owe these invoices. They stay on record with their payment history.'
+                                    : 'Invoices with payments recorded are kept, so money received stays on the books. The rest are deleted with their history; this can\u2019t be undone.'}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant='outline' disabled={bulkBusy} onClick={() => setBulkAction(null)}>Back</Button>
+                        <Button variant={bulkAction === 'DELETE' ? 'destructive' : 'default'} disabled={bulkBusy} onClick={runBulk}>
+                            {bulkBusy
+                                ? 'Saving...'
+                                : bulkAction === 'FULL_PAYMENT'
+                                    ? 'Mark paid'
+                                    : bulkAction === 'CANCELLED'
+                                        ? 'Cancel invoices'
+                                        : 'Delete'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <Dialog open={!!pendingDelete} onOpenChange={(open) => !open && setPendingDelete(null)}>
                 <DialogContent>

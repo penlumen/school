@@ -75,6 +75,12 @@ export class ResultsController {
     return this.resultsService.bulkStatus(user, body);
   }
 
+  @Post('bulk-delete')
+  @HttpCode(200)
+  bulkDelete(@CurrentUser() user: DecodedUser, @Body() body: any) {
+    return this.resultsService.bulkDelete(user, body);
+  }
+
   @Delete('delete/:result_uuid')
   remove(
     @Param('result_uuid') resultUuid: string,

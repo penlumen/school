@@ -125,6 +125,13 @@ export const useBilling = () => {
     const removeInvoice = async (uuid: string) =>
         unwrap((await axiosInstance.delete(`/api/v1/invoice/delete/${uuid}`)).data);
 
+    /** Mark many invoices paid in full, or cancel them. */
+    const bulkStatus = async (uuids: string[], status: 'FULL_PAYMENT' | 'CANCELLED') =>
+        unwrap((await axiosInstance.post('/api/v1/invoice/bulk-status', {uuids, status})).data);
+    /** Delete many invoices; ones with payments recorded are kept. */
+    const bulkDelete = async (uuids: string[]) =>
+        unwrap((await axiosInstance.post('/api/v1/invoice/bulk-delete', {uuids})).data);
+
     return {
         templates,
         template,
@@ -136,5 +143,7 @@ export const useBilling = () => {
         createInvoices,
         updateStatus,
         removeInvoice,
+        bulkStatus,
+        bulkDelete,
     };
 };

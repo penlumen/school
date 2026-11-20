@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Headers,
+  HttpCode,
   Param,
   Patch,
   Post,
@@ -106,6 +107,26 @@ export class InvoicesController {
 
   @ApiOperation({ summary: 'Record a payment, refund or cancellation' })
   @ApiBody({ type: InvoiceStatusBody })
+  @Post('bulk-status')
+  @HttpCode(200)
+  bulkStatus(
+    @Headers('x-branch-session') branchUuid: string,
+    @CurrentUser() user: DecodedUser,
+    @Body() body: any,
+  ) {
+    return this.billingService.bulkStatus(branchUuid, user, body);
+  }
+
+  @Post('bulk-delete')
+  @HttpCode(200)
+  bulkDelete(
+    @Headers('x-branch-session') branchUuid: string,
+    @CurrentUser() user: DecodedUser,
+    @Body() body: any,
+  ) {
+    return this.billingService.bulkDelete(branchUuid, user, body);
+  }
+
   @Patch('status/:uuid')
   updateStatus(
     @Param('uuid') uuid: string,
