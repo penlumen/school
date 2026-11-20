@@ -36,7 +36,7 @@ const prisma = new PrismaClient({
 });
 
 const SLUG = 'demo';
-const PASSWORD = process.env.SEED_PASSWORD || 'password123';
+const PASSWORD = process.env.SEED_PASSWORD || 'password';
 const STUDENT_PIN = '1234';
 const STUDENTS_PER_CLASS = 8;
 
