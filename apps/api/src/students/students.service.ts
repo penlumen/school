@@ -181,7 +181,7 @@ export class StudentsService {
       data: {
         prefix,
         reg_number: prefix
-          ? await nextRegNumber(this.prisma, branchUuid, prefix)
+          ? await nextRegNumber(this.prisma, branchUuid)
           : null,
       },
     };
@@ -310,7 +310,7 @@ export class StudentsService {
     try {
       for (let attempt = 0; ; attempt++) {
         if (prefix) {
-          reg_number = await nextRegNumber(this.prisma, branchUuid, prefix);
+          reg_number = (await nextRegNumber(this.prisma, branchUuid))!;
         }
         try {
           result = await this.prisma.student.create({

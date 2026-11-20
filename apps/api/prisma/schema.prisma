@@ -195,18 +195,20 @@ model GalleryImage {
 
 // ========== BRANCH ==========
 model Branch {
-  id          Int      @id @default(autoincrement())
-  uuid        String   @unique @default(uuid())
-  school_uuid String
-  name        String
-  email       String?
-  contact     String?
-  avatar      String?
-  address     String?
+  id               Int      @id @default(autoincrement())
+  uuid             String   @unique @default(uuid())
+  school_uuid      String
+  name             String
+  email            String?
+  contact          String?
+  avatar           String?
+  address          String?
   /// Registration number prefix, e.g. "NPR/SS"; numbers are PREFIX/YY/0001.
-  reg_prefix  String?
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  reg_prefix       String?
+  /// Put the 2-digit year in numbers (PREFIX/YY/1001); without it, PREFIX/1001.
+  reg_include_year Boolean  @default(true)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
 
   grades             Grade[]
   classes            Class[]

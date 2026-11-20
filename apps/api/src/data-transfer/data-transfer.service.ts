@@ -630,8 +630,7 @@ export class DataTransferService {
         }
         for (let attempt = 0; ; attempt++) {
           const reg_number =
-            row.reg_number ||
-            (await nextRegNumber(this.prisma, branch.uuid, branch.reg_prefix!));
+            row.reg_number || (await nextRegNumber(this.prisma, branch.uuid))!;
           try {
             const student = await this.prisma.student.create({
               data: {

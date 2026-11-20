@@ -171,6 +171,9 @@ export class BranchesService {
         contact,
         address,
         avatar,
+        ...('reg_include_year' in body && {
+          reg_include_year: body.reg_include_year !== false,
+        }),
         ...('reg_prefix' in body && {
           reg_prefix: parseRegPrefix(body.reg_prefix),
         }),

@@ -69,6 +69,7 @@ export const useBranch = () => {
         address: branchData.address,
         avatar: branchData.avatar,
         ...('reg_prefix' in branchData && { reg_prefix: branchData.reg_prefix }),
+        ...('reg_include_year' in branchData && { reg_include_year: branchData.reg_include_year }),
       }
     );
     const data = response.data;

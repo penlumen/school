@@ -29,6 +29,7 @@ import {DateField} from '@/components/ui/date-field';
 import type {PersonRecord} from '@/components/app/person-form-sheet';
 import {Checkbox} from '@/components/ui/checkbox';
 import {PhoneInput} from '@/components/ui/phone-input';
+import {RefreshCw} from 'lucide-react';
 
 export interface StudentRecord {
     uuid: string;
@@ -90,6 +91,22 @@ export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, 
     const [suggested, setSuggested] = useState<string | null>(null);
 
     const isEdit = !!student;
+    const [refreshing, setRefreshing] = useState(false);
+
+    /** Fetches the next number again, e.g. after changing it or after someone else added a student. */
+    const refreshRegNumber = async () => {
+        setRefreshing(true);
+        try {
+            const {reg_number} = await nextRegNumber();
+            if (!reg_number) return;
+            setSuggested(reg_number);
+            setFormData((current) => ({...current, reg_number}));
+        } catch {
+            toast.error('Could not get the next number');
+        } finally {
+            setRefreshing(false);
+        }
+    };
 
     useEffect(() => {
         if (!open) return;
@@ -196,12 +213,28 @@ export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, 
 
                     <div className='space-y-2'>
                         <Label htmlFor='reg_number'>Registration number</Label>
-                        <Input
-                            id='reg_number'
-                            placeholder='Enter reg number'
-                            value={formData.reg_number}
-                            onChange={(e) => setFormData({...formData, reg_number: e.target.value})}
-                        />
+                        <div className='flex gap-2'>
+                            <Input
+                                id='reg_number'
+                                className='flex-1'
+                                placeholder='Enter reg number'
+                                value={formData.reg_number}
+                                onChange={(e) => setFormData({...formData, reg_number: e.target.value})}
+                            />
+                            {!isEdit && suggested !== null && (
+                                <Button
+                                    type='button'
+                                    variant='outline'
+                                    size='icon'
+                                    aria-label='Get the next registration number'
+                                    title='Get the next registration number'
+                                    disabled={refreshing}
+                                    onClick={refreshRegNumber}
+                                >
+                                    <RefreshCw className={refreshing ? 'h-4 w-4 animate-spin' : 'h-4 w-4'}/>
+                                </Button>
+                            )}
+                        </div>
                         {!isEdit && suggested && (
                             <p className='text-xs text-muted-foreground'>
                                 Next number from the branch prefix. Change it only for special cases, like transfers.
