@@ -7,9 +7,22 @@
 --   * a final number under 1000 moves up by 1000, like every other school
 --     (20261120110000):                   .../25/070     -> .../25/1070
 -- So OOA/c/p/25/070 becomes OAA/C/P/25/1070. Only numbers starting with
--- OOA/ or OAA/ are touched, whatever the branch's prefix setting. If a new
--- number is already taken, or two would end up the same, it stops and
--- changes nothing.
+-- OOA/ or OAA/ are touched, whatever the branch's prefix setting.
+--
+-- Clashes are skipped, not fixed: if a new number is already taken, or two
+-- numbers would end up the same (e.g. OOA/C/P/25/070 and OAA/C/P/25/070
+-- both becoming OAA/C/P/25/1070), those students keep their numbers as
+-- they are and everything else is fixed. Prisma doesn't show the NOTICE
+-- listing them, but afterwards they are the only OOA/OAA numbers that still
+-- start with OOA/, have lowercase letters or a number under 1000, so this
+-- lists them (it also catches numbers that end in letters):
+--
+--   SELECT b.name AS branch, s.name, s.reg_number
+--     FROM "Student" s JOIN "Branch" b ON b.uuid = s.branch_uuid
+--    WHERE s.reg_number ~* '^(ooa|oaa)/'
+--      AND (s.reg_number ~ '^OOA/' OR s.reg_number ~ '[a-z]'
+--           OR length(ltrim(substring(s.reg_number from '(\d+)$'), '0')) <= 3)
+--    ORDER BY b.name, s.reg_number;
 
 -- A branch prefix typed as OOA becomes OAA too, so new numbers come out
 -- right (OOA/C/P -> OAA/C/P).
@@ -44,23 +57,34 @@ SELECT uuid,
 
 DELETE FROM oaa_fix WHERE new_number = old_number;
 
+-- Drop clashing rows (they keep their current numbers). Repeat, since a
+-- skipped student keeps a number another row might have moved onto.
 DO $$
 DECLARE
-  clash TEXT;
+  removed INT;
+  skipped TEXT := '';
 BEGIN
-  SELECT string_agg(f.old_number || ' -> ' || f.new_number, ', ')
-    INTO clash
-    FROM oaa_fix f
-   WHERE EXISTS (
-           SELECT 1 FROM "Student" o
-            WHERE o.branch_uuid = f.branch_uuid
-              AND o.reg_number = f.new_number
-              AND o.uuid NOT IN (SELECT uuid FROM oaa_fix))
-      OR (SELECT count(*) FROM oaa_fix g
-           WHERE g.branch_uuid = f.branch_uuid AND g.new_number = f.new_number) > 1;
-  IF clash IS NOT NULL THEN
-    RAISE EXCEPTION 'Registration numbers would clash, fix these by hand first: %', clash;
-  END IF;
+  LOOP
+    WITH clashing AS (
+      SELECT f.uuid
+        FROM oaa_fix f
+       WHERE EXISTS (
+               SELECT 1 FROM "Student" o
+                WHERE o.branch_uuid = f.branch_uuid
+                  AND o.reg_number = f.new_number
+                  AND o.uuid NOT IN (SELECT uuid FROM oaa_fix))
+          OR (SELECT count(*) FROM oaa_fix g
+               WHERE g.branch_uuid = f.branch_uuid AND g.new_number = f.new_number) > 1
+    ), gone AS (
+      DELETE FROM oaa_fix f USING clashing c WHERE f.uuid = c.uuid
+      RETURNING f.old_number, f.new_number
+    )
+    SELECT count(*), coalesce(string_agg(old_number || ' (would be ' || new_number || ')', ', '), '')
+      INTO removed, skipped
+      FROM gone;
+    EXIT WHEN removed = 0;
+    RAISE NOTICE 'Skipped, would clash: %', skipped;
+  END LOOP;
 END $$;
 
 UPDATE "Student" s
