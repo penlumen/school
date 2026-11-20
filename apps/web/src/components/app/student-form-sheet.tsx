@@ -27,6 +27,8 @@ import {
 } from '@/components/ui/sheet';
 import {DateField} from '@/components/ui/date-field';
 import type {PersonRecord} from '@/components/app/person-form-sheet';
+import {Checkbox} from '@/components/ui/checkbox';
+import {PhoneInput} from '@/components/ui/phone-input';
 
 export interface StudentRecord {
     uuid: string;
@@ -54,6 +56,7 @@ interface StudentFormSheetProps {
 
 const emptyForm = {name: '', reg_number: '', gender: '', date_of_birth: '', parent_uuid: '', class_uuid: '', avatar: '', status: 'active'};
 const NO_PARENT = 'none';
+const emptyParent = {name: '', email: '', contact: '', position: 'PARENT'};
 
 export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, onSaved}: StudentFormSheetProps) {
     const {create, update, nextRegNumber} = useStudent();
@@ -80,6 +83,9 @@ export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, 
     const [entityUuid, setEntityUuid] = useState<string | null>(student?.uuid || null);
     const [faceDescriptor, setFaceDescriptor] = useState<number[] | null>(null);
     const [submitting, setSubmitting] = useState(false);
+    // "New parent": add the parent along with the student instead of picking one.
+    const [newParent, setNewParent] = useState(false);
+    const [parentData, setParentData] = useState(emptyParent);
     // The number the branch prefix would give; left as is, the server assigns it on save.
     const [suggested, setSuggested] = useState<string | null>(null);
 
@@ -119,6 +125,10 @@ export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, 
             toast.error('Name, registration number and class are required');
             return;
         }
+        if (newParent && (!parentData.name.trim() || !parentData.email.trim())) {
+            toast.error("Enter the new parent's name and email");
+            return;
+        }
 
         setSubmitting(true);
         try {
@@ -126,6 +136,9 @@ export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, 
                 ...formData,
                 // Untouched suggestion: let the server take the next free number at save time.
                 ...(!isEdit && suggested && formData.reg_number.trim() === suggested ? {reg_number: ''} : {}),
+                ...(!isEdit && newParent
+                    ? {parent_uuid: '', new_parent: {...parentData, name: parentData.name.trim(), email: parentData.email.trim()}}
+                    : {}),
                 ...(entityUuid ? {uuid: entityUuid} : {}),
                 ...(faceDescriptor ? {face_descriptor: faceDescriptor} : {}),
             };
@@ -223,23 +236,85 @@ export function StudentFormSheet({open, onOpenChange, student, lockedClassUuid, 
                     </div>
 
                     <div className='space-y-2'>
-                        <Label>Parent/guardian</Label>
-                        <Select
-                            value={formData.parent_uuid || NO_PARENT}
-                            onValueChange={(value) => setFormData({...formData, parent_uuid: value === NO_PARENT ? '' : value})}
-                        >
-                            <SelectTrigger className='w-full'>
-                                <SelectValue placeholder='Select option'/>
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value={NO_PARENT}>No parent yet</SelectItem>
-                                {parents.map((parent) => (
-                                    <SelectItem key={parent.uuid} value={parent.uuid}>
-                                        {parent.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <div className='flex items-center justify-between gap-2'>
+                            <Label>Parent/guardian</Label>
+                            {!isEdit && (
+                                <label className='flex items-center gap-2 text-sm'>
+                                    <Checkbox
+                                        id='new-parent'
+                                        checked={newParent}
+                                        onCheckedChange={(checked) => setNewParent(checked === true)}
+                                    />
+                                    New parent
+                                </label>
+                            )}
+                        </div>
+                        {newParent && !isEdit ? (
+                            <div className='space-y-3 rounded-[10px] border border-border p-3'>
+                                <div className='space-y-1.5'>
+                                    <Label htmlFor='new-parent-name' className='text-xs'>Full name</Label>
+                                    <Input
+                                        id='new-parent-name'
+                                        value={parentData.name}
+                                        placeholder="Parent's full name"
+                                        onChange={(e) => setParentData({...parentData, name: e.target.value})}
+                                    />
+                                </div>
+                                <div className='space-y-1.5'>
+                                    <Label htmlFor='new-parent-email' className='text-xs'>Email</Label>
+                                    <Input
+                                        id='new-parent-email'
+                                        type='email'
+                                        value={parentData.email}
+                                        placeholder='parent@example.com'
+                                        onChange={(e) => setParentData({...parentData, email: e.target.value})}
+                                    />
+                                </div>
+                                <div className='space-y-1.5'>
+                                    <Label htmlFor='new-parent-phone' className='text-xs'>Phone (optional)</Label>
+                                    <PhoneInput
+                                        id='new-parent-phone'
+                                        value={parentData.contact}
+                                        onChange={(contact) => setParentData({...parentData, contact})}
+                                    />
+                                </div>
+                                <div className='space-y-1.5'>
+                                    <Label className='text-xs'>Relationship</Label>
+                                    <Select
+                                        value={parentData.position}
+                                        onValueChange={(position) => setParentData({...parentData, position})}
+                                    >
+                                        <SelectTrigger className='w-full'>
+                                            <SelectValue/>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value='PARENT'>Parent</SelectItem>
+                                            <SelectItem value='GUARDIAN'>Guardian</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <p className='text-xs text-muted-foreground'>
+                                    The parent is added with the student and emailed a link to set their password.
+                                </p>
+                            </div>
+                        ) : (
+                            <Select
+                                value={formData.parent_uuid || NO_PARENT}
+                                onValueChange={(value) => setFormData({...formData, parent_uuid: value === NO_PARENT ? '' : value})}
+                            >
+                                <SelectTrigger className='w-full'>
+                                    <SelectValue placeholder='Select option'/>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value={NO_PARENT}>No parent yet</SelectItem>
+                                    {parents.map((parent) => (
+                                        <SelectItem key={parent.uuid} value={parent.uuid}>
+                                            {parent.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
                     </div>
 
                     <div className='space-y-2'>

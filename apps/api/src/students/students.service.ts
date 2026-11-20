@@ -12,6 +12,13 @@ import { StorageService } from '../storage/storage.service.js';
 import { WebhooksService } from '../integrations/webhooks.service.js';
 import { nextRegNumber } from '../common/reg-number.js';
 import { DecodedUser } from '../common/types/auth.js';
+import { HashingService } from '../common/hashing.service.js';
+import { normalizePhone } from '../common/phone.js';
+import { PasswordService } from '../mail/password.service.js';
+import { randomBytes } from 'crypto';
+import { Position } from '@prisma/client';
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 @Injectable()
 export class StudentsService {
@@ -20,7 +27,56 @@ export class StudentsService {
     private readonly notifications: NotificationsService,
     private readonly storage: StorageService,
     private readonly webhooks: WebhooksService,
+    private readonly hashing: HashingService,
+    private readonly passwords: PasswordService,
   ) {}
+
+  /**
+   * Checks the "New parent" details sent with a new student, before anything
+   * is saved. An email that already belongs to a parent is refused so the
+   * existing record is picked instead of duplicated.
+   */
+  private async checkNewParent(input: any, schoolUuid: string) {
+    const invalid = (message: string): never => {
+      throw new UnprocessableEntityException({
+        status: 422,
+        success: false,
+        message,
+      });
+    };
+    const name = typeof input?.name === 'string' ? input.name.trim() : '';
+    const email =
+      typeof input?.email === 'string' ? input.email.trim().toLowerCase() : '';
+    if (!name) invalid("Enter the parent's name");
+    if (!email || !EMAIL.test(email)) {
+      invalid("Enter the parent's email address");
+    }
+    const position: Position =
+      input?.position === 'GUARDIAN' ? 'GUARDIAN' : 'PARENT';
+    const existing = await this.prisma.user.findFirst({
+      where: {
+        school_uuid: schoolUuid,
+        role: 'PARENT',
+        email: { equals: email, mode: 'insensitive' },
+      },
+      select: { name: true },
+    });
+    if (existing) {
+      invalid(
+        `${existing.name ?? 'A parent'} already has the email ${email}. Untick New parent and choose them from the list.`,
+      );
+    }
+    return {
+      name,
+      email,
+      position,
+      contact: normalizePhone(input?.contact, 'Parent phone'),
+      address:
+        typeof input?.address === 'string'
+          ? input.address.trim() || null
+          : null,
+    };
+  }
 
   async index(branchUuid: string | undefined, decoded: DecodedUser) {
     if (!branchUuid) {
@@ -178,9 +234,14 @@ export class StudentsService {
         message: 'Name and class are required',
       });
     }
-    // A student can be added before their parent; link one later.
-    const parentUuid =
-      (await this.parentFor(parent_uuid, decoded.school_uuid)) ?? null;
+    // A student can be added before their parent; link one later. A new
+    // parent can also be sent along and is created with the student.
+    const newParent = body.new_parent
+      ? await this.checkNewParent(body.new_parent, decoded.school_uuid)
+      : null;
+    let parentUuid = newParent
+      ? null
+      : ((await this.parentFor(parent_uuid, decoded.school_uuid)) ?? null);
     const dateOfBirth = this.dateOfBirth(body.date_of_birth) ?? null;
 
     if (!branchUuid) {
@@ -218,40 +279,78 @@ export class StudentsService {
       }
     }
 
+    let createdParentUuid: string | null = null;
+    if (newParent) {
+      const parent = await this.prisma.user.create({
+        data: {
+          ...newParent,
+          role: 'PARENT',
+          school_uuid: decoded.school_uuid,
+          // Unknown to anyone: the invite email lets them choose their own.
+          password: await this.hashing.createHash(
+            randomBytes(12).toString('base64url'),
+          ),
+          face_descriptor: [],
+        },
+      });
+      await this.prisma.branchAccess.create({
+        data: {
+          branch_uuid: branchUuid,
+          school_uuid: decoded.school_uuid,
+          user_uuid: parent.uuid,
+          role: 'PARENT',
+        },
+      });
+      createdParentUuid = parentUuid = parent.uuid;
+    }
+
     // Two students added at once can be given the same generated number;
     // the unique index catches it and the next number is tried.
     let result;
-    for (let attempt = 0; ; attempt++) {
-      if (prefix) {
-        reg_number = await nextRegNumber(this.prisma, branchUuid, prefix);
-      }
-      try {
-        result = await this.prisma.student.create({
-          data: {
-            uuid: body.uuid || undefined,
-            name,
-            reg_number,
-            parent_uuid: parentUuid,
-            date_of_birth: dateOfBirth,
-            branch_uuid: branchUuid,
-            class_uuid,
-            gender,
-            avatar,
-            face_descriptor: face_descriptor || [],
-          },
-          include: { class: true },
-        });
-        break;
-      } catch (error: any) {
-        if (error?.code !== 'P2002') throw error;
-        if (!prefix || attempt >= 4) {
-          throw new BadRequestException({
-            status: 400,
-            success: false,
-            message: 'Registration number already taken',
+    try {
+      for (let attempt = 0; ; attempt++) {
+        if (prefix) {
+          reg_number = await nextRegNumber(this.prisma, branchUuid, prefix);
+        }
+        try {
+          result = await this.prisma.student.create({
+            data: {
+              uuid: body.uuid || undefined,
+              name,
+              reg_number,
+              parent_uuid: parentUuid,
+              date_of_birth: dateOfBirth,
+              branch_uuid: branchUuid,
+              class_uuid,
+              gender,
+              avatar,
+              face_descriptor: face_descriptor || [],
+            },
+            include: { class: true },
           });
+          break;
+        } catch (error: any) {
+          if (error?.code !== 'P2002') throw error;
+          if (!prefix || attempt >= 4) {
+            throw new BadRequestException({
+              status: 400,
+              success: false,
+              message: 'Registration number already taken',
+            });
+          }
         }
       }
+    } catch (error) {
+      // Don't leave a parent behind for a student that wasn't saved.
+      if (createdParentUuid) {
+        await this.prisma.user
+          .delete({ where: { uuid: createdParentUuid } })
+          .catch(() => undefined);
+      }
+      throw error;
+    }
+    if (createdParentUuid) {
+      void this.passwords.sendInvite(createdParentUuid).catch(() => undefined);
     }
 
     await this.notifications.notifyBranchAdmins(
