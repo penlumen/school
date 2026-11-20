@@ -799,6 +799,67 @@ export class ResultsService {
     };
   }
 
+  /** 1 to 200 distinct uuids from a bulk action's body. */
+  private bulkUuids(value: unknown): string[] {
+    const uuids = Array.isArray(value)
+      ? [...new Set(value.filter((u): u is string => typeof u === 'string'))]
+      : [];
+    if (!uuids.length || uuids.length > 200) {
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Choose between 1 and 200 at a time',
+      });
+    }
+    return uuids;
+  }
+
+  /** Deletes many reports and their scores (administrators). */
+  async bulkDelete(decoded: DecodedUser, body: any) {
+    if (!this.isAdmin(decoded)) {
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Only administrators can delete reports',
+      });
+    }
+    const uuids = this.bulkUuids(body?.uuids);
+    const found = await this.prisma.result.findMany({
+      where: {
+        uuid: { in: uuids },
+        student: { branch: { school_uuid: decoded.school_uuid } },
+      },
+      select: { uuid: true, class_uuid: true },
+    });
+    // Same check as a single delete: the class must be in a branch they can access.
+    const allowed = new Map<string, boolean>();
+    const deletable: string[] = [];
+    for (const result of found) {
+      if (!allowed.has(result.class_uuid)) {
+        allowed.set(
+          result.class_uuid,
+          await this.canAccessClass(decoded, result.class_uuid),
+        );
+      }
+      if (allowed.get(result.class_uuid)) deletable.push(result.uuid);
+    }
+    await this.prisma.$transaction([
+      this.prisma.assessments.deleteMany({
+        where: { result_uuid: { in: deletable } },
+      }),
+      this.prisma.result.deleteMany({ where: { uuid: { in: deletable } } }),
+    ]);
+    const skipped = uuids.length - deletable.length;
+    return {
+      status: 200,
+      success: true,
+      message:
+        `${deletable.length} ${deletable.length === 1 ? 'report' : 'reports'} deleted` +
+        (skipped ? `; ${skipped} not found` : ''),
+      data: { deleted: deletable.length, skipped },
+    };
+  }
+
   async remove(resultUuid: string, decoded: DecodedUser) {
     if (!this.isAdmin(decoded)) {
       throw new BadRequestException({

@@ -4,7 +4,7 @@ import {useEffect, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
 import {toast} from 'sonner';
-import {CheckCircle2, ChevronLeft, ChevronRight, Clock3, MoreVertical, Search, XCircle} from 'lucide-react';
+import {CheckCircle2, ChevronLeft, ChevronRight, Clock3, MoreVertical, Search, Trash2, XCircle} from 'lucide-react';
 
 import {useResult} from '@/hooks/result';
 import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
@@ -92,7 +92,7 @@ const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2)
 
 export default function ReportsPage() {
     const router = useRouter();
-    const {index, remove, bulkStatus} = useResult();
+    const {index, remove, bulkStatus, bulkDelete} = useResult();
     // Same rule as the API: administrators approve and reject.
     const viewer = JSON.parse(Cookies.get('user') || 'null');
     const isAdmin = ['ROOT', 'ADMIN'].includes(viewer?.role) || viewer?.position === 'ADMINISTRATIVE';
@@ -100,6 +100,7 @@ export default function ReportsPage() {
     const [rejecting, setRejecting] = useState(false);
     const [reason, setReason] = useState('');
     const [bulkBusy, setBulkBusy] = useState(false);
+    const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
     const [data, setData] = useState<ReportList | null>(null);
     const [loading, setLoading] = useState(true);
     const [classUuid, setClassUuid] = useState(ALL);
@@ -164,6 +165,21 @@ export default function ReportsPage() {
             toast.success(response.message);
             setRejecting(false);
             setReason('');
+            load();
+        } catch (error: any) {
+            toast.error(error.message || 'Something went wrong');
+        } finally {
+            setBulkBusy(false);
+        }
+    };
+
+    const deleteSelected = async () => {
+        setBulkBusy(true);
+        try {
+            const response = await bulkDelete([...selected]);
+            if (!response.success) return toast.error(response.message);
+            toast.success(response.message);
+            setConfirmBulkDelete(false);
             load();
         } catch (error: any) {
             toast.error(error.message || 'Something went wrong');
@@ -284,6 +300,9 @@ export default function ReportsPage() {
                         </Button>
                         <Button size='sm' variant='outline' disabled={bulkBusy} onClick={() => setRejecting(true)}>
                             <XCircle className='h-4 w-4'/> Reject
+                        </Button>
+                        <Button size='sm' variant='outline' className='text-destructive' disabled={bulkBusy} onClick={() => setConfirmBulkDelete(true)}>
+                            <Trash2 className='h-4 w-4'/> Delete
                         </Button>
                         <Button size='sm' variant='ghost' disabled={bulkBusy} onClick={() => setSelected(new Set())}>
                             Clear
@@ -426,6 +445,23 @@ export default function ReportsPage() {
                     </div>
                 </div>
             )}
+
+            <Dialog open={confirmBulkDelete} onOpenChange={(open) => !bulkBusy && setConfirmBulkDelete(open)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete {selected.size} {selected.size === 1 ? 'report' : 'reports'}?</DialogTitle>
+                        <DialogDescription>
+                            Their scores, remarks and ratings are deleted too, including approved reports parents can see. This can&apos;t be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant='outline' disabled={bulkBusy} onClick={() => setConfirmBulkDelete(false)}>Cancel</Button>
+                        <Button variant='destructive' disabled={bulkBusy} onClick={deleteSelected}>
+                            {bulkBusy ? 'Deleting...' : 'Delete'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <Dialog open={rejecting} onOpenChange={(open) => !bulkBusy && setRejecting(open)}>
                 <DialogContent>

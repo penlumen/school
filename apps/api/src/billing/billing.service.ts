@@ -684,6 +684,112 @@ export class BillingService {
     };
   }
 
+  /** 1 to 200 distinct uuids from a bulk action's body. */
+  private bulkUuids(value: unknown): string[] {
+    const uuids = Array.isArray(value)
+      ? [...new Set(value.filter((u): u is string => typeof u === 'string'))]
+      : [];
+    if (!uuids.length || uuids.length > 200) {
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Choose between 1 and 200 at a time',
+      });
+    }
+    return uuids;
+  }
+
+  /**
+   * Marks many invoices paid in full, or cancels them. Each goes through the
+   * same path as a single status change, so payment history is recorded.
+   */
+  async bulkStatus(
+    branchUuid: string | undefined,
+    decoded: DecodedUser,
+    body: any,
+  ) {
+    this.assertManager(decoded);
+    const branch = this.requireBranch(branchUuid);
+    const status = body?.status;
+    if (status !== 'FULL_PAYMENT' && status !== 'CANCELLED') {
+      throw new UnprocessableEntityException({
+        status: 422,
+        success: false,
+        message: 'Choose to mark invoices paid in full or cancel them',
+      });
+    }
+    const uuids = this.bulkUuids(body?.uuids);
+    const invoices = await this.prisma.invoice.findMany({
+      where: { uuid: { in: uuids }, branch_uuid: branch },
+      select: { uuid: true, status: true },
+    });
+    // Nothing to do for these: already in that state, or (for payment)
+    // cancelled or refunded invoices, which shouldn't become paid in bulk.
+    const skip: InvoiceStatus[] =
+      status === 'FULL_PAYMENT'
+        ? ['FULL_PAYMENT', 'CANCELLED', 'REFUNDED']
+        : ['CANCELLED'];
+    const description =
+      status === 'FULL_PAYMENT' ? 'Marked paid in full' : 'Cancelled';
+    let updated = 0;
+    for (const invoice of invoices) {
+      if (skip.includes(invoice.status as InvoiceStatus)) continue;
+      await this.updateStatus(invoice.uuid, branch, decoded, {
+        status,
+        description,
+      });
+      updated++;
+    }
+    const skipped = uuids.length - updated;
+    const verb = status === 'FULL_PAYMENT' ? 'marked paid' : 'cancelled';
+    return {
+      status: 200,
+      success: true,
+      message:
+        `${updated} ${updated === 1 ? 'invoice' : 'invoices'} ${verb}` +
+        (skipped
+          ? `; ${skipped} skipped (already ${status === 'FULL_PAYMENT' ? 'paid, cancelled or refunded' : 'cancelled'})`
+          : ''),
+      data: { updated, skipped },
+    };
+  }
+
+  /**
+   * Deletes many invoices. Ones with a payment recorded are kept, so money
+   * received isn't wiped from the books by a bulk action; delete those one
+   * at a time if they really must go.
+   */
+  async bulkDelete(
+    branchUuid: string | undefined,
+    decoded: DecodedUser,
+    body: any,
+  ) {
+    this.assertManager(decoded);
+    const branch = this.requireBranch(branchUuid);
+    const uuids = this.bulkUuids(body?.uuids);
+    const invoices = await this.prisma.invoice.findMany({
+      where: { uuid: { in: uuids }, branch_uuid: branch },
+      select: { uuid: true, paid: true },
+    });
+    const deletable = invoices
+      .filter((i) => new Prisma.Decimal(i.paid).lte(0))
+      .map((i) => i.uuid);
+    const withPayments = invoices.length - deletable.length;
+    await this.prisma.invoice.deleteMany({
+      where: { uuid: { in: deletable } },
+    });
+    return {
+      status: 200,
+      success: true,
+      message:
+        `${deletable.length} ${deletable.length === 1 ? 'invoice' : 'invoices'} deleted` +
+        (withPayments
+          ? `; ${withPayments} kept because ${withPayments === 1 ? 'it has' : 'they have'} payments recorded`
+          : ''),
+      data: { deleted: deletable.length, kept: withPayments },
+    };
+  }
+
   async removeInvoice(
     uuid: string,
     branchUuid: string | undefined,

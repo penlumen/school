@@ -12,6 +12,7 @@ import {Label} from '@/components/ui/label';
 import {Skeleton} from '@/components/ui/skeleton';
 import {SettingsSection} from '@/components/app/settings-shell';
 import {LogoField} from '@/components/app/site-image-upload';
+import {Checkbox} from '@/components/ui/checkbox';
 
 interface BranchForm {
     uuid: string;
@@ -20,6 +21,7 @@ interface BranchForm {
     address: string;
     avatar: string | null;
     reg_prefix: string;
+    reg_include_year: boolean;
 }
 
 export function BranchGeneralTab() {
@@ -45,6 +47,7 @@ export function BranchGeneralTab() {
                     address: branch.address || '',
                     avatar: branch.avatar || null,
                     reg_prefix: branch.reg_prefix || '',
+                    reg_include_year: branch.reg_include_year !== false,
                 });
             }
         });
@@ -147,9 +150,24 @@ export function BranchGeneralTab() {
                         placeholder='e.g. NPR/SS'
                         onChange={(e) => setForm({...form, reg_prefix: e.target.value.toUpperCase()})}
                     />
+                    {form.reg_prefix.trim() && (
+                        <label className='flex items-center gap-2 pt-1 text-sm'>
+                            <Checkbox
+                                checked={form.reg_include_year}
+                                onCheckedChange={(checked) => setForm({...form, reg_include_year: checked === true})}
+                            />
+                            Include the year
+                        </label>
+                    )}
                     <p className='text-xs text-muted-foreground'>
                         {form.reg_prefix.trim()
-                            ? `New students are numbered ${form.reg_prefix.trim().replace(/\/+$/, '')}/${String(new Date().getFullYear()).slice(-2)}/0001, 0002 and so on, starting again each year. Numbers already in use are skipped.`
+                            ? (() => {
+                                const stem = form.reg_prefix.trim().replace(/\/+$/, '');
+                                const year = String(new Date().getFullYear()).slice(-2);
+                                return form.reg_include_year
+                                    ? `New students are numbered ${stem}/${year}/0001, 0002 and so on, starting again at 0001 each year. Numbers already in use are skipped.`
+                                    : `New students are numbered ${stem}/0001, 0002 and so on. Numbers already in use are skipped.`;
+                            })()
                             : 'Set a prefix to number new students automatically. Without one, staff type each number.'}
                     </p>
                 </div>

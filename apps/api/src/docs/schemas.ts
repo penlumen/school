@@ -210,6 +210,11 @@ export class BranchBody {
       'Registration number prefix; students become PREFIX/YY/0001. Empty to turn off. Update only',
   })
   reg_prefix?: string;
+  @ApiPropertyOptional({
+    description:
+      'Put the 2-digit year in generated numbers (PREFIX/YY/0001, the default) or not (PREFIX/0001). Update only',
+  })
+  reg_include_year?: boolean;
 }
 
 class ContentItem {
