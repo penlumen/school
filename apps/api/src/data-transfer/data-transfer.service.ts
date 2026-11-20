@@ -6,6 +6,7 @@ import {
 import { randomBytes } from 'crypto';
 import { Position, Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { scoreLimits } from '../common/score-limits.js';
 import { CacheService } from '../cache/cache.service.js';
 import { HashingService } from '../common/hashing.service.js';
 import { normalizePhone } from '../common/phone.js';
@@ -294,9 +295,8 @@ export class DataTransferService {
               student: r.student?.name ?? '',
               class: r.class_name,
               subject: a.subject,
-              ca_one: Number(a.ca_one),
-              ca_two: Number(a.ca_two),
-              exam: Number(a.examination),
+              assessment: Number(a.assessment),
+              examination: Number(a.examination),
               total: Number(a.overall),
             })),
           );
@@ -1036,16 +1036,18 @@ export class DataTransferService {
       },
     });
     const byReg = new Map(students.map((s) => [lower(s.reg_number), s]));
+    const limits = await scoreLimits(this.prisma, branchUuid);
 
     const score = (
       value: string | undefined,
       label: string,
+      max: number,
       errors: string[],
     ) => {
       if (value === undefined || value === '') return undefined;
       const n = Number(value);
-      if (!Number.isFinite(n) || n < 0 || n > 100) {
-        errors.push(`${label} must be a number from 0 to 100`);
+      if (!Number.isFinite(n) || n < 0 || n > max) {
+        errors.push(`${label} must be a number from 0 to ${max}`);
         return undefined;
       }
       return Math.round(n * 100) / 100;
@@ -1072,9 +1074,24 @@ export class DataTransferService {
           `${student.class?.name ?? 'This class'} has no subject "${row.subject}"`,
         );
       }
-      const ca_one = score(row.ca_one, 'CA 1', errors);
-      const ca_two = score(row.ca_two, 'CA 2', errors);
-      const exam = score(row.exam, 'Exam', errors);
+      // Older spreadsheets have CA 1 and CA 2; they add up to the assessment.
+      const hasCa = (row.ca_one ?? '') !== '' || (row.ca_two ?? '') !== '';
+      const assessmentValue =
+        (row.assessment ?? '') === '' && hasCa
+          ? String(Number(row.ca_one || 0) + Number(row.ca_two || 0))
+          : row.assessment;
+      const assessment = score(
+        assessmentValue,
+        'Assessment',
+        limits.assessment_max,
+        errors,
+      );
+      const examination = score(
+        row.examination,
+        'Examination',
+        limits.examination_max,
+        errors,
+      );
 
       const result = student?.results.find(
         (r) => r.class_uuid === student.class_uuid,
@@ -1086,26 +1103,19 @@ export class DataTransferService {
       }
       const current = result?.assessments.find((a) => a.subject === subject);
       const next = {
-        ca_one: ca_one ?? Number(current?.ca_one ?? 0),
-        ca_two: ca_two ?? Number(current?.ca_two ?? 0),
-        examination: exam ?? Number(current?.examination ?? 0),
+        assessment: assessment ?? Number(current?.assessment ?? 0),
+        examination: examination ?? Number(current?.examination ?? 0),
       };
-      if (
-        !errors.length &&
-        next.ca_one + next.ca_two + next.examination > 100
-      ) {
-        errors.push('CA 1 + CA 2 + Exam is more than 100');
-      }
       if (errors.length) {
         item.action = 'error';
         return item;
       }
 
       if (current) {
-        if (Number(current.ca_one) !== next.ca_one) item.changes.push('CA 1');
-        if (Number(current.ca_two) !== next.ca_two) item.changes.push('CA 2');
+        if (Number(current.assessment) !== next.assessment)
+          item.changes.push('assessment');
         if (Number(current.examination) !== next.examination)
-          item.changes.push('exam');
+          item.changes.push('examination');
         item.action = item.changes.length ? 'update' : 'unchanged';
       } else {
         item.changes.push(result ? 'new subject score' : 'new report');
@@ -1114,15 +1124,15 @@ export class DataTransferService {
 
       item.apply = async () => {
         const target = await this.resultFor(student!, term.uuid);
-        const overall = next.ca_one + next.ca_two + next.examination;
-        await this.prisma.assessments.upsert({
+        const overall = next.assessment + next.examination;
+        await this.prisma.resultAssessments.upsert({
           where: {
             result_uuid_subject: { result_uuid: target, subject: subject! },
           },
           update: { ...next, overall },
           create: { result_uuid: target, subject: subject!, ...next, overall },
         });
-        const sum = await this.prisma.assessments.aggregate({
+        const sum = await this.prisma.resultAssessments.aggregate({
           where: { result_uuid: target },
           _sum: { overall: true },
         });
@@ -1167,7 +1177,7 @@ export class DataTransferService {
         student_uuid: student.uuid,
       },
     });
-    await this.prisma.assessments.createMany({
+    await this.prisma.resultAssessments.createMany({
       data: (student.class?.subjects ?? []).map((s) => ({
         result_uuid: result.uuid,
         subject: s.name,

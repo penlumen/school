@@ -26,9 +26,8 @@ interface StudentData {
 
 interface AssessmentObject {
     subject: string;
-    // First and second continuous assessments (formerly assignment/assessment).
-    ca_one: number;
-    ca_two: number;
+    // Continuous assessment (formerly CA 1 + CA 2) and examination.
+    assessment: number;
     examination: number;
     overall: number;
     grade?: string;
@@ -61,6 +60,8 @@ interface ResultData {
         name: string;
         avatar: string | null;
         address: string | null;
+        assessment_max?: number;
+        examination_max?: number;
         school: { name: string; avatar: string | null } | null;
     } | null;
     summary: ResultSummary;
@@ -224,10 +225,17 @@ export default function TraditionalResultSheet() {
                                 <thead>
                                 <tr className='bg-gray-100'>
                                     <th className='border border-black p-1.5 text-left font-bold text-xs'>SUBJECTS</th>
-                                    <th className='border border-black p-1 text-center font-bold text-[10px] w-16'>ASSIGN.</th>
-                                    <th className='border border-black p-1 text-center font-bold text-[10px] w-16'>TEST</th>
-                                    <th className='border border-black p-1 text-center font-bold text-[10px] w-16'>EXAM</th>
-                                    <th className='border border-black p-1 text-center font-bold text-[10px] w-16'>TOTAL</th>
+                                    <th className='border border-black p-1 text-center font-bold text-[10px] w-20'>
+                                        ASSESSMENT{branch?.assessment_max != null && <span className='block font-normal'>({branch.assessment_max})</span>}
+                                    </th>
+                                    <th className='border border-black p-1 text-center font-bold text-[10px] w-20'>
+                                        EXAMINATION{branch?.examination_max != null && <span className='block font-normal'>({branch.examination_max})</span>}
+                                    </th>
+                                    <th className='border border-black p-1 text-center font-bold text-[10px] w-16'>
+                                        TOTAL{branch?.assessment_max != null && branch?.examination_max != null && (
+                                            <span className='block font-normal'>({branch.assessment_max + branch.examination_max})</span>
+                                        )}
+                                    </th>
                                     <th className='border border-black p-1 text-center font-bold text-[10px] w-12'>GRADE</th>
                                     <th className='border border-black p-1 text-center font-bold text-[10px] w-24'>REMARK</th>
                                 </tr>
@@ -236,8 +244,7 @@ export default function TraditionalResultSheet() {
                                 {assessments.map((assessment, index) => (
                                     <tr key={index} className="h-7">
                                         <td className='border border-black px-2 font-bold text-xs uppercase'>{assessment.subject}</td>
-                                        <td className='border border-black text-center text-xs'>{assessment.ca_one}</td>
-                                        <td className='border border-black text-center text-xs'>{assessment.ca_two}</td>
+                                        <td className='border border-black text-center text-xs'>{assessment.assessment}</td>
                                         <td className='border border-black text-center text-xs'>{assessment.examination}</td>
                                         <td className='border border-black text-center font-bold text-xs'>{assessment.overall}</td>
                                         <td className='border border-black text-center font-bold text-xs'>
@@ -255,14 +262,13 @@ export default function TraditionalResultSheet() {
                                         <td className='border border-black'>&nbsp;</td>
                                         <td className='border border-black'>&nbsp;</td>
                                         <td className='border border-black'>&nbsp;</td>
-                                        <td className='border border-black'>&nbsp;</td>
                                     </tr>
                                 ))}
                                 </tbody>
                                 <tfoot>
                                 <tr className="bg-gray-50">
                                     <td className="border border-black px-2 font-bold text-xs">AGGREGATE / AVERAGE</td>
-                                    <td colSpan={3} className="border border-black"></td>
+                                    <td colSpan={2} className="border border-black"></td>
                                     <td className="border border-black text-center font-bold text-sm bg-gray-200">{totalScores}</td>
                                     <td colSpan={2}
                                         className="border border-black text-center font-bold text-sm bg-gray-200">{average}%

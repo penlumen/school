@@ -165,8 +165,8 @@ export function BranchGeneralTab() {
                                 const stem = form.reg_prefix.trim().replace(/\/+$/, '');
                                 const year = String(new Date().getFullYear()).slice(-2);
                                 return form.reg_include_year
-                                    ? `New students are numbered ${stem}/${year}/0001, 0002 and so on, starting again at 0001 each year. Numbers already in use are skipped.`
-                                    : `New students are numbered ${stem}/0001, 0002 and so on. Numbers already in use are skipped.`;
+                                    ? `New students are numbered ${stem}/${year}/1001, 1002 and so on, starting again at 1001 each year. Numbers already in use are skipped.`
+                                    : `New students are numbered ${stem}/1001, 1002 and so on. Numbers already in use are skipped.`;
                             })()
                             : 'Set a prefix to number new students automatically. Without one, staff type each number.'}
                     </p>

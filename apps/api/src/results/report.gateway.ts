@@ -115,7 +115,7 @@ export class ReportGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody()
     body: {
       result_uuid: string;
-      field: string; // e.g. "assessment:<uuid>:ca_one" or "teacher_remark"
+      field: string; // e.g. "assessment:<uuid>:examination" or "teacher_remark"
       value: string | number;
     },
   ) {

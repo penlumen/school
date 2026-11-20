@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CacheService } from '../cache/cache.service.js';
 import { DecodedUser } from '../common/types/auth.js';
+import { parseLimits, scoreLimits } from '../common/score-limits.js';
 
 @Injectable()
 export class GradesService {
@@ -38,7 +39,45 @@ export class GradesService {
         }),
     );
 
-    return { status: 200, success: true, message: 'Grades', data: { grades } };
+    // The highest assessment and examination score per subject.
+    const limits = await scoreLimits(this.prisma, branchUuid);
+
+    return {
+      status: 200,
+      success: true,
+      message: 'Grades',
+      data: { grades, limits },
+    };
+  }
+
+  /** Sets the branch's score limits (administrators). */
+  async updateLimits(
+    branchUuid: string | undefined,
+    decoded: DecodedUser,
+    body: any,
+  ) {
+    const isAdmin =
+      ['ROOT', 'ADMIN'].includes(decoded.role) ||
+      decoded.position === 'ADMINISTRATIVE';
+    if (!isAdmin || !branchUuid) {
+      throw new BadRequestException({
+        status: 400,
+        success: false,
+        message: 'Unauthorized',
+      });
+    }
+    const limits = parseLimits(body);
+    const branch = await this.prisma.branch.update({
+      where: { uuid: branchUuid },
+      data: limits,
+      select: { assessment_max: true, examination_max: true },
+    });
+    return {
+      status: 200,
+      success: true,
+      message: 'Score limits saved',
+      data: { limits: branch },
+    };
   }
 
   async create(

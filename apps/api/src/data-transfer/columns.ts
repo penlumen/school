@@ -107,9 +107,12 @@ export const DATA_TYPES = {
       { key: 'student', label: 'Student', exportOnly: true },
       { key: 'class', label: 'Class', exportOnly: true },
       { key: 'subject', label: 'Subject', required: true },
-      { key: 'ca_one', label: 'CA 1', hint: 'Empty keeps the current score' },
-      { key: 'ca_two', label: 'CA 2' },
-      { key: 'exam', label: 'Exam' },
+      {
+        key: 'assessment',
+        label: 'Assessment',
+        hint: 'Empty keeps the current score',
+      },
+      { key: 'examination', label: 'Examination' },
       { key: 'total', label: 'Total', exportOnly: true },
     ],
   },
@@ -134,6 +137,11 @@ export function normalizeKey(header: string, type: DataType) {
     (c) => c.label.toLowerCase().replace(/[\s-]+/g, '_') === simple,
   );
   if (byLabel) return byLabel.key;
-  if (type === 'results' && simple === 'examination') return 'exam';
+  // Older spreadsheets: Exam, and CA 1 + CA 2 (added together on import).
+  if (type === 'results' && simple === 'exam') return 'examination';
+  if (type === 'results' && ['ca_1', 'ca1', 'ca_one'].includes(simple))
+    return 'ca_one';
+  if (type === 'results' && ['ca_2', 'ca2', 'ca_two'].includes(simple))
+    return 'ca_two';
   return simple;
 }

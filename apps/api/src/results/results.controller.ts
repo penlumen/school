@@ -13,6 +13,8 @@ import {
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { ResultsService } from './results.service.js';
+import { ApiBody, ApiOperation } from '@nestjs/swagger';
+import { ResultUpdateBody } from '../docs/schemas.js';
 
 @Controller('result')
 export class ResultsController {
@@ -61,6 +63,8 @@ export class ResultsController {
   }
 
   @Patch('update/:result_uuid')
+  @ApiOperation({ summary: 'Save a report: scores, remarks and approval' })
+  @ApiBody({ type: ResultUpdateBody })
   update(
     @Param('result_uuid') resultUuid: string,
     @CurrentUser() user: DecodedUser,
