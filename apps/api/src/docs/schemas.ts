@@ -114,6 +114,19 @@ export class UserBody {
   face_descriptor?: number[];
 }
 
+export class NewParentBody {
+  @ApiProperty({ example: 'Hauwa Musa' })
+  name!: string;
+  @ApiProperty({ example: 'hauwa@example.com' })
+  email!: string;
+  @ApiPropertyOptional({ example: '0803 333 4444' })
+  contact?: string;
+  @ApiPropertyOptional({ enum: ['PARENT', 'GUARDIAN'] })
+  position?: string;
+  @ApiPropertyOptional()
+  address?: string;
+}
+
 export class StudentBody {
   @ApiProperty({ example: 'Amina Muhammad' })
   name!: string;
@@ -139,6 +152,12 @@ export class StudentBody {
     description: 'YYYY-MM-DD; empty clears it',
   })
   date_of_birth?: string;
+  @ApiPropertyOptional({
+    type: () => NewParentBody,
+    description:
+      'Create only: add a new parent with the student (instead of parent_uuid). They get the set-password invite.',
+  })
+  new_parent?: NewParentBody;
   @ApiPropertyOptional({ description: 'Image URL' })
   avatar?: string;
   @ApiPropertyOptional({

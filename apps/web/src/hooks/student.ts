@@ -52,6 +52,8 @@ export const useStudent = () => {
       date_of_birth: studentData.date_of_birth || null,
       avatar: studentData.avatar,
       face_descriptor: studentData.face_descriptor,
+      // Set when "New parent" is ticked: the API creates them with the student.
+      new_parent: studentData.new_parent,
     });
     const data = response.data;
 
