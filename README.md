@@ -50,6 +50,14 @@ If you're migrating an existing database, there's nothing to run — `apps/api/p
 cd apps/api && bun run prisma:migrate
 ```
 
+To fill a local database with demo data (a school with two branches, staff, parents, 64 students, two terms of reports, attendance, events and invoices):
+
+```bash
+cd apps/api && bun run seed
+```
+
+Sign in with `admin@demo.test` / `password123` (also `bursar@demo.test`, `teacher1`–`8@demo.test`, `parent1`–`24@demo.test`), or on the student portal with a reg number such as `PDS/MC/26/1001` and PIN `1234`. The demo school takes its token from `NEXT_PUBLIC_SCHOOL_TOKEN` in `apps/web/.env` (or `SEED_SCHOOL_TOKEN`), so the web app opens straight onto it. Running it again replaces the demo school and leaves every other school alone. It refuses to run with `NODE_ENV=production`; `SEED_PASSWORD` changes the shared password.
+
 ## Development
 
 ```bash

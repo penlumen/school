@@ -10,7 +10,8 @@
     "start:prod": "node dist/main.js",
     "lint": "prettier --write \"src/**/*.ts\"",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate deploy"
+    "prisma:migrate": "prisma migrate deploy",
+    "seed": "prisma db seed"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1128.0",
