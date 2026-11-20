@@ -1125,14 +1125,14 @@ export class DataTransferService {
       item.apply = async () => {
         const target = await this.resultFor(student!, term.uuid);
         const overall = next.assessment + next.examination;
-        await this.prisma.assessments.upsert({
+        await this.prisma.resultAssessments.upsert({
           where: {
             result_uuid_subject: { result_uuid: target, subject: subject! },
           },
           update: { ...next, overall },
           create: { result_uuid: target, subject: subject!, ...next, overall },
         });
-        const sum = await this.prisma.assessments.aggregate({
+        const sum = await this.prisma.resultAssessments.aggregate({
           where: { result_uuid: target },
           _sum: { overall: true },
         });
@@ -1177,7 +1177,7 @@ export class DataTransferService {
         student_uuid: student.uuid,
       },
     });
-    await this.prisma.assessments.createMany({
+    await this.prisma.resultAssessments.createMany({
       data: (student.class?.subjects ?? []).map((s) => ({
         result_uuid: result.uuid,
         subject: s.name,

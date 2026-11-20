@@ -21,7 +21,7 @@ export class ResultsService {
     private readonly webhooks: WebhooksService,
   ) {}
 
-  // Assessments' score columns are Prisma.Decimal (Assessments.assessment/
+  // ResultAssessments' score columns are Prisma.Decimal (assessment/
   // examination/overall). Decimal serializes to a JSON *string*, which would silently
   // change the API's response shape from number to string. Normalize back to plain
   // numbers here so the response contract stays exactly as it was.
@@ -442,14 +442,14 @@ export class ResultsService {
 
       const currentSubjectNames = student.class.subjects.map((s) => s.name);
 
-      await this.prisma.assessments.deleteMany({
+      await this.prisma.resultAssessments.deleteMany({
         where: {
           result_uuid: result.uuid,
           subject: { notIn: currentSubjectNames },
         },
       });
 
-      await this.prisma.assessments.createMany({
+      await this.prisma.resultAssessments.createMany({
         data: currentSubjectNames.map((subject) => ({
           result_uuid: result.uuid,
           subject,
@@ -550,7 +550,7 @@ export class ResultsService {
     // can't be changed through it.
     await this.prisma.$transaction(
       computedAssessments.map((a) =>
-        this.prisma.assessments.updateMany({
+        this.prisma.resultAssessments.updateMany({
           where: { uuid: a.uuid, result_uuid: resultUuid },
           data: {
             assessment: a.assessment,
@@ -561,7 +561,7 @@ export class ResultsService {
       ),
     );
     // The report's total is the sum of all its subjects as saved.
-    const sum = await this.prisma.assessments.aggregate({
+    const sum = await this.prisma.resultAssessments.aggregate({
       where: { result_uuid: resultUuid },
       _sum: { overall: true },
     });
@@ -854,7 +854,7 @@ export class ResultsService {
       if (allowed.get(result.class_uuid)) deletable.push(result.uuid);
     }
     await this.prisma.$transaction([
-      this.prisma.assessments.deleteMany({
+      this.prisma.resultAssessments.deleteMany({
         where: { result_uuid: { in: deletable } },
       }),
       this.prisma.result.deleteMany({ where: { uuid: { in: deletable } } }),
@@ -890,7 +890,7 @@ export class ResultsService {
     }
 
     try {
-      await this.prisma.assessments.deleteMany({
+      await this.prisma.resultAssessments.deleteMany({
         where: { result_uuid: resultUuid },
       });
       await this.prisma.result.delete({ where: { uuid: resultUuid } });
