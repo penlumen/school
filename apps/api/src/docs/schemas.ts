@@ -212,7 +212,7 @@ export class BranchBody {
   reg_prefix?: string;
   @ApiPropertyOptional({
     description:
-      'Put the 2-digit year in generated numbers (PREFIX/YY/1001, the default) or not (PREFIX/1001). Update only',
+      'Put the 2-digit year in generated numbers (PREFIX/YY/0001, the default) or not (PREFIX/0001). Update only',
   })
   reg_include_year?: boolean;
 }
