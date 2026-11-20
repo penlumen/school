@@ -56,7 +56,7 @@ To fill a local database with demo data (a school with two branches, staff, pare
 cd apps/api && bun run seed
 ```
 
-Sign in with `admin@demo.test` / `password123` (also `bursar@demo.test`, `teacher1`–`8@demo.test`, `parent1`–`24@demo.test`), or on the student portal with a reg number such as `PDS/MC/26/1001` and PIN `1234`. The demo school takes its token from `NEXT_PUBLIC_SCHOOL_TOKEN` in `apps/web/.env` (or `SEED_SCHOOL_TOKEN`), so the web app opens straight onto it. Running it again replaces the demo school and leaves every other school alone. It refuses to run with `NODE_ENV=production`; `SEED_PASSWORD` changes the shared password.
+Sign in with `admin@demo.test` / `password` (also `bursar@demo.test`, `teacher1`–`8@demo.test`, `parent1`–`24@demo.test`), or on the student portal with a reg number such as `PDS/MC/26/1001` and PIN `1234`. The demo school takes its token from `NEXT_PUBLIC_SCHOOL_TOKEN` in `apps/web/.env` (or `SEED_SCHOOL_TOKEN`), so the web app opens straight onto it. Running it again replaces the demo school and leaves every other school alone. It refuses to run with `NODE_ENV=production`; `SEED_PASSWORD` changes the shared password.
 
 ## Development
 

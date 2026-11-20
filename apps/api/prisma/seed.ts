@@ -9,7 +9,7 @@
  * under it) and creates it fresh. No other school is touched. It refuses to
  * run when NODE_ENV is production.
  *
- * Sign-in (all accounts share SEED_PASSWORD, default "password123"):
+ * Sign-in (all accounts share SEED_PASSWORD, default "password"):
  *   admin      admin@demo.test
  *   bursar     bursar@demo.test
  *   teachers   teacher1@demo.test ... teacher8@demo.test
