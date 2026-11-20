@@ -40,9 +40,16 @@ const toDraftRow = (g: Grade) => ({
     score: String(g.score),
 });
 
+type Limits = {assessment_max: number; examination_max: number};
+
 export function GradingTab() {
-    const {index, create, update, remove} = useGrade();
+    const {index, create, update, remove, updateLimits} = useGrade();
     const [grades, setGrades] = useState<Grade[] | null>(null);
+
+    // Score limits: the most a subject's assessment and examination can be.
+    const [limits, setLimits] = useState<Limits | null>(null);
+    const [limitDraft, setLimitDraft] = useState({assessment_max: '', examination_max: ''});
+    const [savingLimits, setSavingLimits] = useState(false);
 
     // Edit mode keeps a draft; nothing is sent until Save changes.
     const [editing, setEditing] = useState(false);
@@ -60,6 +67,13 @@ export function GradingTab() {
         const response = await index();
         if (response.success) {
             setGrades(response.data.grades || []);
+            if (response.data.limits) {
+                setLimits(response.data.limits);
+                setLimitDraft({
+                    assessment_max: String(response.data.limits.assessment_max),
+                    examination_max: String(response.data.limits.examination_max),
+                });
+            }
         } else {
             toast.error(response.message || 'Could not load grades');
             setGrades([]);
@@ -185,11 +199,102 @@ export function GradingTab() {
         }
     };
 
+    const limitTotal = Number(limitDraft.assessment_max || 0) + Number(limitDraft.examination_max || 0);
+    const limitsChanged =
+        !!limits &&
+        (limitDraft.assessment_max !== String(limits.assessment_max) ||
+            limitDraft.examination_max !== String(limits.examination_max));
+    const limitsError = (() => {
+        const values = [limitDraft.assessment_max, limitDraft.examination_max];
+        if (values.some((v) => v === '' || !Number.isInteger(Number(v)) || Number(v) < 0)) {
+            return 'Use whole numbers.';
+        }
+        if (limitTotal < 1 || limitTotal > 100) return 'The total must be from 1 to 100.';
+        return null;
+    })();
+
+    const saveLimits = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (limitsError) return toast.error(limitsError);
+        setSavingLimits(true);
+        try {
+            const response = await updateLimits({
+                assessment_max: Number(limitDraft.assessment_max),
+                examination_max: Number(limitDraft.examination_max),
+            });
+            if (!response.success) return toast.error(response.message);
+            toast.success(response.message);
+            setLimits(response.data.limits);
+        } catch (error: any) {
+            toast.error(error.message || 'Something went wrong');
+        } finally {
+            setSavingLimits(false);
+        }
+    };
+
     const setCell = (uuid: string, field: (typeof FIELDS)[number], value: string) =>
         setDraft((d) => ({...d, [uuid]: {...d[uuid], [field]: value}}));
 
     return (
-        <div className='space-y-5'>
+        <div className='space-y-8'>
+            <form onSubmit={saveLimits} className='space-y-4'>
+                <div>
+                    <h2 className='text-xl font-medium leading-7'>Score limits</h2>
+                    <p className='mt-1 text-sm text-muted-foreground'>
+                        The most each subject&apos;s assessment and examination can score. Teachers can&apos;t enter more than these.
+                    </p>
+                </div>
+                {limits === null ? (
+                    <Skeleton className='h-16 w-full max-w-xl'/>
+                ) : (
+                    <div className='flex flex-wrap items-end gap-3'>
+                        <div className='space-y-2'>
+                            <Label htmlFor='assessment-max'>Assessment</Label>
+                            <Input
+                                id='assessment-max'
+                                type='number'
+                                min={0}
+                                max={100}
+                                className='w-28'
+                                value={limitDraft.assessment_max}
+                                onChange={(e) => setLimitDraft({...limitDraft, assessment_max: e.target.value})}
+                            />
+                        </div>
+                        <span className='pb-2 text-muted-foreground'>+</span>
+                        <div className='space-y-2'>
+                            <Label htmlFor='examination-max'>Examination</Label>
+                            <Input
+                                id='examination-max'
+                                type='number'
+                                min={0}
+                                max={100}
+                                className='w-28'
+                                value={limitDraft.examination_max}
+                                onChange={(e) => setLimitDraft({...limitDraft, examination_max: e.target.value})}
+                            />
+                        </div>
+                        <span className='pb-2 text-muted-foreground'>=</span>
+                        <div className='space-y-2'>
+                            <Label>Total</Label>
+                            <div
+                                aria-live='polite'
+                                className={`flex h-9 w-28 items-center rounded-md border px-3 text-sm font-medium ${
+                                    limitsError ? 'border-destructive text-destructive' : 'bg-muted/50'
+                                }`}
+                            >
+                                {limitTotal}
+                            </div>
+                        </div>
+                        <Button type='submit' variant='outline' disabled={!limitsChanged || !!limitsError || savingLimits}>
+                            <Check className='h-4 w-4'/>
+                            {savingLimits ? 'Saving...' : 'Save limits'}
+                        </Button>
+                    </div>
+                )}
+                {limits !== null && limitsError && <p className='text-sm text-destructive'>{limitsError}</p>}
+            </form>
+
+            <div className='space-y-5'>
             <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
                 <div>
                     <h2 className='text-xl font-medium leading-7'>Grade Scale</h2>
@@ -284,6 +389,7 @@ export function GradingTab() {
                         )}
                     </TableBody>
                 </Table>
+            </div>
             </div>
 
             <Sheet open={addOpen} onOpenChange={setAddOpen}>

@@ -207,6 +207,9 @@ model Branch {
   reg_prefix       String?
   /// Put the 2-digit year in numbers (PREFIX/YY/1001); without it, PREFIX/1001.
   reg_include_year Boolean  @default(true)
+  /// Highest assessment and examination score per subject (Grade settings).
+  assessment_max   Int      @default(40)
+  examination_max  Int      @default(60)
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
 
@@ -386,8 +389,8 @@ model Assessments {
   uuid        String   @unique @default(uuid())
   result_uuid String
   subject     String
-  ca_one      Decimal  @default(0) @db.Decimal(5, 2)
-  ca_two      Decimal  @default(0) @db.Decimal(5, 2)
+  /// Continuous assessment (formerly CA 1 + CA 2), up to Branch.assessment_max.
+  assessment  Decimal  @default(0) @db.Decimal(5, 2)
   examination Decimal  @default(0) @db.Decimal(5, 2)
   overall     Decimal  @default(0) @db.Decimal(5, 2)
   grade       String?

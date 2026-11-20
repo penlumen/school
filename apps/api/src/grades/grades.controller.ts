@@ -11,6 +11,8 @@ import {
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { DecodedUser } from '../common/types/auth.js';
 import { GradesService } from './grades.service.js';
+import { ApiBody, ApiOperation } from '@nestjs/swagger';
+import { ScoreLimitsBody } from '../docs/schemas.js';
 
 @Controller('grade')
 export class GradesController {
@@ -19,6 +21,20 @@ export class GradesController {
   @Get('index')
   index(@Headers('x-branch-session') branchUuid: string) {
     return this.gradesService.index(branchUuid);
+  }
+
+  @Patch('limits')
+  @ApiOperation({
+    summary:
+      'Set the highest assessment and examination score per subject (administrators)',
+  })
+  @ApiBody({ type: ScoreLimitsBody })
+  updateLimits(
+    @Headers('x-branch-session') branchUuid: string,
+    @CurrentUser() user: DecodedUser,
+    @Body() body: any,
+  ) {
+    return this.gradesService.updateLimits(branchUuid, user, body);
   }
 
   @Post('create')

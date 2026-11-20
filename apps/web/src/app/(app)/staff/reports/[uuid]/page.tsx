@@ -14,6 +14,7 @@ import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
 import {Tooltip, TooltipContent, TooltipTrigger} from '@/components/ui/tooltip';
 import Link from 'next/link';
+import {toast} from 'sonner';
 import {useResult} from '@/hooks/result';
 import type {AffectiveRow, AffectiveScaleItem} from '@/hooks/affective';
 import {useReportSocket} from '@/hooks/report-socket';
@@ -38,8 +39,7 @@ interface StudentData {
 interface AssessmentObject {
     uuid: string;
     subject: string;
-    ca_one: number;
-    ca_two: number;
+    assessment: number;
     examination: number;
     overall: number;
     grade?: string;
@@ -70,6 +70,8 @@ interface ResultData {
         status?: string;
         approval_requested?: boolean;
     };
+    /** The branch's score limits (Grade settings). */
+    branch?: {assessment_max?: number; examination_max?: number} | null;
     summary: ResultSummary;
     assessments: AssessmentObject[];
     grading_system?: GradingScale[];
@@ -77,7 +79,9 @@ interface ResultData {
     affective_scale?: AffectiveScaleItem[];
 }
 
-const EDITABLE_FIELDS = ['ca_one', 'ca_two', 'examination'] as const;
+const EDITABLE_FIELDS = ['assessment', 'examination'] as const;
+type ScoreField = (typeof EDITABLE_FIELDS)[number];
+const FIELD_LABELS: Record<ScoreField, string> = {assessment: 'Assessment', examination: 'Examination'};
 
 export default function ReportPage() {
     const {uuid} = useParams();
@@ -130,7 +134,7 @@ export default function ReportPage() {
                     prev.map((item) => {
                         if (item.uuid !== assessmentUuid) return item;
                         const updated = {...item, [key]: Number(event.value)};
-                        updated.overall = updated.ca_one + updated.ca_two + updated.examination;
+                        updated.overall = updated.assessment + updated.examination;
                         return updated;
                     }),
                 );
@@ -189,11 +193,18 @@ export default function ReportPage() {
         emitFieldChange(`affective:${traitUuid}`, next ?? '');
     };
 
-    const updateAssessment = (assessmentUuid: string, field: string, value: number) => {
+    const limits: Record<ScoreField, number> = {
+        assessment: reportData?.branch?.assessment_max ?? 40,
+        examination: reportData?.branch?.examination_max ?? 60,
+    };
+    const overLimit = (a: AssessmentObject, field: ScoreField) => a[field] > limits[field] || a[field] < 0;
+    const overflowing = assessments.filter((a) => EDITABLE_FIELDS.some((f) => overLimit(a, f)));
+
+    const updateAssessment = (assessmentUuid: string, field: ScoreField, value: number) => {
         setAssessments(prev => prev.map(item => {
             if (item.uuid === assessmentUuid) {
                 const updated = {...item, [field]: value};
-                updated.overall = updated.ca_one + updated.ca_two + updated.examination;
+                updated.overall = updated.assessment + updated.examination;
                 return updated;
             }
             return item;
@@ -211,6 +222,12 @@ export default function ReportPage() {
 
     const handleSave = async () => {
         if (!reportData) return;
+        if (overflowing.length) {
+            const first = overflowing[0];
+            const field = EDITABLE_FIELDS.find((f) => overLimit(first, f)) as ScoreField;
+            toast.error(`${first.subject}: ${FIELD_LABELS[field].toLowerCase()} must be from 0 to ${limits[field]}`);
+            return;
+        }
         setIsLoading(true);
         try {
             const response = await update(
@@ -230,8 +247,11 @@ export default function ReportPage() {
                 setIsEditing(false);
                 emitSaved();
                 fetchData();
+            } else {
+                toast.error(response.message || 'Could not save the report');
             }
-        } catch (error) {
+        } catch (error: any) {
+            toast.error(error?.response?.data?.message || error.message || 'Could not save the report');
             console.error('Save error', error);
         } finally {
             setIsLoading(false);
@@ -379,10 +399,16 @@ export default function ReportPage() {
                     <TableHeader className="bg-slate-50">
                         <TableRow>
                             <TableHead className="font-bold text-slate-700">SUBJECTS</TableHead>
-                            <TableHead className="text-center w-24 font-bold text-slate-700">CA 1</TableHead>
-                            <TableHead className="text-center w-24 font-bold text-slate-700">CA 2</TableHead>
-                            <TableHead className="text-center w-24 font-bold text-slate-700">EXAM</TableHead>
-                            <TableHead className="text-center w-24 font-bold text-slate-700">TOTAL</TableHead>
+                            {EDITABLE_FIELDS.map((field) => (
+                                <TableHead key={field} className="text-center w-28 font-bold text-slate-700">
+                                    {FIELD_LABELS[field].toUpperCase()}
+                                    <span className="block text-[10px] font-medium text-muted-foreground">out of {limits[field]}</span>
+                                </TableHead>
+                            ))}
+                            <TableHead className="text-center w-24 font-bold text-slate-700">
+                                TOTAL
+                                <span className="block text-[10px] font-medium text-muted-foreground">out of {limits.assessment + limits.examination}</span>
+                            </TableHead>
                             <TableHead className="text-center font-bold text-slate-700">PERFORMANCE</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -400,9 +426,17 @@ export default function ReportPage() {
                                             {isEditing ? (
                                                 <Input
                                                     type="number"
+                                                    min={0}
+                                                    max={limits[field]}
+                                                    step="any"
+                                                    aria-label={`${FIELD_LABELS[field]} for ${a.subject}, out of ${limits[field]}`}
+                                                    aria-invalid={overLimit(a, field)}
+                                                    title={overLimit(a, field) ? `From 0 to ${limits[field]}` : undefined}
                                                     value={a[field]}
                                                     onChange={(e) => updateAssessment(a.uuid, field, Number(e.target.value))}
-                                                    className="w-16 mx-auto text-center h-8 focus:ring-emerald-500"
+                                                    className={`w-20 mx-auto text-center h-8 focus:ring-emerald-500 ${
+                                                        overLimit(a, field) ? 'border-destructive text-destructive focus-visible:ring-destructive' : ''
+                                                    }`}
                                                 />
                                             ) : (
                                                 <span className="text-slate-600">{a[field]}</span>
@@ -425,6 +459,12 @@ export default function ReportPage() {
                         })}
                     </TableBody>
                 </Table>
+                {isEditing && overflowing.length > 0 && (
+                    <p className="border-t px-4 py-2 text-sm text-destructive">
+                        {overflowing.length === 1 ? '1 subject has' : `${overflowing.length} subjects have`} a score over the limit
+                        (assessment up to {limits.assessment}, examination up to {limits.examination}). Fix {overflowing.length === 1 ? 'it' : 'them'} to save.
+                    </p>
+                )}
             </Card>
 
             {/* RESULT WORKFLOW */}

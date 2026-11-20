@@ -78,10 +78,19 @@ export const useGrade = () => {
     }
   };
 
+  /** The highest assessment and examination score per subject. */
+  const updateLimits = async (limits: { assessment_max: number; examination_max: number }) => {
+    const data = (await axiosInstance.patch('/api/v1/grade/limits', limits)).data;
+    return data.success
+      ? { success: true as const, message: data.message as string, data: data.data }
+      : { success: false as const, message: (data.message as string) || 'Something went wrong' };
+  };
+
   return {
     index,
     create,
     update,
     remove,
+    updateLimits,
   };
 };

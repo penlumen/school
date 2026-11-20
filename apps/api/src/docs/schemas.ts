@@ -212,7 +212,7 @@ export class BranchBody {
   reg_prefix?: string;
   @ApiPropertyOptional({
     description:
-      'Put the 2-digit year in generated numbers (PREFIX/YY/0001, the default) or not (PREFIX/0001). Update only',
+      'Put the 2-digit year in generated numbers (PREFIX/YY/1001, the default) or not (PREFIX/1001). Update only',
   })
   reg_include_year?: boolean;
 }
@@ -430,6 +430,41 @@ export class TestEmailBody {
 }
 
 // ---------- Import ----------
+
+export class ScoreLimitsBody {
+  @ApiProperty({
+    example: 40,
+    description: 'Highest assessment score per subject',
+  })
+  assessment_max!: number;
+  @ApiProperty({
+    example: 60,
+    description:
+      'Highest examination score per subject; with the assessment, at most 100',
+  })
+  examination_max!: number;
+}
+
+class ScoreRow {
+  @ApiProperty({ description: 'The subject row (assessment) uuid' })
+  uuid!: string;
+  @ApiProperty({ example: 32, description: 'Up to the branch assessment_max' })
+  assessment!: number;
+  @ApiProperty({ example: 55, description: 'Up to the branch examination_max' })
+  examination!: number;
+}
+
+export class ResultUpdateBody {
+  @ApiPropertyOptional({
+    description:
+      'teacher_remark, principal_remark, status, approval_requested, calendar',
+  })
+  result?: Record<string, unknown>;
+  @ApiProperty({ type: [ScoreRow] })
+  assessments!: ScoreRow[];
+  @ApiPropertyOptional({ description: '[{ trait_uuid, rating }]' })
+  affective?: unknown[];
+}
 
 export class ImportBody {
   @ApiProperty({

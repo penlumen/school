@@ -10,8 +10,7 @@ type ResultData = {
 type AssessmentObject = {
     uuid: string;
     subject: string;
-    ca_one: number;
-    ca_two: number;
+    assessment: number;
     examination: number;
     overall: number;
 };

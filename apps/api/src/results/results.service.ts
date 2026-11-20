@@ -4,8 +4,10 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { readScores, scoreLimits } from '../common/score-limits.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { WebhooksService } from '../integrations/webhooks.service.js';
 import { DecodedUser } from '../common/types/auth.js';
@@ -19,15 +21,14 @@ export class ResultsService {
     private readonly webhooks: WebhooksService,
   ) {}
 
-  // Assessments' score columns are Prisma.Decimal now (Assessments.ca_one/ca_two/
+  // Assessments' score columns are Prisma.Decimal (Assessments.assessment/
   // examination/overall). Decimal serializes to a JSON *string*, which would silently
   // change the API's response shape from number to string. Normalize back to plain
   // numbers here so the response contract stays exactly as it was.
   private toPlainAssessment(a: any) {
     return {
       ...a,
-      ca_one: Number(a.ca_one),
-      ca_two: Number(a.ca_two),
+      assessment: Number(a.assessment),
       examination: Number(a.examination),
       overall: Number(a.overall),
     };
@@ -293,6 +294,8 @@ export class ResultsService {
             address: true,
             contact: true,
             email: true,
+            assessment_max: true,
+            examination_max: true,
             school: { select: { name: true, avatar: true } },
           },
         })
@@ -328,7 +331,7 @@ export class ResultsService {
     );
     const enrichedAssessments = ordered.map((asm) => {
       const plain = this.toPlainAssessment(asm);
-      const total = plain.ca_one + plain.ca_two + plain.examination;
+      const total = plain.assessment + plain.examination;
       const { grade, remark } = getGradeInfo(total);
       return { ...plain, total, grade, remark };
     });
@@ -515,48 +518,55 @@ export class ResultsService {
       });
     }
 
-    for (const item of assessments) {
-      if (
-        !item.uuid ||
-        item.ca_one === undefined ||
-        item.ca_two === undefined ||
-        item.examination === undefined
-      ) {
+    // Scores can't go over the branch's limits (Grade settings).
+    const limits = await scoreLimits(
+      this.prisma,
+      existing.student?.branch_uuid,
+    );
+    const computedAssessments = assessments.map((a: any) => {
+      if (!a?.uuid) {
         throw new BadRequestException({
           status: 400,
           success: false,
-          message: 'uuid, ca_one, ca_two and examination are required',
+          message: 'Each score needs the uuid of its subject row',
         });
       }
-    }
-
-    const computedAssessments = assessments.map((a: any) => {
-      const overall =
-        Number(a.ca_one) + Number(a.ca_two) + Number(a.examination);
+      const scores = readScores(a, limits, a.subject || 'A subject');
+      if (typeof scores === 'string') {
+        throw new UnprocessableEntityException({
+          status: 422,
+          success: false,
+          message: scores,
+        });
+      }
       return {
-        uuid: a.uuid,
-        ca_one: Number(a.ca_one),
-        ca_two: Number(a.ca_two),
-        examination: Number(a.examination),
-        overall: Number(overall),
+        uuid: String(a.uuid),
+        ...scores,
+        overall: scores.assessment + scores.examination,
       };
     });
 
-    const updates = computedAssessments.map((a) =>
-      this.prisma.assessments.update({
-        where: { uuid: a.uuid },
-        data: {
-          ca_one: a.ca_one,
-          ca_two: a.ca_two,
-          examination: a.examination,
-          overall: a.overall,
-        },
-      }),
+    // updateMany scoped to this report, so a subject row from another report
+    // can't be changed through it.
+    await this.prisma.$transaction(
+      computedAssessments.map((a) =>
+        this.prisma.assessments.updateMany({
+          where: { uuid: a.uuid, result_uuid: resultUuid },
+          data: {
+            assessment: a.assessment,
+            examination: a.examination,
+            overall: a.overall,
+          },
+        }),
+      ),
     );
+    // The report's total is the sum of all its subjects as saved.
+    const sum = await this.prisma.assessments.aggregate({
+      where: { result_uuid: resultUuid },
+      _sum: { overall: true },
+    });
+    const total = Number(sum._sum.overall ?? 0);
 
-    const total = computedAssessments.reduce((sum, a) => sum + a.overall, 0);
-
-    await this.prisma.$transaction(updates);
     if (Array.isArray(body.affective)) {
       await this.saveAffective(
         resultUuid,
